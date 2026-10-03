@@ -4,7 +4,6 @@ import '../widgets/package_card_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:loader_overlay/loader_overlay.dart';
 
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({super.key});
@@ -24,17 +23,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     _statusWorker = ever(controller.status, (status) {
       if (!mounted) return;
-      if (status == SubscriptionStatus.purchasePending) {
-        context.loaderOverlay.show();
-      } else {
-        if (context.loaderOverlay.visible) {
-          context.loaderOverlay.hide();
-        }
-        if (status == SubscriptionStatus.purchaseError) {
-          AppToast.showError(context: context, title: controller.errorMessage.value ?? 'Có lỗi xảy ra khi thanh toán');
-        } else if (status == SubscriptionStatus.purchaseSuccess) {
-          AppToast.showSuccess(context: context, title: 'Thanh toán thành công!');
-        }
+      if (status == SubscriptionStatus.purchaseError) {
+        AppToast.showError(context: context, title: controller.errorMessage.value ?? 'Có lỗi xảy ra khi thanh toán');
+      } else if (status == SubscriptionStatus.purchaseSuccess) {
+        AppToast.showSuccess(context: context, title: 'Thanh toán thành công!');
       }
     });
   }
@@ -55,23 +47,35 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LoaderOverlay(
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(title: const Text("Nâng cấp Premium")),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 32),
-              Obx(() => _buildPremiumPackage(context)),
-              const SizedBox(height: 24),
-              Obx(() => _buildStandardPackage(context)),
-            ],
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(title: const Text("Nâng cấp Premium")),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 32),
+                Obx(() => _buildPremiumPackage(context)),
+                const SizedBox(height: 24),
+                Obx(() => _buildStandardPackage(context)),
+              ],
+            ),
           ),
         ),
-      ),
+        Obx(() {
+          if (controller.status.value == SubscriptionStatus.purchasePending) {
+            return Container(
+              color: Colors.black45,
+              alignment: Alignment.center,
+              child: const CircularProgressIndicator(),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
+      ],
     );
   }
 

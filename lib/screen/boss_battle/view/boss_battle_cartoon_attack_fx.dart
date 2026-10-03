@@ -46,6 +46,63 @@ class BossBattleCartoonAttackFx extends StatelessWidget {
                       dragonAttack: dragonAttack,
                     ),
                   ),
+                  if (pandaAttack && progress >= .18 && progress <= .80)
+                    LayoutBuilder(
+                      builder: (context, box) {
+                        final travel =
+                            ((progress - .18) / .58).clamp(0.0, 1.0);
+                        final p = Curves.easeOutCubic.transform(travel);
+                        final start =
+                            Offset(box.maxWidth * .28, box.maxHeight * .34);
+                        final target =
+                            Offset(box.maxWidth * .72, box.maxHeight * .23);
+                        final head = Offset.lerp(start, target, p)!;
+                        final angle = math.atan2(
+                            target.dy - start.dy, target.dx - start.dx);
+                        return Positioned(
+                          left: head.dx - 26,
+                          top: head.dy - 13,
+                          child: Transform.rotate(
+                            angle: angle,
+                            child: const GameArtImage(
+                              url: GameArt.arrow,
+                              width: 52,
+                              height: 26,
+                              fit: BoxFit.contain,
+                              fallbackEmoji: '🏹',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  if (dragonAttack && progress >= .16 && progress <= .82)
+                    LayoutBuilder(
+                      builder: (context, box) {
+                        final travel =
+                            ((progress - .16) / .62).clamp(0.0, 1.0);
+                        final p = Curves.easeOutCubic.transform(travel);
+                        final mouth =
+                            Offset(box.maxWidth * .73, box.maxHeight * .22);
+                        final target =
+                            Offset(box.maxWidth * .29, box.maxHeight * .35);
+                        final head = Offset.lerp(mouth, target, p)!;
+                        return Positioned(
+                          left: head.dx - 34,
+                          top: head.dy - 34,
+                          child: Transform.scale(
+                            scale: 0.85 +
+                                math.sin(progress * math.pi * 6) * 0.22,
+                            child: const GameArtImage(
+                              url: GameArt.fireCore,
+                              width: 68,
+                              height: 68,
+                              fit: BoxFit.contain,
+                              fallbackEmoji: '🔥',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   if (visible)
                     Align(
                       alignment: dragonAttack
@@ -82,6 +139,23 @@ class BossBattleCartoonAttackFx extends StatelessWidget {
                             height: 72,
                             fit: BoxFit.contain,
                             fallbackEmoji: '✨',
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (visible && pandaAttack)
+                    Align(
+                      alignment: const Alignment(.52, -.48),
+                      child: Opacity(
+                        opacity: (1 - impact).clamp(0.0, 1.0),
+                        child: Transform.scale(
+                          scale: .7 + impact * 1.2,
+                          child: const GameArtImage(
+                            url: GameArt.smoke,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.contain,
+                            fallbackEmoji: '💨',
                           ),
                         ),
                       ),

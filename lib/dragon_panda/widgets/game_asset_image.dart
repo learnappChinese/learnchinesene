@@ -30,7 +30,7 @@ class GameAssetImage extends StatelessWidget {
         return Container(
           width: width,
           height: height,
-          alignment: Alignment.Center,
+          alignment: Alignment.center,
           child: Text(
             fallbackEmoji,
             style: TextStyle(fontSize: (height != null) ? (height! * 0.5) : 32),

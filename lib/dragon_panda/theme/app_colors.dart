@@ -5,6 +5,7 @@ class AppColors {
   static const Color primaryBlue = Color(0xFF2F80ED);
   static const Color darkBlue = Color(0xFF163B70);
   static const Color deepNavy = Color(0xFF0F172A);
+  static const Color backgroundDark = Color(0xFF0F172A);
   static const Color surfaceDark = Color(0xFF1E293B);
 
   // Warm Fantasy Palette

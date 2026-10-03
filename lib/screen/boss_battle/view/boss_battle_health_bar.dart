@@ -26,62 +26,105 @@ class BossBattleHealthBar extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 16),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+        if (label.isNotEmpty || current > 0)
+          Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 16),
+              const SizedBox(width: 6),
+              if (label.isNotEmpty)
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      shadows: [
+                        Shadow(color: Colors.black, blurRadius: 4),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                const Spacer(),
+              Text(
+                '$current / $max',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
+                  shadows: [
+                    Shadow(color: Colors.black, blurRadius: 4),
+                  ],
                 ),
               ),
-            ),
-            Text(
-              '$current / $max',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Container(
-          height: 13,
-          decoration: BoxDecoration(
-            color: const Color(0xAA171218),
-            borderRadius: BorderRadius.circular(99),
-            border: Border.all(color: Colors.white24),
+            ],
           ),
-          clipBehavior: Clip.antiAlias,
+        const SizedBox(height: 5),
+        Container(
+          height: 16,
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.65),
+            borderRadius: BorderRadius.circular(99),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.35),
+              width: 1.2,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x66000000),
+                blurRadius: 8,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              return Align(
-                alignment: Alignment.centerLeft,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 320),
-                  curve: Curves.easeOutCubic,
-                  width: constraints.maxWidth * fraction,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [color.withValues(alpha: .78), color],
-                    ),
-                    borderRadius: BorderRadius.circular(99),
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: .45),
-                        blurRadius: 8,
+              return Stack(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 360),
+                    curve: Curves.easeOutCubic,
+                    width: constraints.maxWidth * fraction,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          color.withValues(alpha: 0.95),
+                          color,
+                          Color.lerp(color, Colors.black, 0.25)!,
+                        ],
+                        stops: const [0.0, 0.45, 1.0],
                       ),
-                    ],
+                      borderRadius: BorderRadius.circular(99),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.65),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  // Glossy highlight shine on upper half
+                  Positioned(
+                    top: 1,
+                    left: 2,
+                    right: 2,
+                    height: 5,
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.28),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               );
             },
           ),
