@@ -2,7 +2,7 @@ name: flash_learn_chinese
 description: "A cloud-first HSK Chinese learning app powered by Supabase."
 publish_to: 'none'
 
-version: 1.0.2+6
+version: 1.0.0+1
 
 environment:
   sdk: ^3.6.2
