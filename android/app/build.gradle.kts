@@ -14,7 +14,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
 
-    namespace = "com.yourname.flashlearnchinese"
+    namespace = "com.stallion.chinesemaster"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -28,7 +28,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.yourname.flashlearnchinese"
+        applicationId = "com.stallion.chinesemaster"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
