@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-import '../../theme/app_colors.dart';
-import '../../widgets/answer_button.dart';
+import 'view/boss_battle_arena.dart';
+import 'widgets/boss_battle_gameplay_widgets.dart';
 
 enum _ActorState { idle, attacking, hurt, victory, defeated }
 
@@ -83,6 +83,9 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
   ui.Image? _pandaImage;
   ui.Image? _dragonImage;
   bool _imagesLoaded = false;
+
+  final BossBattleArenaController _arenaController =
+      BossBattleArenaController();
 
   final FlutterTts _tts = FlutterTts();
 
@@ -208,7 +211,8 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
     return frame.image;
   }
 
-  Map<String, dynamic> get _currQ => _questions[questionIndex % _questions.length];
+  Map<String, dynamic> get _currQ =>
+      _questions[questionIndex % _questions.length];
 
   void handleAnswer(int index) {
     if (isAnimating) return;
@@ -230,6 +234,7 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
         feedbackText = 'Chính xác!';
         pandaState = _ActorState.attacking;
       });
+      _arenaController.playBearAttack();
 
       // Release Arrow (220ms delay)
       Timer(const Duration(milliseconds: 220), () {
@@ -294,6 +299,7 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
         feedbackText = 'Sai rồi!';
         dragonMouthGlow = 0.8;
       });
+      _arenaController.playDragonAttack();
 
       // Dragon charges mouth glow (200ms)
       Timer(const Duration(milliseconds: 200), () {
@@ -435,13 +441,14 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
     _damageTimer?.cancel();
     _ticker.dispose();
     _tts.stop();
+    _arenaController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final q = _currQ;
-    final options = q['options'] as List;
+    final options = (q['options'] as List).cast<Map<String, dynamic>>();
 
     return Scaffold(
       backgroundColor: const Color(0xFF140B18),
@@ -453,133 +460,11 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
           // ==========================================
           Column(
             children: [
-              // TOP BAR (Pause, Boss HP, Speaker)
-              SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      // Pause Button
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.35),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.pause_rounded,
-                              color: Colors.white, size: 22),
-                          onPressed: widget.onExit,
-                        ),
-                      ),
-
-                      // Boss Info & Red Gradient HP Bar
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 1),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryGold,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text(
-                                      'Lv. 3',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w900,
-                                        color: Color(0xFF4A1000),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  const Text(
-                                    'Rồng Lửa',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white,
-                                      shadows: [
-                                        Shadow(
-                                            color: Colors.black, blurRadius: 4),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '$bossHp/$maxBossHp',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFFFFCC80),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              // Boss Animated HP Bar
-                              Container(
-                                width: double.infinity,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.45),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: const Color(0x66FF8A65),
-                                    width: 1,
-                                  ),
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: FractionallySizedBox(
-                                  alignment: Alignment.centerLeft,
-                                  widthFactor:
-                                      (bossHp / maxBossHp).clamp(0.0, 1.0),
-                                  child: Container(
-                                    decoration: const BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Color(0xFFFF1744),
-                                          Color(0xFFFF5252),
-                                          Color(0xFFFF8A65),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Speaker Button
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.35),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.volume_up_rounded,
-                              color: Colors.white, size: 22),
-                          onPressed: () => _speak(q['hanziPrompt']),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              BossBattleTopBar(
+                bossHp: bossHp,
+                maxBossHp: maxBossHp,
+                onExit: widget.onExit,
+                onSpeak: () => _speak(q['hanziPrompt'] as String),
               ),
 
               // BATTLE ARENA CANVAS
@@ -588,305 +473,47 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    CustomPaint(
-                      painter: _BattleArenaCanvasPainter(
-                        bgImage: _bgImage,
-                        pandaImage: _pandaImage,
-                        dragonImage: _dragonImage,
-                        pandaState: pandaState,
-                        dragonState: dragonState,
-                        isArrowActive: isArrowActive,
-                        arrowProgress: arrowProgress,
-                        isFireActive: isFireActive,
-                        fireProgress: fireProgress,
-                        dragonMouthGlow: dragonMouthGlow,
-                        cameraShakeOffset: cameraShakeOffset,
-                        floatingDamages: _floatingDamages,
-                        gameTime: _gameTime,
+                    BossBattleArena(
+                      controller: _arenaController,
+                      cameraShakeOffset: cameraShakeOffset,
+                      fallback: CustomPaint(
+                        painter: _BattleArenaCanvasPainter(
+                          bgImage: _bgImage,
+                          pandaImage: _pandaImage,
+                          dragonImage: _dragonImage,
+                          pandaState: pandaState,
+                          dragonState: dragonState,
+                          isArrowActive: isArrowActive,
+                          arrowProgress: arrowProgress,
+                          isFireActive: isFireActive,
+                          fireProgress: fireProgress,
+                          dragonMouthGlow: dragonMouthGlow,
+                          cameraShakeOffset: cameraShakeOffset,
+                          floatingDamages: _floatingDamages,
+                          gameTime: _gameTime,
+                        ),
                       ),
                     ),
-
-                    // ARENA HUD (Panda HP Badge + Combo Badge)
-                    Positioned(
-                      left: 14,
-                      right: 14,
-                      bottom: 10,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Player Panda HP Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xB3181124),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.24),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primaryGold,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: Image.asset(
-                                    'assets/images/characters/panda_avatar.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Center(
-                                      child: Text('🐼',
-                                          style: TextStyle(fontSize: 16)),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      '$playerHp / $maxPlayerHp',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Container(
-                                      width: 80,
-                                      height: 6,
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.4),
-                                        borderRadius: BorderRadius.circular(3),
-                                      ),
-                                      clipBehavior: Clip.antiAlias,
-                                      child: FractionallySizedBox(
-                                        alignment: Alignment.centerLeft,
-                                        widthFactor: (playerHp / maxPlayerHp)
-                                            .clamp(0.0, 1.0),
-                                        child: Container(
-                                          decoration: const BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                Color(0xFF00E676),
-                                                Color(0xFF69F0AE),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(width: 4),
-                              ],
-                            ),
-                          ),
-
-                          // Fiery Combo Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFFF7A00), Color(0xFFFF3D00)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      const Color(0xFFFF3D00).withOpacity(0.55),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text('🔥', style: TextStyle(fontSize: 13)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Combo x$combo',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    BossBattleArenaHud(
+                      playerHp: playerHp,
+                      maxPlayerHp: maxPlayerHp,
+                      combo: combo,
                     ),
                   ],
                 ),
               ),
 
-              // BOTTOM QUESTION & ANSWER PANEL
               Expanded(
                 flex: 10,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF9F6F0),
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(28)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 16,
-                        offset: Offset(0, -6),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Feedback Banner
-                      if (feedbackText != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: feedbackText == 'Chính xác!'
-                                ? const Color(0xFF2E7D32)
-                                : const Color(0xFFC62828),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            feedbackText!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-
-                      // Question Prompt
-                      InkWell(
-                        onTap: () => _speak(q['hanziPrompt']),
-                        borderRadius: BorderRadius.circular(20),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 2,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 34,
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0284C7).withOpacity(0.12),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.volume_up_rounded,
-                                  color: Color(0xFF0284C7),
-                                  size: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                q['prompt'],
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFF1E293B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const Text(
-                        'Hãy chọn đáp án đúng',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF757575),
-                        ),
-                      ),
-
-                      // 2x2 Answer Grid
-                      Row(
-                        children: [
-                          if (options.isNotEmpty)
-                            AnswerButton(
-                              text: options[0]['hanzi'],
-                              subtitle: options[0]['pinyin'],
-                              state: selectedAnswerIndex == 0
-                                  ? (0 == q['correct']
-                                      ? AnswerButtonState.correct
-                                      : AnswerButtonState.wrong)
-                                  : AnswerButtonState.idle,
-                              onTap: () => handleAnswer(0),
-                            ),
-                          const SizedBox(width: 10),
-                          if (options.length > 1)
-                            AnswerButton(
-                              text: options[1]['hanzi'],
-                              subtitle: options[1]['pinyin'],
-                              state: selectedAnswerIndex == 1
-                                  ? (1 == q['correct']
-                                      ? AnswerButtonState.correct
-                                      : AnswerButtonState.wrong)
-                                  : AnswerButtonState.idle,
-                              onTap: () => handleAnswer(1),
-                            ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          if (options.length > 2)
-                            AnswerButton(
-                              text: options[2]['hanzi'],
-                              subtitle: options[2]['pinyin'],
-                              state: selectedAnswerIndex == 2
-                                  ? (2 == q['correct']
-                                      ? AnswerButtonState.correct
-                                      : AnswerButtonState.wrong)
-                                  : AnswerButtonState.idle,
-                              onTap: () => handleAnswer(2),
-                            ),
-                          const SizedBox(width: 10),
-                          if (options.length > 3)
-                            AnswerButton(
-                              text: options[3]['hanzi'],
-                              subtitle: options[3]['pinyin'],
-                              state: selectedAnswerIndex == 3
-                                  ? (3 == q['correct']
-                                      ? AnswerButtonState.correct
-                                      : AnswerButtonState.wrong)
-                                  : AnswerButtonState.idle,
-                              onTap: () => handleAnswer(3),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
+                child: BossBattleQuestionPanel(
+                  prompt: q['prompt'] as String,
+                  hanziPrompt: q['hanziPrompt'] as String,
+                  options: options,
+                  correctIndex: q['correct'] as int,
+                  selectedAnswerIndex: selectedAnswerIndex,
+                  feedbackText: feedbackText,
+                  onSpeak: _speak,
+                  onAnswer: handleAnswer,
                 ),
               ),
             ],
@@ -897,7 +524,8 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
             Positioned.fill(
               child: IgnorePointer(
                 child: Container(
-                  color: Colors.red.withOpacity(screenFlashAlpha.clamp(0.0, 0.4)),
+                  color:
+                      Colors.red.withOpacity(screenFlashAlpha.clamp(0.0, 0.4)),
                 ),
               ),
             ),
@@ -977,14 +605,14 @@ class _BattleArenaCanvasPainter extends CustomPainter {
         ? math.sin(gameTime * 25.0) * canvasW * 0.015
         : 0.0;
 
-    final bowWorldPos = pandaOrigin +
-        Offset(pandaBox.width * 0.91, pandaBox.height * 0.32);
+    final bowWorldPos =
+        pandaOrigin + Offset(pandaBox.width * 0.91, pandaBox.height * 0.32);
     final pandaHitPos =
         pandaOrigin + Offset(pandaBox.width * 0.50, pandaBox.height * 0.50);
     final dragonMouthPos = dragonOrigin +
         Offset(dragonBox.width * 0.13, dragonBox.height * 0.37 + dragonBob);
-    final dragonHitPos = dragonOrigin +
-        Offset(dragonBox.width * 0.46, dragonBox.height * 0.54);
+    final dragonHitPos =
+        dragonOrigin + Offset(dragonBox.width * 0.46, dragonBox.height * 0.54);
 
     // 2. Draw Fire Dragon Actor
     if (dragonImage != null) {
@@ -1062,14 +690,12 @@ class _BattleArenaCanvasPainter extends CustomPainter {
         final ty = (1 - subT) * (1 - subT) * p0.dy +
             2 * (1 - subT) * subT * p1.dy +
             subT * subT * p2.dy;
-        final trailAlpha =
-            ((1.0 - (i / trailPoints)) * 0.75).clamp(0.0, 1.0);
+        final trailAlpha = ((1.0 - (i / trailPoints)) * 0.75).clamp(0.0, 1.0);
 
         canvas.drawCircle(
           Offset(tx, ty),
           (4.5 * (1.0 - (i / trailPoints))).clamp(1.0, 4.5),
-          Paint()
-            ..color = const Color(0xFFFFD54F).withOpacity(trailAlpha),
+          Paint()..color = const Color(0xFFFFD54F).withOpacity(trailAlpha),
         );
       }
 
@@ -1159,8 +785,7 @@ class _BattleArenaCanvasPainter extends CustomPainter {
           final cx = p0.dx + dx * t;
           final cy = p0.dy + dy * t;
 
-          final wave =
-              math.sin(gameTime * 20.0 + i * 1.5) * (8.0 + 25.0 * t);
+          final wave = math.sin(gameTime * 20.0 + i * 1.5) * (8.0 + 25.0 * t);
           final flameRadius = 14.0 + (55.0 * t);
           final posX = cx + normalX * wave;
           final posY = cy + normalY * wave;
@@ -1228,8 +853,7 @@ class _BattleArenaCanvasPainter extends CustomPainter {
         final emberCount = (16 * fireProgress).toInt().clamp(4, 16);
         for (int e = 0; e < emberCount; e++) {
           final eT = (e / emberCount) * fireProgress;
-          final spread =
-              (math.sin(e * 37.0 + gameTime * 5.0)) * 32.0 * eT;
+          final spread = (math.sin(e * 37.0 + gameTime * 5.0)) * 32.0 * eT;
           final ex = p0.dx + dx * eT + normalX * spread;
           final ey = p0.dy +
               dy * eT +

@@ -1,4 +1,4 @@
-package com.yourname.flashlearnchinese;
+package com.stallion.chinesemaster;
 
 import io.flutter.embedding.android.FlutterActivity;
 
