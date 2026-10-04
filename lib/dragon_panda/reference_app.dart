@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'theme/app_colors.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/game_hub/game_hub_screen.dart';
@@ -16,64 +17,82 @@ void main() {
 }
 
 class ChineseLearningGameApp extends StatelessWidget {
-  const ChineseLearningGameApp({Key? key}) : super(key: key);
+  const ChineseLearningGameApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Chinese Boss Battle',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Roboto',
-        scaffoldBackgroundColor: AppColors.backgroundDark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primaryOrange,
-          primary: AppColors.primaryOrange,
+    return ScreenUtilInit(
+      designSize: const Size(440, 956),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (_, __) => MaterialApp(
+        title: 'Chinese Boss Battle',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          fontFamily: 'Roboto',
+          scaffoldBackgroundColor: AppColors.backgroundDark,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: AppColors.primaryOrange,
+            primary: AppColors.primaryOrange,
+          ),
         ),
+        initialRoute: '/',
+        routes: {
+          '/': (context) => HomeScreen(
+                onNavigateToGameHub: () =>
+                    Navigator.pushNamed(context, '/game_hub'),
+              ),
+          '/game_hub': (context) => GameHubScreen(
+                onBackToHome: () => Navigator.pop(context),
+                onSelectBossBattle: () =>
+                    Navigator.pushNamed(context, '/boss_intro'),
+                onSelectRadicalBuilder: () =>
+                    Navigator.pushNamed(context, '/radical_builder'),
+                onSelectToneNinja: () =>
+                    Navigator.pushNamed(context, '/tone_ninja'),
+                onSelectRestaurant: () =>
+                    Navigator.pushNamed(context, '/restaurant'),
+                onSelectQuickAnswer: () =>
+                    Navigator.pushNamed(context, '/quick_answer'),
+              ),
+          '/boss_intro': (context) => BossBattleIntroScreen(
+                onBack: () => Navigator.pop(context),
+                onStartGame: () =>
+                    Navigator.pushNamed(context, '/boss_gameplay'),
+              ),
+          '/boss_gameplay': (context) => BossBattleGameplayScreen(
+                onExit: () => Navigator.pop(context),
+                onVictory: () =>
+                    Navigator.pushReplacementNamed(context, '/victory'),
+                onDefeat: () =>
+                    Navigator.pushReplacementNamed(context, '/defeat'),
+              ),
+          '/victory': (context) => BossBattleVictoryScreen(
+                onContinue: () =>
+                    Navigator.pushReplacementNamed(context, '/boss_gameplay'),
+                onBackToHub: () => Navigator.popUntil(
+                    context, ModalRoute.withName('/game_hub')),
+              ),
+          '/defeat': (context) => BossBattleDefeatScreen(
+                onRetry: () =>
+                    Navigator.pushReplacementNamed(context, '/boss_gameplay'),
+                onBackToHub: () => Navigator.popUntil(
+                    context, ModalRoute.withName('/game_hub')),
+              ),
+          '/radical_builder': (context) => RadicalBuilderScreen(
+                onBack: () => Navigator.pop(context),
+              ),
+          '/tone_ninja': (context) => ToneNinjaScreen(
+                onBack: () => Navigator.pop(context),
+              ),
+          '/restaurant': (context) => ChineseRestaurantScreen(
+                onBack: () => Navigator.pop(context),
+              ),
+          '/quick_answer': (context) => QuickAnswerScreen(
+                onBack: () => Navigator.pop(context),
+              ),
+        },
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => HomeScreen(
-              onNavigateToGameHub: () => Navigator.pushNamed(context, '/game_hub'),
-            ),
-        '/game_hub': (context) => GameHubScreen(
-              onBackToHome: () => Navigator.pop(context),
-              onSelectBossBattle: () => Navigator.pushNamed(context, '/boss_intro'),
-              onSelectRadicalBuilder: () => Navigator.pushNamed(context, '/radical_builder'),
-              onSelectToneNinja: () => Navigator.pushNamed(context, '/tone_ninja'),
-              onSelectRestaurant: () => Navigator.pushNamed(context, '/restaurant'),
-              onSelectQuickAnswer: () => Navigator.pushNamed(context, '/quick_answer'),
-            ),
-        '/boss_intro': (context) => BossBattleIntroScreen(
-              onBack: () => Navigator.pop(context),
-              onStartGame: () => Navigator.pushNamed(context, '/boss_gameplay'),
-            ),
-        '/boss_gameplay': (context) => BossBattleGameplayScreen(
-              onExit: () => Navigator.pop(context),
-              onVictory: () => Navigator.pushReplacementNamed(context, '/victory'),
-              onDefeat: () => Navigator.pushReplacementNamed(context, '/defeat'),
-            ),
-        '/victory': (context) => BossBattleVictoryScreen(
-              onContinue: () => Navigator.pushReplacementNamed(context, '/boss_gameplay'),
-              onBackToHub: () => Navigator.popUntil(context, ModalRoute.withName('/game_hub')),
-            ),
-        '/defeat': (context) => BossBattleDefeatScreen(
-              onRetry: () => Navigator.pushReplacementNamed(context, '/boss_gameplay'),
-              onBackToHub: () => Navigator.popUntil(context, ModalRoute.withName('/game_hub')),
-            ),
-        '/radical_builder': (context) => RadicalBuilderScreen(
-              onBack: () => Navigator.pop(context),
-            ),
-        '/tone_ninja': (context) => ToneNinjaScreen(
-              onBack: () => Navigator.pop(context),
-            ),
-        '/restaurant': (context) => ChineseRestaurantScreen(
-              onBack: () => Navigator.pop(context),
-            ),
-        '/quick_answer': (context) => QuickAnswerScreen(
-              onBack: () => Navigator.pop(context),
-            ),
-      },
     );
   }
 }
