@@ -1,0 +1,39 @@
+# Trò chơi reference UI
+
+The main Games tab and standalone Dragon Panda preview share `lib/screen/game_hub/view/game_hub_view.dart`. Text, callbacks and arrow controls are live Flutter widgets. `HomeBottomNavigation` supplies the selected Games tab and central panda Home button. The main app embeds the view without a second scaffold or safe-area inset. The stage-map shortcut remains available in the heading.
+
+The current screen backdrop is the user-supplied `assets/images/backgrounds/shared_landscape.png`, shared with Learning, Progress and Personal via `SharedTabBackground`. See `docs/shared_tab_background.md` for the current backdrop details.
+
+The menu follows the Learning tab layout: safe-area header with a curved green underline, a bold subtitle, 16-unit card margins and 8-unit gaps. All five cards have a minimum height of 128, 24-unit rounded corners, a 4-unit white border and a soft shadow. The Journey button is 92 units square, with room reserved beside the centered heading. Dimensions scale with the existing 440-wide design.
+
+Card assets live in `assets/images/backgrounds/games_*.png`. Generated with the built-in image_gen tool. Tone Ninja combines a new lavender landscape with the existing transparent `assets/images/characters/panda_ninja.png`. Scenic card artwork uses BoxFit.cover to preserve illustration proportions.
+
+Rendered preview: `docs/games_ui_preview.png` (440 × 782 logical pixels at 2× resolution). The preview uses locally loaded Arial fonts; native device typography may vary. Native status indicators are provided by the OS.
+
+Validation: `flutter analyze lib/screen/game_hub lib/dragon_panda/screens/game_hub lib/screen/home/home_screen.dart test/screen/game_hub/game_hub_view_test.dart`; `flutter test test/screen/game_hub/game_hub_view_test.dart test/screen/home`. Game-menu checks cover four viewport widths, every callback, navigation, safe insets and 1.5× text scaling.
+
+## Generation prompts
+
+### scene
+
+Use case: illustration-story. Asset type: production portrait full screen scenic background for Chinese learning mobile app, 9:16 composition. Bright ivory cream #FFFAF0 background; vivid green bamboo stems and pointed leaves frame top left and top right and far side edges. TOP 8-20%: softly layered mint jade karst mountains with a traditional turquoise roof Chinese pagoda and waterfall toward far right, pale quiet center for black app heading. TOP 0-8% center nearly blank cream for native status bar. CENTRAL 22-85% is near blank warm ivory cream for five overlaid game cards, absolutely no characters or objects in this central space. BOTTOM 87-100% is a lush bamboo garden, jade stream, mossy stones, small pink blossoms at bottom corners, fading softly into cream upward. Polished bright rounded 3D storybook painted illustration. No panda, no character, no lettering, no buttons, no icons, no UI, no phone frame, no watermark.
+
+### boss
+
+Use case: illustration-story. Asset type: production Flutter game selection card background, very wide panoramic banner, about 4.2:1 width to height, full bleed rectangular image. Style: cheerful polished rounded 3D storybook mobile game illustration, adorable expressive panda, bright soft daylight, painterly Chinese mountains and pagodas. Composition: foreground illustration occupies LEFT 0-35% width; middle 38-74% width is quiet pale empty mist for live text overlay; distant pagoda and themed scenery on RIGHT 76-100%. Keep central text area low contrast and open. No UI, no buttons, no labels, no Latin lettering, no watermark, no frame border, no rounded corners. Theme: orange red fiery Boss Battle. On LEFT a cute chubby panda archer with straw hat, black Chinese martial arts outfit, red scarf, aiming bow toward right, feet on rocks, bright golden arrow spark. On far RIGHT a large coiling red golden Chinese dragon, facing inward, fierce but family friendly, its head around x85%. Red autumn maple leaves at edges, Chinese pagoda silhouettes and glowing gold warm cream mist in the center. Dragon and panda must stay out of the central x38-74% text area.
+
+### radicals
+
+Use case: illustration-story. Asset type: production Flutter game selection card background, very wide panoramic banner, about 4.2:1 width to height, full bleed rectangular image. Style: cheerful polished rounded 3D storybook mobile game illustration, adorable expressive panda, bright soft daylight, painterly Chinese mountains and pagodas. Composition: foreground illustration occupies LEFT 0-35% width; middle 38-74% width is quiet pale empty mist for live text overlay; distant pagoda and themed scenery on RIGHT 76-100%. Keep central text area low contrast and open. No UI, no buttons, no labels, no Latin lettering, no watermark, no frame border, no rounded corners. Theme: jade mint bamboo garden. On LEFT two large tilted ivory parchment wooden tiles on mossy rocks, first with single black Chinese character 汉 and second 字, lush green bamboo and leaves around them. In RIGHT background a jade turquoise multi tier Chinese pagoda and soft mountains. Middle pale mint cream. No panda.
+
+### ninja
+
+Use case: illustration-story. Asset type: production wide panoramic mobile app background. A tranquil lavender Chinese mountain garden, soft pastel violet and lilac palette. A distant traditional multi tier pagoda on the far right x85%, misty purple karst peaks, pink cherry blossoms at upper right, mossy rocks and soft green bamboo leaves along bottom corners. Leftmost 30% quiet pale lilac space above rocks, reserved for a separately composited existing character. Center x38-75% is empty pale lavender mist reserved for live text. Cheerful polished rounded 3D storybook landscape illustration. Full bleed horizontal wide rectangle. No characters, no panda, no weapons, no lettering, no buttons, no UI, no watermark.
+
+### restaurant
+
+Use case: illustration-story. Asset type: production Flutter game selection card background, very wide panoramic banner, about 4.2:1 width to height, full bleed rectangular image. Style: cheerful polished rounded 3D storybook mobile game illustration, adorable expressive panda, bright soft daylight, painterly Chinese mountains and pagodas. Composition: foreground illustration occupies LEFT 0-35% width; middle 38-74% width is quiet pale empty mist for live text overlay; distant pagoda and themed scenery on RIGHT 76-100%. Keep central text area low contrast and open. No UI, no buttons, no labels, no Latin lettering, no watermark, no frame border, no rounded corners. Theme: warm golden orange Chinese restaurant. On LEFT a cute chubby panda chef wearing white fluffy chef toque, white jacket and red neckerchief, smiling and tossing colorful carrots peppers broccoli from a black wok, rock garden below. On RIGHT distant golden Chinese gateway and pagoda framed by green bamboo. Middle pale cream peach.
+
+### quick
+
+Use case: illustration-story. Asset type: production Flutter game selection card background, very wide panoramic banner, about 4.2:1 width to height, full bleed rectangular image. Style: cheerful polished rounded 3D storybook mobile game illustration, adorable expressive panda, bright soft daylight, painterly Chinese mountains and pagodas. Composition: foreground illustration occupies LEFT 0-35% width; middle 38-74% width is quiet pale empty mist for live text overlay; distant pagoda and themed scenery on RIGHT 76-100%. Keep central text area low contrast and open. No UI, no buttons, no labels, no Latin lettering, no watermark, no frame border, no rounded corners. Theme: bright sky blue Quick Answer. On LEFT an unfurled ivory parchment scroll with golden brown wooden rollers displaying one large black Chinese character 答, leaning on mossy rocks, a long brown Chinese calligraphy brush diagonal beside it. On RIGHT a turquoise blue Chinese pagoda, white waterfalls, blue misty mountains and pink cherry blossom sprigs. Middle pale sky blue cream. No panda.

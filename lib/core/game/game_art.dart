@@ -1,11 +1,7 @@
 abstract final class GameArt {
   static const _root = 'assets/images';
 
-  static const homeBackground = '$_root/backgrounds/home_bg.png';
-  static const gameHubBackground = '$_root/backgrounds/game_hub_bg.png';
   static const bossBattleBackground = '$_root/backgrounds/boss_battle_bg.png';
-  static const bossBattlePortraitBackground =
-      '$_root/backgrounds/boss_battle_portrait_bg.png';
   static const bossIntroBackground = '$_root/backgrounds/boss_intro_bg.png';
   static const quickAnswerBackground = '$_root/backgrounds/quick_answer_bg.png';
   static const radicalBuilderBackground =
@@ -24,8 +20,6 @@ abstract final class GameArt {
   static const dragonFire = '$_root/characters/dragon_fire.png';
 
   static const arrow = '$_root/effects/arrow.png';
-  static const arrowTrail = '$_root/effects/arrow_trail.png';
-  static const coin = '$_root/effects/coin.png';
   static const fireCore = '$_root/effects/fire_core.png';
   static const fireParticle = '$_root/effects/fire_particle.png';
   static const hitFlash = '$_root/effects/hit_flash.png';
@@ -35,10 +29,4 @@ abstract final class GameArt {
   static const dumplings = '$_root/foods/dumplings.png';
   static const noodles = '$_root/foods/noodles.png';
   static const rice = '$_root/foods/rice.png';
-
-  static const bossBattleThumb = '$_root/icons/boss_battle_thumb.png';
-  static const radicalBuilderThumb = '$_root/icons/radical_builder_thumb.png';
-  static const toneNinjaThumb = '$_root/icons/tone_ninja_thumb.png';
-  static const restaurantThumb = '$_root/icons/restaurant_thumb.png';
-  static const quickAnswerThumb = '$_root/icons/quick_answer_thumb.png';
 }
