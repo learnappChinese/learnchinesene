@@ -1,6 +1,6 @@
-import '../../../database/duo_db_helper.dart';
-import '../../../models/duo_challenge.dart';
-import '../../../models/duo_flashcard.dart';
+import '../../../core/database/duo_db_helper.dart';
+import '../../../core/models/duo_challenge.dart';
+import '../../../core/models/duo_flashcard.dart';
 
 class DuoGameRepository {
   static final DuoGameRepository instance = DuoGameRepository._();

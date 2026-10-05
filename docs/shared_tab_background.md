@@ -14,6 +14,6 @@ Use case: precise-object-edit. Edit target: the supplied minimalist cream mobile
 
 ## Validation
 
-`flutter analyze lib/screen/home lib/screen/game_hub lib/dragon_panda/screens/game_hub`
+`flutter analyze lib/screen/home lib/screen/game_hub lib/screen/dragon_panda/screens/game_hub`
 
 `flutter test test/screen/home test/screen/game_hub/game_hub_view_test.dart`

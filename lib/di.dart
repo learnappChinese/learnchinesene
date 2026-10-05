@@ -4,11 +4,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'screen/home/controller/home_controller.dart';
 import 'screen/splash/controller/splash_controller.dart';
-import 'services/gemini_service.dart';
-import 'services/history_service.dart';
+import 'core/services/gemini_service.dart';
+import 'core/services/history_service.dart';
 import 'core/backend/supabase_service.dart';
 import 'core/services/iap_service.dart';
-import 'features/subscription/controller/subscription_controller.dart';
+import 'screen/subscription/controller/subscription_controller.dart';
 
 void initDI() {
   Get.lazyPut<SupabaseClient>(() => Supabase.instance.client, fenix: true);
@@ -20,5 +20,9 @@ void initDI() {
   Get.lazyPut(() => SplashController(), fenix: true);
   Get.lazyPut(() => HomeController(), fenix: true);
   Get.lazyPut(() => IAPService(), fenix: true);
-  Get.lazyPut(() => SubscriptionController(Get.find<IAPService>()), fenix: true);
+  Get.lazyPut(() => SubscriptionController(Get.find<IAPService>()),
+      fenix: true);
+  Get.lazyPut(() => IAPService(), fenix: true);
+  Get.lazyPut(() => SubscriptionController(Get.find<IAPService>()),
+      fenix: true);
 }

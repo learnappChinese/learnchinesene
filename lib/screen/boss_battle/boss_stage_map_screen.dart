@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -7,8 +5,9 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/game_visual_tokens.dart';
 import 'boss_battle_screen.dart';
 import 'data/boss_battle_repository.dart';
+import 'controller/boss_stage_map_controller.dart';
 import 'model/boss_battle_stage.dart';
-import 'view/boss_battle_character_art.dart';
+import 'widget/boss_battle_character_art.dart';
 
 class BossBattleStageMapScreen extends StatefulWidget {
   const BossBattleStageMapScreen({super.key});
@@ -19,17 +18,28 @@ class BossBattleStageMapScreen extends StatefulWidget {
 }
 
 class _BossBattleStageMapScreenState extends State<BossBattleStageMapScreen> {
-  final BossBattleRepository _repository = BossBattleRepository();
-  late Future<List<BossBattleStage>> _future;
+  static int _nextControllerId = 0;
+  late final String _controllerTag;
+  late final BossStageMapController controller;
 
   @override
   void initState() {
     super.initState();
-    _future = _repository.loadStages();
+    _controllerTag = 'boss-stage-map-${_nextControllerId++}';
+    controller = Get.put(
+      BossStageMapController(loadStages: BossBattleRepository().loadStages),
+      tag: _controllerTag,
+    );
+  }
+
+  @override
+  void dispose() {
+    Get.delete<BossStageMapController>(tag: _controllerTag);
+    super.dispose();
   }
 
   void _retry() {
-    setState(() => _future = _repository.loadStages());
+    setState(controller.reload);
   }
 
   @override
@@ -55,54 +65,57 @@ class _BossBattleStageMapScreenState extends State<BossBattleStageMapScreen> {
             ),
           ),
           SafeArea(
-            child: FutureBuilder<List<BossBattleStage>>(
-              future: _future,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
-                  return const _StageLoading();
-                }
-                if (snapshot.hasError) {
-                  return _StageError(onRetry: _retry);
-                }
-
-                final stages = snapshot.data ?? const <BossBattleStage>[];
-                if (stages.isEmpty) {
-                  return _StageError(
-                    onRetry: _retry,
-                    message: 'Supabase chưa có cửa ải Boss Battle.',
-                  );
-                }
-
-                return Column(
-                  children: [
-                    _StageHeader(stageCount: stages.length),
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(18, 10, 18, 34),
-                        itemCount: stages.length,
-                        itemBuilder: (context, index) {
-                          final stage = stages[index];
-                          final next = index < stages.length - 1
-                              ? stages[index + 1]
-                              : null;
-                          return _StagePathItem(
-                            stage: stage,
-                            next: next,
-                            index: index,
-                            onTap: () => Get.to(
-                              () => BossBattleScreen(stage: stage),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+            child: _buildStageCatalog(),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStageCatalog() {
+    return FutureBuilder<List<BossBattleStage>>(
+      future: controller.stages,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const _StageLoading();
+        }
+        if (snapshot.hasError) {
+          return _StageError(onRetry: _retry);
+        }
+
+        final stages = snapshot.data ?? const <BossBattleStage>[];
+        if (stages.isEmpty) {
+          return _StageError(
+            onRetry: _retry,
+            message: 'Supabase chưa có cửa ải Boss Battle.',
+          );
+        }
+
+        return Column(
+          children: [
+            _StageHeader(stageCount: stages.length),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 34),
+                itemCount: stages.length,
+                itemBuilder: (context, index) {
+                  final stage = stages[index];
+                  final next =
+                      index < stages.length - 1 ? stages[index + 1] : null;
+                  return _StagePathItem(
+                    stage: stage,
+                    next: next,
+                    index: index,
+                    onTap: () => Get.to(
+                      () => BossBattleScreen(stage: stage),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -244,115 +257,9 @@ class _StagePathItem extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          width: 58,
-                          height: 58,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                accent,
-                                Color.lerp(
-                                  accent,
-                                  const Color(0xFF2A1720),
-                                  .45,
-                                )!,
-                              ],
-                            ),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFFFFD985),
-                              width: 2,
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '${stage.stageOrder}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
+                        _buildStageBadge(accent),
                         const SizedBox(width: 11),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      stage.label,
-                                      style: const TextStyle(
-                                        color: AppColors.redDark,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  if (bossGate)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 7,
-                                        vertical: 3,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFFE0D8),
-                                        borderRadius: BorderRadius.circular(99),
-                                      ),
-                                      child: const Text(
-                                        'BOSS GATE',
-                                        style: TextStyle(
-                                          color: Color(0xFFD9473F),
-                                          fontSize: 8,
-                                          fontWeight: FontWeight.w900,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                stage.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.ink,
-                                  fontSize: 14,
-                                  height: 1.2,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              const SizedBox(height: 7),
-                              Wrap(
-                                spacing: 7,
-                                runSpacing: 5,
-                                children: [
-                                  _StageMeta(
-                                    icon: Icons.local_fire_department_rounded,
-                                    text: stage.difficultyLabel,
-                                    color: accent,
-                                  ),
-                                  _StageMeta(
-                                    icon: Icons.quiz_rounded,
-                                    text: '${stage.questionCount} câu',
-                                    color: const Color(0xFF327FC4),
-                                  ),
-                                  _StageMeta(
-                                    icon: Icons.favorite_rounded,
-                                    text: '${stage.bossHp} HP',
-                                    color: const Color(0xFFD84A43),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                        _buildStageDetails(accent, bossGate),
                         const Icon(
                           Icons.chevron_right_rounded,
                           color: Color(0xFF9C8176),
@@ -380,6 +287,120 @@ class _StagePathItem extends StatelessWidget {
       default:
         return const Color(0xFFE68A2E);
     }
+  }
+
+  Widget _buildStageBadge(Color accent) {
+    return Container(
+      width: 58,
+      height: 58,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            accent,
+            Color.lerp(
+              accent,
+              const Color(0xFF2A1720),
+              .45,
+            )!,
+          ],
+        ),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: const Color(0xFFFFD985),
+          width: 2,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '${stage.stageOrder}',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStageDetails(Color accent, bool bossGate) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  stage.label,
+                  style: const TextStyle(
+                    color: AppColors.redDark,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              if (bossGate)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE0D8),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: const Text(
+                    'BOSS GATE',
+                    style: TextStyle(
+                      color: Color(0xFFD9473F),
+                      fontSize: 8,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            stage.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.ink,
+              fontSize: 14,
+              height: 1.2,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Wrap(
+            spacing: 7,
+            runSpacing: 5,
+            children: [
+              _StageMeta(
+                icon: Icons.local_fire_department_rounded,
+                text: stage.difficultyLabel,
+                color: accent,
+              ),
+              _StageMeta(
+                icon: Icons.quiz_rounded,
+                text: '${stage.questionCount} câu',
+                color: const Color(0xFF327FC4),
+              ),
+              _StageMeta(
+                icon: Icons.favorite_rounded,
+                text: '${stage.bossHp} HP',
+                color: const Color(0xFFD84A43),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

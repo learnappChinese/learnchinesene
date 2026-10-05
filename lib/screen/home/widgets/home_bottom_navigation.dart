@@ -24,105 +24,8 @@ class HomeBottomNavigation extends StatelessWidget {
           clipBehavior: Clip.none,
           alignment: Alignment.bottomCenter,
           children: [
-            Container(
-              height: 63.w,
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(34.r),
-                border:
-                    Border.all(color: const Color(0xFFC0D4BB), width: 1.5.w),
-                boxShadow: [
-                  BoxShadow(
-                      color: const Color(0x33334E35),
-                      blurRadius: 18.r,
-                      spreadRadius: 1.w,
-                      offset: Offset(0, 5.w))
-                ],
-              ),
-              child: Row(children: [
-                _destination(context, 1, Icons.menu_book_rounded, 'Học tập'),
-                _destination(
-                    context, 2, Icons.sports_esports_rounded, 'Trò chơi'),
-                const Expanded(child: SizedBox()),
-                _destination(context, 3, Icons.bar_chart_rounded, 'Tiến độ'),
-                _destination(context, 4, Icons.person_rounded, 'Cá nhân'),
-              ]),
-            ),
-            Positioned(
-              bottom: 0,
-              child: SizedBox(
-                width: 92.w,
-                height: 86.w,
-                child: Stack(
-                  alignment: Alignment.bottomCenter,
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned(
-                        left: 0,
-                        bottom: 17.w,
-                        child: HomeLeaves(size: 35.w, flip: true)),
-                    Positioned(
-                        right: 0, bottom: 17.w, child: HomeLeaves(size: 35.w)),
-                    Positioned(
-                        bottom: 48.w,
-                        child: ExcludeSemantics(
-                            child: Image.asset(homeNavPandaAsset,
-                                width: 59.w,
-                                height: 54.w,
-                                fit: BoxFit.contain,
-                                filterQuality: FilterQuality.high))),
-                    Positioned(
-                        bottom: 9.w,
-                        child: Semantics(
-                          label: 'Trang chủ',
-                          button: true,
-                          selected: currentIndex == 0,
-                          child: Tooltip(
-                            message: 'Trang chủ',
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                customBorder: const CircleBorder(),
-                                onTap: () => onSelected(0),
-                                child: Ink(
-                                  width: 58.w,
-                                  height: 58.w,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          Color.lerp(
-                                              homeColor, Colors.white, .12)!,
-                                          homeColor,
-                                        ]),
-                                    border: Border.all(
-                                        color: Colors.white, width: 3.w),
-                                    boxShadow: [
-                                      BoxShadow(
-                                          color: homeSelected
-                                              ? homeGreen.withValues(alpha: .24)
-                                              : const Color(0x22334E35),
-                                          blurRadius: 5.r,
-                                          offset: Offset(0, 3.w))
-                                    ],
-                                  ),
-                                  child: Icon(Icons.home_rounded,
-                                      color: homeSelected
-                                          ? Colors.white
-                                          : const Color(0xFF666E60),
-                                      size: 31.sp),
-                                ),
-                              ),
-                            ),
-                          ),
-                        )),
-                  ],
-                ),
-              ),
-            ),
+            _buildDestinations(context),
+            _buildHomeDestination(homeSelected, homeColor),
           ],
         ),
       ),
@@ -169,6 +72,106 @@ class HomeBottomNavigation extends StatelessWidget {
                   ]),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDestinations(BuildContext context) {
+    return Container(
+      height: 63.w,
+      padding: EdgeInsets.all(3.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(34.r),
+        border: Border.all(color: const Color(0xFFC0D4BB), width: 1.5.w),
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0x33334E35),
+              blurRadius: 18.r,
+              spreadRadius: 1.w,
+              offset: Offset(0, 5.w))
+        ],
+      ),
+      child: Row(children: [
+        _destination(context, 1, Icons.menu_book_rounded, 'Học tập'),
+        _destination(context, 2, Icons.sports_esports_rounded, 'Trò chơi'),
+        const Expanded(child: SizedBox()),
+        _destination(context, 3, Icons.bar_chart_rounded, 'Tiến độ'),
+        _destination(context, 4, Icons.person_rounded, 'Cá nhân'),
+      ]),
+    );
+  }
+
+  Widget _buildHomeDestination(bool homeSelected, Color homeColor) {
+    return Positioned(
+      bottom: 0,
+      child: SizedBox(
+        width: 92.w,
+        height: 86.w,
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+                left: 0,
+                bottom: 17.w,
+                child: HomeLeaves(size: 35.w, flip: true)),
+            Positioned(right: 0, bottom: 17.w, child: HomeLeaves(size: 35.w)),
+            Positioned(
+                bottom: 48.w,
+                child: ExcludeSemantics(
+                    child: Image.asset(homeNavPandaAsset,
+                        width: 59.w,
+                        height: 54.w,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high))),
+            Positioned(
+                bottom: 9.w,
+                child: Semantics(
+                  label: 'Trang chủ',
+                  button: true,
+                  selected: currentIndex == 0,
+                  child: Tooltip(
+                    message: 'Trang chủ',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => onSelected(0),
+                        child: Ink(
+                          width: 58.w,
+                          height: 58.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Color.lerp(homeColor, Colors.white, .12)!,
+                                  homeColor,
+                                ]),
+                            border: Border.all(color: Colors.white, width: 3.w),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: homeSelected
+                                      ? homeGreen.withValues(alpha: .24)
+                                      : const Color(0x22334E35),
+                                  blurRadius: 5.r,
+                                  offset: Offset(0, 3.w))
+                            ],
+                          ),
+                          child: Icon(Icons.home_rounded,
+                              color: homeSelected
+                                  ? Colors.white
+                                  : const Color(0xFF666E60),
+                              size: 31.sp),
+                        ),
+                      ),
+                    ),
+                  ),
+                )),
+          ],
         ),
       ),
     );
