@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/game_visual_tokens.dart';
-import '../../core/game/game_art.dart';
-import '../../widgets/game_art_image.dart';
-import '../boss_battle/view/boss_battle_character_art.dart';
 import 'package:get/get.dart';
 import '../hsk/hsk_screen.dart';
-import '../review/review_screen.dart';
 import '../speaking/speaking_screen.dart';
 import '../stats/stats_screen.dart';
 import 'controller/home_controller.dart';
+import 'widgets/home_dashboard.dart';
+import 'widgets/home_learning_tab.dart';
+import 'widgets/home_progress_tab.dart';
+import 'widgets/home_personal_tab.dart';
+import 'widgets/home_bottom_navigation.dart';
+import 'widgets/home_decorations.dart';
+import 'widgets/shared_tab_background.dart';
 import '../../features/hanzi_writing/screens/hanzi_writing_home_screen.dart';
 import '../../core/responsive/responsive_layout.dart';
-import '../translator/translator_screen.dart';
 import '../conversations/conversations_screen.dart';
 import '../lessons/lessons_screen.dart';
 import '../hsk_exam/hsk_exam_screen.dart';
@@ -21,7 +22,6 @@ import '../dictionary/dictionary_screen.dart';
 import '../flashcards/flashcards_screen.dart';
 import '../hsk_quiz/hsk_quiz_screen.dart';
 import '../../features/system/presentation/pages/profile_page.dart';
-import '../../features/system/presentation/pages/settings_page.dart';
 import '../../features/subscription/page/subscription_page.dart';
 import '../../features/subscription/controller/subscription_controller.dart';
 import '../../core/helper/upgrade_dialog_helper.dart';
@@ -38,7 +38,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   HomeController get controller => Get.find<HomeController>();
 
-  void _runIfFeatureUnlocked(String featureKey, String title, String message, List<String> benefits, VoidCallback onUnlocked) {
+  void _runIfFeatureUnlocked(String featureKey, String title, String message,
+      List<String> benefits, VoidCallback onUnlocked) {
     final subController = Get.find<SubscriptionController>();
     if (subController.isFeatureUnlocked(featureKey)) {
       onUnlocked();
@@ -53,432 +54,64 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeDashboard() {
-    return ColoredBox(
-      color: GameVisualTokens.cream,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: ResponsiveHelper.contentMaxWidth(context),
-          ),
-          child: RefreshIndicator(
-            onRefresh: controller.refreshStats,
-            color: GameVisualTokens.blue,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
-              children: [
-                _buildHomeHeader(),
-                const SizedBox(height: 12),
-                _buildHomeHero(),
-                const SizedBox(height: 11),
-                Obx(() {
-                  final s = controller.stats;
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: _HomeMetric(
-                          icon: Icons.local_fire_department_rounded,
-                          value: '${s['streak']?.toInt() ?? 7}',
-                          label: 'Ngày học',
-                          color: const Color(0xFF2F9DE2),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _HomeMetric(
-                          icon: Icons.menu_book_rounded,
-                          value: '${s['learned']?.toInt() ?? 12}',
-                          label: 'Bài học',
-                          color: const Color(0xFF46AF52),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _HomeMetric(
-                          icon: Icons.workspace_premium_rounded,
-                          value:
-                              '${((s['correct'] ?? 0) * 10).toInt() + 156}',
-                          label: 'Điểm XP',
-                          color: const Color(0xFFF3A325),
-                        ),
-                      ),
-                    ],
-                  );
-                }),
-                const SizedBox(height: 18),
-                const _HomeSectionTitle(title: 'Bài học hôm nay'),
-                const SizedBox(height: 9),
-                _TodayLessonCard(
-                  onTap: () => Get.to(() => const HskScreen()),
-                ),
-                const SizedBox(height: 18),
-                const _HomeSectionTitle(title: 'Học nhanh'),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _QuickTile(
-                        icon: Icons.translate_rounded,
-                        label: 'Từ vựng',
-                        color: const Color(0xFFFF7438),
-                        onTap: () => Get.to(() => const HskScreen()),
-                      ),
-                    ),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: _QuickTile(
-                        icon: Icons.chat_bubble_rounded,
-                        label: 'Ngữ pháp',
-                        color: const Color(0xFF8757E8),
-                        onTap: () => _runIfFeatureUnlocked(
-                          'lessons',
-                          'Mở khóa Bài học AI',
-                          'Tính năng này yêu cầu nâng cấp.',
-                          const ['Bài học ngữ pháp chuyên sâu'],
-                          () => Get.to(() => const LessonsScreen()),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: _QuickTile(
-                        icon: Icons.headphones_rounded,
-                        label: 'Luyện nghe',
-                        color: const Color(0xFF26A9C8),
-                        onTap: () =>
-                            Get.to(() => const ConversationsScreen()),
-                      ),
-                    ),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: _QuickTile(
-                        icon: Icons.mic_rounded,
-                        label: 'Luyện nói',
-                        color: const Color(0xFF29BA72),
-                        onTap: () => Get.to(
-                          () => const SpeakingScreen(),
-                          arguments: const {'standalone': true},
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                const _HomeSectionTitle(title: 'Thử thách hôm nay'),
-                const SizedBox(height: 10),
-                _ChallengeCard(
-                  onTap: () => controller.setIndex(2),
-                ),
-              ],
-            ),
-          ),
+    return Obx(() {
+      final stats = controller.stats;
+      return HomeDashboard(
+        streak: stats['streak']?.toInt() ?? 7,
+        lessons: stats['learned']?.toInt() ?? 12,
+        xp: ((stats['correct'] ?? 0) * 10).toInt() + 156,
+        onRefresh: controller.refreshStats,
+        onStartLearning: () => Get.to(() => const HskScreen()),
+        onGrammar: () => _runIfFeatureUnlocked(
+          'lessons',
+          'Mở khóa Bài học AI',
+          'Tính năng này yêu cầu nâng cấp.',
+          const ['Bài học ngữ pháp chuyên sâu'],
+          () => Get.to(() => const LessonsScreen()),
         ),
-      ),
-    );
+        onListening: () => Get.to(() => const ConversationsScreen()),
+        onSpeaking: () => Get.to(
+          () => const SpeakingScreen(),
+          arguments: const {'standalone': true},
+        ),
+        onChallenge: () => Get.to(() => const HskQuizScreen()),
+        onProgress: () => controller.setIndex(3),
+        onViewAllQuickActions: () => controller.setIndex(1),
+      );
+    });
   }
 
-  Widget _buildHomeHeader() {
-    return Row(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFEED3),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: const Color(0xFFFFCF8E),
-              width: 1.2,
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x16000000),
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: const Padding(
-            padding: EdgeInsets.all(3),
-            child: BossBattleCharacterArt(
-              kind: BossBattleCharacterKind.panda,
-              size: 44,
-            ),
+  Widget _buildLearningTab() => HomeLearningTab(
+        onPractice: () => Get.to(
+          () => Scaffold(
+            appBar: AppBar(title: const Text('Luyện tập')),
+            body: SafeArea(child: _buildPracticeTab()),
           ),
         ),
-        const SizedBox(width: 10),
-        const Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Xin chào!',
-                style: TextStyle(
-                  color: AppColors.ink,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Hôm nay cùng học tiếng Trung nào!',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF4DF),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: const Color(0xFFFFD28C)),
-          ),
-          child: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('🔥', style: TextStyle(fontSize: 16)),
-                  SizedBox(width: 3),
-                  Text(
-                    '12',
-                    style: TextStyle(
-                      color: Color(0xFFE76A16),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 1),
-              Text(
-                'Ngày liên tiếp',
-                style: TextStyle(
-                  color: Color(0xFFAF7138),
-                  fontSize: 8,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHomeHero() {
-    return Container(
-      height: 248,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: const Color(0xFFFFD595),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF9A5A24).withValues(alpha: .22),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          const GameArtImage(
-            url: GameArt.homeBackground,
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-            fallbackEmoji: '🏯',
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF10283F).withValues(alpha: .76),
-                  const Color(0xFF10283F).withValues(alpha: .28),
-                  Colors.transparent,
-                ],
-                stops: const [0, .56, 1],
-              ),
-            ),
-          ),
-          const Positioned(
-            right: -10,
-            top: 10,
-            bottom: 18,
-            width: 185,
-            child: GameArtImage(
-              url: GameArt.pandaArcher,
-              fit: BoxFit.contain,
-              alignment: Alignment.bottomCenter,
-              fallbackEmoji: '🐼',
-            ),
-          ),
-          Positioned(
-            left: 18,
-            top: 18,
-            right: 142,
-            bottom: 18,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFD267),
-                    borderRadius: BorderRadius.circular(999),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x44C77813),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: const Text(
-                    'DAILY QUEST',
-                    style: TextStyle(
-                      color: Color(0xFF5B3400),
-                      fontSize: 9,
-                      letterSpacing: 1.1,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Mỗi ngày\nmạnh hơn một chút',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 25,
-                    height: 1.02,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -.5,
-                    shadows: [
-                      Shadow(
-                        color: Color(0x88000000),
-                        blurRadius: 10,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Học từ vựng, luyện nghe và mở khóa thử thách mới.',
-                  maxLines: 3,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: .88),
-                    fontSize: 11.5,
-                    height: 1.4,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  height: 44,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFB52F),
-                      foregroundColor: const Color(0xFF4A2800),
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        side: const BorderSide(
-                          color: Color(0xFFFFE08B),
-                          width: 1.2,
-                        ),
-                      ),
-                    ),
-                    onPressed: () => Get.to(() => const HskScreen()),
-                    icon: const Icon(Icons.play_arrow_rounded, size: 20),
-                    label: const Text(
-                      'Bắt đầu học',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLearningTab() {
-    return Center(
-      child: ConstrainedBox(
-        constraints:
-            BoxConstraints(maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const Text(
-              'Học tập chuyên sâu',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 18),
-            _Action(
-              icon: Icons.menu_book_rounded,
-              title: 'Kho từ vựng HSK',
-              subtitle: 'Xem từ theo cấp độ HSK và bài học',
-              color: AppColors.red,
-              onTap: () => Get.to(() => const HskScreen()),
-            ),
-            const SizedBox(height: 12),
-            _Action(
-              icon: Icons.school_rounded,
-              title: 'Bài học chuyên đề AI',
-              subtitle: 'Tự động biên soạn bài học và ngữ pháp',
-              color: AppColors.redDark,
-              onTap: () => _runIfFeatureUnlocked(
-                'lessons',
-                'Mở khóa Bài học AI',
-                'Tính năng biên soạn bài học ngữ pháp AI yêu cầu nâng cấp gói cước Cao Cấp.',
-                const ['Bài học ngữ pháp chuyên sâu tự động', 'Bài tập thực hành đi kèm phong phú', 'Hỏi đáp bài học trực tiếp'],
-                () => Get.to(() => const LessonsScreen()),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _Action(
-              icon: Icons.forum_rounded,
-              title: 'Hội thoại tình huống AI',
-              subtitle: 'Luyện giao tiếp qua các chủ đề thông minh',
-              color: AppColors.orange,
-              onTap: () => _runIfFeatureUnlocked(
-                'ai_chat',
-                'Mở khóa Hội thoại AI',
-                'Tính năng trò chuyện tình huống thông minh yêu cầu nâng cấp gói cước Cao Cấp.',
-                const ['Giao tiếp tình huống không giới hạn', 'Phát âm và sửa lỗi thời gian thực', 'Đàm thoại AI thông minh'],
-                () => Get.to(() => const ConversationsScreen()),
-              ),
-            ),
+        onVocabulary: () => Get.to(() => const HskScreen()),
+        onLessons: () => _runIfFeatureUnlocked(
+          'lessons',
+          'Mở khóa Bài học AI',
+          'Tính năng biên soạn bài học ngữ pháp AI yêu cầu nâng cấp gói cước Cao Cấp.',
+          const [
+            'Bài học ngữ pháp chuyên sâu tự động',
+            'Bài tập thực hành đi kèm phong phú',
+            'Hỏi đáp bài học trực tiếp'
           ],
+          () => Get.to(() => const LessonsScreen()),
         ),
-      ),
-    );
-  }
+        onConversation: () => _runIfFeatureUnlocked(
+          'ai_chat',
+          'Mở khóa Hội thoại AI',
+          'Tính năng trò chuyện tình huống thông minh yêu cầu nâng cấp gói cước Cao Cấp.',
+          const [
+            'Giao tiếp tình huống không giới hạn',
+            'Phát âm và sửa lỗi thời gian thực',
+            'Đàm thoại AI thông minh'
+          ],
+          () => Get.to(() => const ConversationsScreen()),
+        ),
+      );
 
   Widget _buildPracticeTab() {
     return Center(
@@ -523,7 +156,8 @@ class _HomeScreenState extends State<HomeScreen> {
             _Action(
               icon: Icons.games_rounded,
               title: 'Lộ Trình Học Tập',
-              subtitle: 'Học tiếng Trung qua các trò chơi tương tác như Duolingo',
+              subtitle:
+                  'Học tiếng Trung qua các trò chơi tương tác như Duolingo',
               color: Colors.blue,
               onTap: () => Get.to(() => const DuoGameCenterScreen()),
             ),
@@ -542,180 +176,56 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildGamesTab() {
-    return const GameHubScreen();
+    return const GameHubScreen(embedded: true);
   }
 
-  Widget _buildProgressTab() {
-    return Center(
-      child: ConstrainedBox(
-        constraints:
-            BoxConstraints(maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const Text(
-              'Tiến độ & Đánh giá',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 18),
-            _Action(
-              icon: Icons.insights_rounded,
-              title: 'Thống kê chi tiết',
-              subtitle: 'Theo dõi tiến trình và số liệu học tập của bạn',
-              color: AppColors.orange,
-              onTap: () => Get.to(() => const StatsScreen()),
-            ),
-            const SizedBox(height: 12),
-            _Action(
-              icon: Icons.assignment_turned_in_rounded,
-              title: 'Thi thử HSK với AI',
-              subtitle: 'Chấm điểm và nhận xét chi tiết từ giáo viên AI',
-              color: AppColors.success,
-              onTap: () => _runIfFeatureUnlocked(
-                'hsk_exam',
-                'Mở khóa Thi thử AI',
-                'Tính năng làm đề thi thử và chấm điểm AI yêu cầu nâng cấp gói cước Cao Cấp.',
-                const ['Đề thi thử HSK 1-6 chuẩn cấu trúc', 'Chấm điểm và sửa bài chi tiết bằng AI', 'Xem lại lịch sử thi bất kỳ lúc nào'],
-                () => Get.to(() => const HskExamScreen()),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _Action(
-              icon: Icons.history_rounded,
-              title: 'Lịch sử & Phân tích',
-              subtitle: 'Xem lại các bản dịch, hội thoại và kết quả thi',
-              color: AppColors.muted,
-              onTap: () => Get.to(() => const HistoryScreen()),
-            ),
+  Widget _buildProgressTab() => HomeProgressTab(
+        onStats: () => Get.to(() => const StatsScreen()),
+        onExam: () => _runIfFeatureUnlocked(
+          'hsk_exam',
+          'Mở khóa Thi thử AI',
+          'Tính năng làm đề thi thử và chấm điểm AI yêu cầu nâng cấp gói cước Cao Cấp.',
+          const [
+            'Đề thi thử HSK 1-6 chuẩn cấu trúc',
+            'Chấm điểm và sửa bài chi tiết bằng AI',
+            'Xem lại lịch sử thi bất kỳ lúc nào'
           ],
+          () => Get.to(() => const HskExamScreen()),
         ),
-      ),
-    );
-  }
+        onHistory: () => Get.to(() => const HistoryScreen()),
+      );
 
-  Widget _buildPersonalTab() {
-    return Center(
-      child: ConstrainedBox(
-        constraints:
-            BoxConstraints(maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const Text(
-              'Cá nhân',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 18),
-            _Action(
-              icon: Icons.person_rounded,
-              title: 'Hồ sơ người dùng',
-              subtitle: 'Xem thông tin cá nhân và xếp hạng',
-              color: AppColors.red,
-              onTap: () => Get.to(() => const ProfilePage()),
-            ),
-            const SizedBox(height: 12),
-            _Action(
-              icon: Icons.workspace_premium_rounded,
-              title: 'Nâng cấp Premium',
-              subtitle: 'Mở khóa toàn bộ tính năng và bài học HSK',
-              color: AppColors.orange,
-              onTap: () => Get.to(() => const SubscriptionPage()),
-            ),
-            const SizedBox(height: 12),
-            _Action(
-              icon: Icons.g_translate_rounded,
-              title: 'Từ điển Việt ↔ Trung',
-              subtitle: 'Tra cứu từ bằng AI, hỗ trợ giọng nói',
-              color: AppColors.orange,
-              onTap: () => Get.to(() => const DictionaryScreen()),
-            ),
-            const SizedBox(height: 12),
-            _Action(
-              icon: Icons.settings_rounded,
-              title: 'Cài đặt hệ thống',
-              subtitle: 'Cấu hình âm thanh, tốc độ đọc, thông báo',
-              color: AppColors.muted,
-              onTap: () => Get.to(() => const SettingsPage()),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildPersonalTab() => HomePersonalTab(
+        onProfile: () => Get.to(() => const ProfilePage()),
+        onPremium: () => Get.to(() => const SubscriptionPage()),
+        onDictionary: () => Get.to(() => const DictionaryScreen()),
+      );
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final index = controller.currentIndex.value.clamp(0, 4);
-      final body = SafeArea(
-        child: IndexedStack(
-          index: index,
-          children: [
-            _buildHomeDashboard(),
-            _buildLearningTab(),
-            _buildGamesTab(),
-            _buildProgressTab(),
-            _buildPersonalTab(),
-          ],
-        ),
+      final content = IndexedStack(
+        index: index,
+        children: [
+          _buildHomeDashboard(),
+          _buildLearningTab(),
+          _buildGamesTab(),
+          _buildProgressTab(),
+          _buildPersonalTab(),
+        ],
       );
 
-      const destinations = <NavigationDestination>[
-        NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home_rounded),
-          label: 'Trang chủ',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.menu_book_outlined),
-          selectedIcon: Icon(Icons.menu_book_rounded),
-          label: 'Học tập',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.sports_esports_outlined),
-          selectedIcon: Icon(Icons.sports_esports_rounded),
-          label: 'Trò chơi',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.bar_chart_outlined),
-          selectedIcon: Icon(Icons.bar_chart_rounded),
-          label: 'Tiến độ',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.person_outline_rounded),
-          selectedIcon: Icon(Icons.person_rounded),
-          label: 'Cá nhân',
-        ),
-      ];
+      final body = index == 0 ? content : SharedTabBackground(child: content);
 
       return ResponsiveLayout(
         mobile: Scaffold(
-          backgroundColor: GameVisualTokens.cream,
+          backgroundColor: index == 0 ? homePageBackground : homeCream,
+          extendBody: true,
           body: body,
-          bottomNavigationBar: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                top: BorderSide(color: Color(0xFFEDE4DB)),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x16000000),
-                  blurRadius: 20,
-                  offset: Offset(0, -5),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              top: false,
-              child: NavigationBar(
-                selectedIndex: index,
-                onDestinationSelected: controller.setIndex,
-                labelBehavior:
-                    NavigationDestinationLabelBehavior.alwaysShow,
-                destinations: destinations,
-              ),
-            ),
+          bottomNavigationBar: HomeBottomNavigation(
+            currentIndex: index,
+            onSelected: controller.setIndex,
           ),
         ),
         tablet: Scaffold(
@@ -801,395 +311,6 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     });
   }
-}
-
-class _HomeSectionTitle extends StatelessWidget {
-  const _HomeSectionTitle({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: AppColors.ink,
-        fontSize: 17,
-        fontWeight: FontWeight.w900,
-      ),
-    );
-  }
-}
-
-class _TodayLessonCard extends StatelessWidget {
-  const _TodayLessonCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFF6FBFF),
-      elevation: 0,
-      borderRadius: BorderRadius.circular(19),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(19),
-        onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 88),
-          padding: const EdgeInsets.all(11),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(19),
-            border: Border.all(
-              color: const Color(0xFFD5EAFE),
-              width: 1.1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFDBF3FF),
-                      Color(0xFFEAF8FF),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.menu_book_rounded,
-                  color: Color(0xFF2E93D6),
-                  size: 32,
-                ),
-              ),
-              const SizedBox(width: 11),
-              const Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Từ vựng cơ bản',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppColors.ink,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Chủ đề: Gia đình',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: 7),
-                    ClipRRect(
-                      borderRadius: BorderRadius.all(Radius.circular(99)),
-                      child: LinearProgressIndicator(
-                        value: .34,
-                        minHeight: 5,
-                        backgroundColor: Color(0xFFDCEAF4),
-                        color: Color(0xFF2D9AF1),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                height: 38,
-                padding: const EdgeInsets.symmetric(horizontal: 13),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2D9AF1),
-                  borderRadius: BorderRadius.circular(13),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x332D9AF1),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Text(
-                  'Bắt đầu',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeMetric extends StatelessWidget {
-  const _HomeMetric({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF0E8DE)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 19),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickTile extends StatelessWidget {
-  const _QuickTile({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            height: 48,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(
-                color: color.withValues(alpha: .13),
-              ),
-            ),
-            child: Center(
-              child: Icon(icon, color: color, size: 25),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.ink,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChallengeCard extends StatelessWidget {
-  const _ChallengeCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFF0F8FF),
-      borderRadius: BorderRadius.circular(17),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(17),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0CF),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: const Icon(
-                  Icons.star_rounded,
-                  color: Color(0xFFF8B51B),
-                  size: 29,
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hoàn thành 10 câu hỏi',
-                      style: TextStyle(
-                        color: AppColors.ink,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    SizedBox(height: 7),
-                    LinearProgressIndicator(
-                      value: .6,
-                      minHeight: 7,
-                      borderRadius: BorderRadius.all(Radius.circular(99)),
-                      backgroundColor: Color(0xFFDDEAF4),
-                      color: Color(0xFF2D9AF1),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                '6/10',
-                style: TextStyle(
-                  color: Color(0xFF4480A9),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(width: 7),
-              const Icon(
-                Icons.card_giftcard_rounded,
-                color: Color(0xFFFF8A1B),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeHeroPainter extends CustomPainter {
-  const _HomeHeroPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFF4FBFF),
-            Color(0xFFDDF3FF),
-            Color(0xFFFFEAC6),
-          ],
-        ).createShader(rect),
-    );
-
-    final mountain = Paint()..color = const Color(0xFFBFDDEB);
-    final p = Path()
-      ..moveTo(0, size.height * .68)
-      ..lineTo(size.width * .18, size.height * .33)
-      ..lineTo(size.width * .33, size.height * .62)
-      ..lineTo(size.width * .48, size.height * .27)
-      ..lineTo(size.width * .68, size.height * .64)
-      ..lineTo(size.width * .84, size.height * .36)
-      ..lineTo(size.width, size.height * .62)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(p, mountain);
-
-    final ground = Paint()..color = const Color(0xFFB9DF8B);
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height * .68, size.width, size.height * .32),
-      ground,
-    );
-
-    _pagoda(canvas, Offset(size.width * .17, size.height * .57), 36);
-    _pagoda(canvas, Offset(size.width * .39, size.height * .61), 30);
-
-    final blossom = Paint()..color = const Color(0xFFFF8FB5);
-    for (var i = 0; i < 15; i++) {
-      final x = size.width * (.02 + (i % 7) * .055);
-      final y = size.height * (.72 + (i % 4) * .05);
-      canvas.drawCircle(Offset(x, y), 4 + (i % 2), blossom);
-    }
-  }
-
-  void _pagoda(Canvas canvas, Offset center, double s) {
-    final roof = Paint()..color = const Color(0xFF315D73);
-    final wall = Paint()..color = const Color(0xFFE2824C);
-
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: center.translate(0, s * .22),
-        width: s * .8,
-        height: s * .55,
-      ),
-      wall,
-    );
-
-    for (var floor = 0; floor < 2; floor++) {
-      final y = center.dy - s * (.05 + floor * .3);
-      final path = Path()
-        ..moveTo(center.dx - s * .65, y)
-        ..lineTo(center.dx, y - s * .19)
-        ..lineTo(center.dx + s * .65, y)
-        ..lineTo(center.dx + s * .48, y + s * .08)
-        ..lineTo(center.dx - s * .48, y + s * .08)
-        ..close();
-      canvas.drawPath(path, roof);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _HomeHeroPainter oldDelegate) => false;
 }
 
 class _Action extends StatelessWidget {
