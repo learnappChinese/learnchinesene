@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../database/db_helper.dart';
-import '../../../models/word.dart';
-import '../../../services/progress_service.dart';
+import '../../../core/database/db_helper.dart';
+import '../../../core/models/word.dart';
+import '../../../core/services/progress_service.dart';
 
 class WordListController extends GetxController {
   final progress = ProgressService();

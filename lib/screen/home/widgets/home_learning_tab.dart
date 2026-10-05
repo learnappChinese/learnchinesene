@@ -31,55 +31,57 @@ class HomeLearningTab extends StatelessWidget {
             key: const ValueKey('learning-scroll'),
             padding: EdgeInsets.only(top: 4.w),
             child: Column(children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Column(children: [
-                  _LearningCard(
-                    title: 'Luyện tập & Thực hành',
-                    subtitle: 'Luyện viết, phát âm, flashcards và ôn tập HSK',
-                    asset: 'assets/images/backgrounds/learning_practice.png',
-                    color: const Color(0xFF09A51F),
-                    background: const Color(0xFFF3FCF1),
-                    height: 128.w,
-                    onTap: onPractice,
-                  ),
-                  SizedBox(height: 8.w),
-                  _LearningCard(
-                    title: 'Kho từ vựng HSK',
-                    subtitle: 'Xem từ theo cấp độ HSK và bài học',
-                    asset:
-                        'assets/images/backgrounds/learning_vocabulary.png',
-                    color: const Color(0xFF25BA81),
-                    background: const Color(0xFFF0FCFB),
-                    height: 128.w,
-                    onTap: onVocabulary,
-                  ),
-                  SizedBox(height: 8.w),
-                  _LearningCard(
-                    title: 'Bài học chuyên đề AI',
-                    subtitle: 'Tự động biên soạn bài học và ngữ pháp',
-                    asset: 'assets/images/backgrounds/learning_lessons.png',
-                    color: const Color(0xFFFF8809),
-                    background: const Color(0xFFFFFAEC),
-                    height: 128.w,
-                    onTap: onLessons,
-                  ),
-                  SizedBox(height: 8.w),
-                  _LearningCard(
-                    title: 'Hội thoại tình huống AI',
-                    subtitle: 'Luyện giao tiếp qua các chủ đề thông minh',
-                    asset:
-                        'assets/images/backgrounds/learning_conversation.png',
-                    color: const Color(0xFF168CFF),
-                    background: const Color(0xFFF4F7FF),
-                    height: 128.w,
-                    onTap: onConversation,
-                  ),
-                ]),
-              ),
+              _buildLearningCards(),
               SizedBox(height: bottomSpace),
             ]),
           ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _buildLearningCards() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: Column(children: [
+        _LearningCard(
+          title: 'Luyện tập & Thực hành',
+          subtitle: 'Luyện viết, phát âm, flashcards và ôn tập HSK',
+          asset: 'assets/images/backgrounds/learning_practice.png',
+          color: const Color(0xFF09A51F),
+          background: const Color(0xFFF3FCF1),
+          height: 128.w,
+          onTap: onPractice,
+        ),
+        SizedBox(height: 8.w),
+        _LearningCard(
+          title: 'Kho từ vựng HSK',
+          subtitle: 'Xem từ theo cấp độ HSK và bài học',
+          asset: 'assets/images/backgrounds/learning_vocabulary.png',
+          color: const Color(0xFF25BA81),
+          background: const Color(0xFFF0FCFB),
+          height: 128.w,
+          onTap: onVocabulary,
+        ),
+        SizedBox(height: 8.w),
+        _LearningCard(
+          title: 'Bài học chuyên đề AI',
+          subtitle: 'Tự động biên soạn bài học và ngữ pháp',
+          asset: 'assets/images/backgrounds/learning_lessons.png',
+          color: const Color(0xFFFF8809),
+          background: const Color(0xFFFFFAEC),
+          height: 128.w,
+          onTap: onLessons,
+        ),
+        SizedBox(height: 8.w),
+        _LearningCard(
+          title: 'Hội thoại tình huống AI',
+          subtitle: 'Luyện giao tiếp qua các chủ đề thông minh',
+          asset: 'assets/images/backgrounds/learning_conversation.png',
+          color: const Color(0xFF168CFF),
+          background: const Color(0xFFF4F7FF),
+          height: 128.w,
+          onTap: onConversation,
         ),
       ]),
     );

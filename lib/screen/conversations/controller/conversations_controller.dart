@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
-import '../../../services/gemini_service.dart';
-import '../../../services/history_service.dart';
+import '../../../core/services/gemini_service.dart';
+import '../../../core/services/history_service.dart';
 
 class ConversationsController extends GetxController {
   final GeminiService _gemini = Get.find<GeminiService>();

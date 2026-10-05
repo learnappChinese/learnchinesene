@@ -1,21 +1,37 @@
 import 'package:flutter/material.dart';
+import 'widget/review_word_item.dart';
+import '../../core/widgets/bottom_action_bar.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/responsive/responsive_layout.dart';
-import '../../widgets/empty_state_widget.dart';
-import '../../widgets/primary_button.dart';
-import '../../widgets/word_card.dart';
+import '../../core/widgets/empty_state_widget.dart';
+import '../../core/widgets/primary_button.dart';
 import '../quiz/quiz_screen.dart';
 import '../word_detail/word_detail_screen.dart';
 import 'controller/review_controller.dart';
+import '../../core/models/word.dart';
 
-class ReviewScreen extends StatelessWidget {
+class ReviewScreen extends StatefulWidget {
   const ReviewScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(ReviewController());
+  State<ReviewScreen> createState() => _ReviewScreenState();
+}
 
+class _ReviewScreenState extends State<ReviewScreen> {
+  late final ReviewController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // The existing GetX route owns this registration.
+    controller = Get.isRegistered<ReviewController>()
+        ? Get.find<ReviewController>()
+        : Get.put(ReviewController());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -23,117 +39,67 @@ class ReviewScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final words = controller.words;
-        if (words.isEmpty) {
-          return const EmptyStateWidget(
-            icon: Icons.verified_rounded,
-            title: 'Bạn đã ôn xong!',
-            message: 'Hiện không còn từ khó nào cần ôn lại.',
-          );
-        }
-        return Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                      maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-                  child: ListView(
-                    padding: EdgeInsets.fromLTRB(
-                      ResponsiveHelper.horizontalPadding(context),
-                      8,
-                      ResponsiveHelper.horizontalPadding(context),
-                      22,
-                    ),
-                    children: [
-                      _ReviewHero(count: words.length),
-                      const SizedBox(height: 20),
-                      for (final word in words)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Column(
-                            children: [
-                              WordCard(
-                                word: word,
-                                onTap: () => Get.to(
-                                  () => const WordDetailScreen(),
-                                  arguments: {'word': word},
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(8, 7, 8, 0),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.close_rounded,
-                                      size: 15,
-                                      color: AppColors.error,
-                                    ),
-                                    Text(
-                                      ' ${word.wrongCount} lần sai',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.error,
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    Text(
-                                      '${word.correctCount} lần đúng',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.success,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Container(
-              alignment: Alignment.center,
-              padding: EdgeInsets.fromLTRB(
-                ResponsiveHelper.horizontalPadding(context),
-                12,
-                ResponsiveHelper.horizontalPadding(context),
-                12 + MediaQuery.paddingOf(context).bottom,
-              ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x14000000),
-                    blurRadius: 16,
-                    offset: Offset(0, -4),
-                  ),
-                ],
-              ),
+      body: _buildReviewContent(context),
+    );
+  }
+
+  Widget _buildReviewActions(List<Word> words) {
+    return BottomActionBar(
+        child: PrimaryButton(
+      label: 'Bắt đầu ôn tập',
+      icon: Icons.quiz_rounded,
+      onPressed: () => Get.to(
+        () => const QuizScreen(),
+        arguments: {'unitTitle': 'Ôn tập', 'reviewWords': words},
+      ),
+    ));
+  }
+
+  Widget _buildReviewContent(BuildContext context) {
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      final words = controller.words;
+      if (words.isEmpty) {
+        return const EmptyStateWidget(
+          icon: Icons.verified_rounded,
+          title: 'Bạn đã ôn xong!',
+          message: 'Hiện không còn từ khó nào cần ôn lại.',
+        );
+      }
+      return Column(
+        children: [
+          Expanded(
+            child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                     maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-                child: PrimaryButton(
-                  label: 'Bắt đầu ôn tập',
-                  icon: Icons.quiz_rounded,
-                  onPressed: () => Get.to(
-                    () => const QuizScreen(),
-                    arguments: {'unitTitle': 'Ôn tập', 'reviewWords': words},
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    ResponsiveHelper.horizontalPadding(context),
+                    8,
+                    ResponsiveHelper.horizontalPadding(context),
+                    22,
                   ),
+                  children: [
+                    _ReviewHero(count: words.length),
+                    const SizedBox(height: 20),
+                    for (final word in words)
+                      ReviewWordItem(
+                          key: ValueKey(word.id),
+                          word: word,
+                          onTap: () => Get.to(() => const WordDetailScreen(),
+                              arguments: {"word": word})),
+                  ],
                 ),
               ),
             ),
-          ],
-        );
-      }),
-    );
+          ),
+          _buildReviewActions(words),
+        ],
+      );
+    });
   }
 }
 
