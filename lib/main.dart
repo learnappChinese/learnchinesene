@@ -81,22 +81,30 @@ class _AppBootstrapState extends State<AppBootstrap> {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD32F2F)),
         useMaterial3: true,
       ),
-      home: Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                child: _loading
-                    ? const _CloudLoadingView(key: ValueKey('loading'))
-                    : _CloudErrorView(
-                        key: const ValueKey('error'),
-                        error: _error,
-                        onRetry: _initialize,
-                      ),
-              ),
+      home: _buildBootstrapScreen(),
+    );
+  }
+
+  Widget _buildConnectionStatus() {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      child: _loading
+          ? const _CloudLoadingView(key: ValueKey('loading'))
+          : _CloudErrorView(
+              key: const ValueKey('error'),
+              error: _error,
+              onRetry: _initialize,
             ),
+    );
+  }
+
+  Widget _buildBootstrapScreen() {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: _buildConnectionStatus(),
           ),
         ),
       ),

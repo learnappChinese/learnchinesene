@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../database/db_helper.dart';
-import '../../../models/word.dart';
-import '../../../models/example_sentence.dart';
-import '../../../services/audio_service.dart';
-import '../../../services/progress_service.dart';
+import '../../../core/database/db_helper.dart';
+import '../../../core/models/word.dart';
+import '../../../core/models/example_sentence.dart';
+import '../../../core/services/audio_service.dart';
+import '../../../core/services/progress_service.dart';
 import '../../speaking/speaking_screen.dart';
 
 class WordDetailController extends GetxController {

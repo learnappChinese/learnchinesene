@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import '../../../database/db_helper.dart';
+import '../../../core/database/db_helper.dart';
 
 class LearningOverviewController extends GetxController {
   int unitId = 0;

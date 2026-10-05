@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
-import '../../../models/quiz_question.dart';
-import '../../../models/word.dart';
-import '../../../services/audio_service.dart';
-import '../../../services/progress_service.dart';
-import '../../../services/quiz_service.dart';
+import '../../../core/models/quiz_question.dart';
+import '../../../core/models/word.dart';
+import '../../../core/services/audio_service.dart';
+import '../../../core/services/progress_service.dart';
+import '../../../core/services/quiz_service.dart';
 
 class QuizController extends GetxController {
   final quiz = QuizService();

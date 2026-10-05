@@ -56,7 +56,7 @@ The supplied quick-action, navigation, and statistics crops guided a refinement 
 ## Validation
 
 ```sh
-flutter analyze lib/screen/home lib/dragon_panda/screens/home test/screen/home/home_dashboard_test.dart
+flutter analyze lib/screen/home lib/screen/dragon_panda/screens/home test/screen/home/home_dashboard_test.dart
 flutter test test/screen/home/home_dashboard_test.dart
 ```
 

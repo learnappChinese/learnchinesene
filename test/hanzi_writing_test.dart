@@ -1,4 +1,4 @@
-import 'package:flash_learn_chinese/models/hanzi_character.dart';
+import 'package:flash_learn_chinese/core/models/hanzi_character.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

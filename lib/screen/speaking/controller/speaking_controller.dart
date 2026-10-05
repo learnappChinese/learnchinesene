@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../database/db_helper.dart';
-import '../../../models/speaking_practice_item.dart';
-import '../../../services/speech_service.dart';
-import '../../../services/vocabulary_service.dart';
-import '../../../services/audio_service.dart';
-import '../../../core/helpers/permission_helper.dart';
+import '../../../core/database/db_helper.dart';
+import '../../../core/models/speaking_practice_item.dart';
+import '../../../core/services/speech_service.dart';
+import '../../../core/services/vocabulary_service.dart';
+import '../../../core/services/audio_service.dart';
+import '../../../core/helper/permission_helper.dart';
 
 class SpeakingController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -92,21 +92,25 @@ class SpeakingController extends GetxController
         loaded = await vocabService.getRandomSpeakingItems();
       }
 
+      if (isClosed) return;
       items.value = loaded;
       if (items.isEmpty) {
         errorMessage.value = 'Không có dữ liệu luyện tập.';
       }
       isLoading.value = false;
     } catch (e) {
+      if (isClosed) return;
       isLoading.value = false;
       errorMessage.value = 'Lỗi tải dữ liệu: $e';
     }
   }
 
   Future<void> start(BuildContext context) async {
-    if (items.isEmpty) return;
+    if (isClosed || items.isEmpty || busy.value) return;
 
-    if (!await PermissionHelper.requestSpeakingPermissions()) {
+    final granted = await PermissionHelper.requestSpeakingPermissions();
+    if (isClosed) return;
+    if (!granted) {
       Get.snackbar(
         'Yêu cầu quyền truy cập',
         'Vui lòng cấp quyền micro và nhận diện giọng nói.',
@@ -118,6 +122,7 @@ class SpeakingController extends GetxController
       return;
     }
 
+    if (isClosed) return;
     final currentItem = items[currentIndex.value];
 
     busy.value = true;
@@ -129,6 +134,7 @@ class SpeakingController extends GetxController
       targetText: currentItem.targetText,
     );
 
+    if (isClosed) return;
     pulse.stop();
     pulse.value = 1;
 
@@ -155,6 +161,7 @@ class SpeakingController extends GetxController
       );
     }
 
+    if (isClosed) return;
     busy.value = false;
     recognized.value = result.recognizedText;
     score.value = result.score;
@@ -162,6 +169,7 @@ class SpeakingController extends GetxController
   }
 
   void nextItem(BuildContext context) {
+    if (isClosed) return;
     if (currentIndex.value < items.length - 1) {
       currentIndex.value++;
       recognized.value = '';

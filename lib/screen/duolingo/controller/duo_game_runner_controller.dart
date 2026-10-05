@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'duo_game_repository.dart';
-import '../../../database/duo_db_helper.dart';
+import '../../../core/database/duo_db_helper.dart';
 
 class DuoGameRunnerController extends GetxController {
   final int gameId;

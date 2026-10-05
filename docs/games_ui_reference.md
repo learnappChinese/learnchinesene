@@ -10,7 +10,7 @@ Card assets live in `assets/images/backgrounds/games_*.png`. Generated with the 
 
 Rendered preview: `docs/games_ui_preview.png` (440 × 782 logical pixels at 2× resolution). The preview uses locally loaded Arial fonts; native device typography may vary. Native status indicators are provided by the OS.
 
-Validation: `flutter analyze lib/screen/game_hub lib/dragon_panda/screens/game_hub lib/screen/home/home_screen.dart test/screen/game_hub/game_hub_view_test.dart`; `flutter test test/screen/game_hub/game_hub_view_test.dart test/screen/home`. Game-menu checks cover four viewport widths, every callback, navigation, safe insets and 1.5× text scaling.
+Validation: `flutter analyze lib/screen/game_hub lib/screen/dragon_panda/screens/game_hub lib/screen/home/home_screen.dart test/screen/game_hub/game_hub_view_test.dart`; `flutter test test/screen/game_hub/game_hub_view_test.dart test/screen/home`. Game-menu checks cover four viewport widths, every callback, navigation, safe insets and 1.5× text scaling.
 
 ## Generation prompts
 
