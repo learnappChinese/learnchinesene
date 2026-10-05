@@ -1,4 +1,4 @@
-import 'package:flash_learn_chinese/screen/boss_battle/view/boss_battle_answer_button.dart';
+import 'package:flash_learn_chinese/screen/boss_battle/widget/boss_battle_answer_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

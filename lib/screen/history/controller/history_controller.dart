@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import '../../../services/history_service.dart';
+import '../../../core/services/history_service.dart';
 
 class HistoryController extends GetxController {
   final HistoryService _historyService = Get.find<HistoryService>();

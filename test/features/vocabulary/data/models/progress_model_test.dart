@@ -1,4 +1,4 @@
-import 'package:flash_learn_chinese/features/vocabulary/data/models/progress_model.dart';
+import 'package:flash_learn_chinese/screen/vocabulary/data/models/progress_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

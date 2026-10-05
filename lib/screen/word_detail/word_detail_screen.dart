@@ -1,17 +1,35 @@
 import 'package:flutter/material.dart';
+import 'widget/word_detail_cards.dart';
+import '../../core/widgets/bottom_action_bar.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/responsive/responsive_layout.dart';
-import '../../widgets/empty_state_widget.dart';
-import '../../features/hanzi_writing/screens/hanzi_writing_screen.dart';
+import '../../core/widgets/empty_state_widget.dart';
+import '../hanzi_writing/screens/hanzi_writing_screen.dart';
 import 'controller/word_detail_controller.dart';
+import '../../core/models/word.dart';
 
-class WordDetailScreen extends StatelessWidget {
+class WordDetailScreen extends StatefulWidget {
   const WordDetailScreen({super.key});
 
   @override
+  State<WordDetailScreen> createState() => _WordDetailScreenState();
+}
+
+class _WordDetailScreenState extends State<WordDetailScreen> {
+  late final WordDetailController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // The existing GetX route owns this registration.
+    controller = Get.isRegistered<WordDetailController>()
+        ? Get.find<WordDetailController>()
+        : Get.put(WordDetailController());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Get.put(WordDetailController());
     final w = controller.word;
 
     if (w == null) {
@@ -42,278 +60,108 @@ class WordDetailScreen extends StatelessWidget {
               )),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                    maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    ResponsiveHelper.horizontalPadding(context),
-                    4,
-                    ResponsiveHelper.horizontalPadding(context),
-                    24,
-                  ),
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(28),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            AppColors.redDark,
-                            AppColors.red,
-                            AppColors.orange,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x30B4232C),
-                            blurRadius: 25,
-                            offset: Offset(0, 12),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          if (w.sectionTitle.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 11,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white24,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                w.sectionTitle,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          const SizedBox(height: 18),
-                          Text(
-                            w.chinese,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 58,
-                              fontWeight: FontWeight.w400,
-                              fontFamily: 'FZKaiTiPinyin',
-                              fontFamilyFallback: [
-                                'FZKaiTiPinyin_1',
-                                'PingFang SC',
-                                'Heiti SC',
-                                'Microsoft YaHei',
-                                'Noto Sans SC'
-                              ],
-                            ),
-                          ),
-                          Text(
-                            w.vietnamese,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 22),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              IconButton.filled(
-                                onPressed: w.ttsUrl.isEmpty
-                                    ? null
-                                    : () => controller.audio.playUrl(w.ttsUrl),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: AppColors.red,
-                                ),
-                                icon: const Icon(Icons.volume_up_rounded),
-                              ),
-                              const SizedBox(width: 12),
-                              IconButton.filled(
-                                onPressed: () => controller.speak(),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: AppColors.red,
-                                ),
-                                icon: const Icon(Icons.mic_rounded),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 26),
-                    const Text(
-                      'Câu mẫu theo ngữ cảnh',
-                      style:
-                          TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 12),
-                    Obx(() {
-                      if (controller.isLoadingExamples.value) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(20),
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
-                      if (controller.examples.isEmpty) {
-                        return const EmptyStateWidget(
-                          icon: Icons.chat_bubble_outline_rounded,
-                          title: 'Chưa có câu mẫu',
-                          message: 'Từ này chưa có câu ví dụ.',
-                        );
-                      }
-                      return Column(
-                        children:
-                            controller.examples.asMap().entries.map((entry) {
-                          final e = entry.value;
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 11),
-                            padding: const EdgeInsets.all(17),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 30,
-                                  height: 30,
-                                  alignment: Alignment.center,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFFFE9E5),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Text(
-                                    '${entry.key + 1}',
-                                    style: const TextStyle(
-                                      color: AppColors.red,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        e.chinese,
-                                        style: const TextStyle(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.w400,
-                                          fontFamily: 'FZKaiTiPinyin',
-                                          fontFamilyFallback: [
-                                            'FZKaiTiPinyin_1',
-                                            'PingFang SC',
-                                            'Heiti SC',
-                                            'Microsoft YaHei',
-                                            'Noto Sans SC'
-                                          ],
-                                        ),
-                                      ),
-                                      if (e.vietnamese.isNotEmpty)
-                                        Padding(
-                                          padding:
-                                              const EdgeInsets.only(top: 5),
-                                          child: Text(
-                                            e.vietnamese,
-                                            style: const TextStyle(
-                                              color: AppColors.muted,
-                                              height: 1.4,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () =>
-                                      controller.speak(exampleId: e.id),
-                                  icon: const Icon(
-                                    Icons.mic_none_rounded,
-                                    color: AppColors.red,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ),
+      body: _buildWordContent(context, w),
+    );
+  }
+
+  Widget _buildExamples() {
+    return Obx(() {
+      if (controller.isLoadingExamples.value) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: CircularProgressIndicator(),
           ),
-          Container(
-            alignment: Alignment.center,
-            padding: EdgeInsets.fromLTRB(
-              ResponsiveHelper.horizontalPadding(context),
-              12,
-              ResponsiveHelper.horizontalPadding(context),
-              12 + MediaQuery.paddingOf(context).bottom,
-            ),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x14000000),
-                  blurRadius: 16,
-                  offset: Offset(0, -4),
+        );
+      }
+      if (controller.examples.isEmpty) {
+        return const EmptyStateWidget(
+          icon: Icons.chat_bubble_outline_rounded,
+          title: 'Chưa có câu mẫu',
+          message: 'Từ này chưa có câu ví dụ.',
+        );
+      }
+      return Column(
+        children: controller.examples.asMap().entries.map((entry) {
+          final e = entry.value;
+          return WordExampleCard(
+              key: ValueKey(e.id),
+              example: e,
+              number: entry.key + 1,
+              onSpeak: () => controller.speak(exampleId: e.id));
+        }).toList(),
+      );
+    });
+  }
+
+  Widget _buildPracticeActions() {
+    return BottomActionBar(
+        child: Obx(() => Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => controller.speak(),
+                    icon: const Icon(Icons.record_voice_over_rounded),
+                    label: const Text('Luyện phát âm'),
+                  ),
                 ),
+                if (controller.characterId.value != null) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Get.to(() => HanziWritingScreen(
+                            characterId: controller.characterId.value!));
+                      },
+                      icon: const Icon(Icons.draw_rounded),
+                      label: const Text('Luyện viết'),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.red),
+                        foregroundColor: AppColors.red,
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ),
+            )));
+  }
+
+  Widget _buildWordContent(BuildContext context, Word word) {
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(
                   maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-              child: Obx(() => Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () => controller.speak(),
-                          icon: const Icon(Icons.record_voice_over_rounded),
-                          label: const Text('Luyện phát âm'),
-                        ),
-                      ),
-                      if (controller.characterId.value != null) ...[
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Get.to(() => HanziWritingScreen(
-                                  characterId: controller.characterId.value!));
-                            },
-                            icon: const Icon(Icons.draw_rounded),
-                            label: const Text('Luyện viết'),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: AppColors.red),
-                              foregroundColor: AppColors.red,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  )),
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  ResponsiveHelper.horizontalPadding(context),
+                  4,
+                  ResponsiveHelper.horizontalPadding(context),
+                  24,
+                ),
+                children: [
+                  WordPronunciationCard(
+                      word: word,
+                      onPlayAudio: word.ttsUrl.isEmpty
+                          ? null
+                          : () => controller.audio.playUrl(word.ttsUrl),
+                      onSpeak: () => controller.speak()),
+                  const SizedBox(height: 26),
+                  const Text(
+                    'Câu mẫu theo ngữ cảnh',
+                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildExamples(),
+                ],
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+        _buildPracticeActions(),
+      ],
     );
   }
 }

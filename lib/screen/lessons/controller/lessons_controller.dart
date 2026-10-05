@@ -1,6 +1,6 @@
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
-import '../../../services/gemini_service.dart';
+import '../../../core/services/gemini_service.dart';
 
 class LessonsController extends GetxController {
   final GeminiService _gemini = Get.find<GeminiService>();

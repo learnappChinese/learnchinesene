@@ -141,9 +141,8 @@ class BossBattleController extends GetxController {
     phase.value = BossBattlePhase.loading;
 
     try {
-      final requested = stage == null
-          ? 16
-          : min(16, max(3, stage!.questionCount));
+      final requested =
+          stage == null ? 16 : min(16, max(3, stage!.questionCount));
       final seeds = await _source.loadQuestionSeeds(
         limit: stage == null ? 48 : requested,
         stageId: stage?.id,

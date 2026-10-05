@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import '../../../models/word.dart';
-import '../../../services/progress_service.dart';
+import '../../../core/models/word.dart';
+import '../../../core/services/progress_service.dart';
 
 class ReviewController extends GetxController {
   final progressService = ProgressService();
