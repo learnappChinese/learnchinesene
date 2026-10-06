@@ -22,58 +22,62 @@ class GameHubScreen extends StatelessWidget {
 
   final bool embedded;
 
+  static int currentBossStageLevel = 1;
+
+  static String getBossName(int level) {
+    switch (level) {
+      case 1:
+        return 'Hỏa Long';
+      case 2:
+        return 'Băng Long';
+      case 3:
+        return 'Lôi Long';
+      case 4:
+        return 'Phong Long';
+      case 5:
+        return 'Thần Long';
+      default:
+        return 'Long Vương (Lv. $level)';
+    }
+  }
+
   void _back() => Get.back();
 
   void _openBossBattle() {
     Get.to(() => BossBattleIntroScreen(
           onBack: _back,
-          onStartGame: _openInitialBossGameplay,
+          onStartGame: () => _openBossGameplay(currentBossStageLevel),
         ));
   }
 
-  void _openInitialBossGameplay() {
-    Get.to(() => BossBattleGameplayScreen(
-          onExit: _back,
-          onVictory: _openInitialVictory,
-          onDefeat: _openInitialDefeat,
-        ));
-  }
-
-  void _openInitialVictory() {
-    Get.off(() => BossBattleVictoryScreen(
-          onContinue: _openReplayBossGameplay,
-          onBackToHub: _back,
-        ));
-  }
-
-  void _openInitialDefeat() {
-    Get.off(() => BossBattleDefeatScreen(
-          onRetry: _openReplayBossGameplay,
-          onBackToHub: _back,
-        ));
-  }
-
-  void _openReplayBossGameplay() {
+  void _openBossGameplay(int level) {
     Get.off(() => BossBattleGameplayScreen(
+          stageLevel: level,
+          stageTitle: 'Cấp độ $level',
+          bossName: getBossName(level),
           onExit: _back,
-          onVictory: _openReplayVictory,
-          onDefeat: _openReplayDefeat,
+          onVictory: () => _openVictory(level),
+          onDefeat: () => _openDefeat(level),
         ));
   }
 
-  void _openReplayVictory() {
+  void _openVictory(int level) {
     Get.off(() => BossBattleVictoryScreen(
-          onContinue: _back,
+          onContinue: () {
+            currentBossStageLevel = level + 1;
+            _openBossGameplay(currentBossStageLevel);
+          },
           onBackToHub: _back,
         ));
   }
 
-  void _openReplayDefeat() {
+  void _openDefeat(int level) {
     Get.off(() => BossBattleDefeatScreen(
-          onRetry: _back,
+          onRetry: () => _openBossGameplay(level),
           onBackToHub: _back,
         ));
   }
+
 
   void _selectTab(int index) {
     if (index == 2) return;
