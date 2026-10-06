@@ -6,11 +6,11 @@ import '../model/unit_learning_node.dart';
 class UnitPathController extends GetxController {
   UnitPathController({
     required this.unitId,
-    required UnitLearningRepository repository,
+    required UnitLearningSource repository,
   }) : _repository = repository;
 
   final String unitId;
-  final UnitLearningRepository _repository;
+  final UnitLearningSource _repository;
 
   final isLoading = true.obs;
   final errorMessage = RxnString();
