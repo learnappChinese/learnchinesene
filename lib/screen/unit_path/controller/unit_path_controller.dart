@@ -47,43 +47,16 @@ class UnitPathController extends GetxController {
   }
 
   List<UnitLearningNode> _resolveStates(List<UnitLearningNode> loaded) {
-    final result = <UnitLearningNode>[];
-    var allPreviousLearningCompleted = true;
-    var firstLearningSeen = false;
-
-    for (final node in loaded) {
-      if (node.isBoss) {
-        final unlocked = node.completed ||
-            node.rawUnlocked ||
-            (firstLearningSeen && allPreviousLearningCompleted);
-        result.add(
-          node.copyWith(
-            state: node.completed
-                ? UnitLearningNodeState.completed
-                : unlocked
-                    ? UnitLearningNodeState.available
-                    : UnitLearningNodeState.locked,
-          ),
-        );
-        continue;
-      }
-
-      final unlocked =
-          node.rawUnlocked || (firstLearningSeen && allPreviousLearningCompleted);
+    return loaded.map((node) {
       final state = node.completed
           ? UnitLearningNodeState.completed
           : node.inProgress
               ? UnitLearningNodeState.inProgress
-              : unlocked
+              : node.rawUnlocked
                   ? UnitLearningNodeState.available
                   : UnitLearningNodeState.locked;
-
-      result.add(node.copyWith(state: state));
-      firstLearningSeen = true;
-      if (!node.completed) allPreviousLearningCompleted = false;
-    }
-
-    return result;
+      return node.copyWith(state: state);
+    }).toList(growable: false);
   }
 
   UnitLearningNode? nextLearningNodeAfter(UnitLearningNode current) {
