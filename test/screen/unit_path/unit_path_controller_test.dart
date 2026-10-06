@@ -54,7 +54,7 @@ void main() {
     final controller = UnitPathController(
       unitId: 'sec_1_unit_1',
       repository: _FakeUnitLearningSource([
-        _node(order: 1),
+        _node(order: 1, unlocked: true),
         _node(order: 2),
         _node(order: 3, boss: true),
       ]),
@@ -63,6 +63,24 @@ void main() {
     await controller.load();
 
     expect(controller.nodes[0].state, UnitLearningNodeState.available);
+    expect(controller.nodes[1].state, UnitLearningNodeState.locked);
+    expect(controller.nodes[2].state, UnitLearningNodeState.locked);
+  });
+
+  test('server gate keeps the first mission locked for a locked Unit',
+      () async {
+    final controller = UnitPathController(
+      unitId: 'sec_2_unit_1',
+      repository: _FakeUnitLearningSource([
+        _node(order: 1),
+        _node(order: 2),
+        _node(order: 3, boss: true),
+      ]),
+    );
+
+    await controller.load();
+
+    expect(controller.nodes[0].state, UnitLearningNodeState.locked);
     expect(controller.nodes[1].state, UnitLearningNodeState.locked);
     expect(controller.nodes[2].state, UnitLearningNodeState.locked);
   });
