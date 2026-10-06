@@ -119,6 +119,13 @@ class UnitLearningNode {
   }
 
   UnitLearningNode copyWith({
+    int? attempts,
+    int? bestScore,
+    int? stars,
+    bool? rawUnlocked,
+    bool? completed,
+    bool? inProgress,
+    int? currentIndex,
     UnitLearningNodeState? state,
   }) {
     return UnitLearningNode(
@@ -136,13 +143,13 @@ class UnitLearningNode {
       gameDescription: gameDescription,
       gameIcon: gameIcon,
       challengeCount: challengeCount,
-      attempts: attempts,
-      bestScore: bestScore,
-      stars: stars,
-      rawUnlocked: rawUnlocked,
-      completed: completed,
-      inProgress: inProgress,
-      currentIndex: currentIndex,
+      attempts: attempts ?? this.attempts,
+      bestScore: bestScore ?? this.bestScore,
+      stars: stars ?? this.stars,
+      rawUnlocked: rawUnlocked ?? this.rawUnlocked,
+      completed: completed ?? this.completed,
+      inProgress: inProgress ?? this.inProgress,
+      currentIndex: currentIndex ?? this.currentIndex,
       bossStageId: bossStageId,
       bossName: bossName,
       bossHp: bossHp,
