@@ -4,7 +4,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:get/get.dart';
+
+import '../../../../core/services/tts_service.dart';
 
 import 'view/boss_battle_arena.dart';
 import 'widgets/boss_battle_gameplay_widgets.dart';
@@ -87,7 +89,7 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
   final BossBattleArenaController _arenaController =
       BossBattleArenaController();
 
-  final FlutterTts _tts = FlutterTts();
+  final TtsService _tts = Get.find<TtsService>();
 
   final List<Map<String, dynamic>> _questions = [
     {
@@ -170,17 +172,12 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
   }
 
   Future<void> _initTts() async {
-    try {
-      await _tts.setLanguage('zh-CN');
-      await _tts.setSpeechRate(0.45);
-      await _tts.setVolume(1.0);
-    } catch (_) {}
+    _tts.ensureReady();
   }
 
   Future<void> _speak(String text) async {
     try {
-      await _tts.stop();
-      await _tts.speak(text);
+      await _tts.speakChinese(text);
     } catch (_) {}
   }
 
