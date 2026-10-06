@@ -41,6 +41,7 @@ Future<void> _pumpNode(
   required UnitLearningNodeState state,
 }) async {
   await tester.binding.setSurfaceSize(Size(width, 820));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(
     MaterialApp(
       home: Scaffold(
@@ -59,11 +60,6 @@ Future<void> _pumpNode(
 }
 
 void main() {
-  tearDown(() async {
-    TestWidgetsFlutterBinding.ensureInitialized();
-    await TestWidgetsFlutterBinding.instance.setSurfaceSize(null);
-  });
-
   testWidgets('mission node renders without overflow at 320 px',
       (tester) async {
     await _pumpNode(
