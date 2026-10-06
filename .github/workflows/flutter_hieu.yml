@@ -12,7 +12,7 @@ on:
 jobs:
   verify-and-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -52,6 +52,9 @@ jobs:
           flutter test --concurrency=1
           test/screen/boss_battle
           test/screen/unit_path
+
+      - name: Full test suite
+        run: flutter test --concurrency=1
 
       - name: Build optimized release APKs
         run: flutter build apk --release --split-per-abi
