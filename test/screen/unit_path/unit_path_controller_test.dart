@@ -72,7 +72,7 @@ void main() {
     final controller = UnitPathController(
       unitId: 'sec_2_unit_1',
       repository: _FakeUnitLearningSource([
-        _node(order: 1),
+        _node(order: 1, unlocked: true),
         _node(order: 2),
         _node(order: 3, boss: true),
       ]),
@@ -89,8 +89,8 @@ void main() {
     final controller = UnitPathController(
       unitId: 'sec_1_unit_1',
       repository: _FakeUnitLearningSource([
-        _node(order: 1, completed: true),
-        _node(order: 2, inProgress: true),
+        _node(order: 1, completed: true, unlocked: true),
+        _node(order: 2, inProgress: true, unlocked: true),
         _node(order: 3, boss: true),
       ]),
     );
@@ -106,9 +106,9 @@ void main() {
     final controller = UnitPathController(
       unitId: 'sec_1_unit_1',
       repository: _FakeUnitLearningSource([
-        _node(order: 1, completed: true),
-        _node(order: 2, completed: true),
-        _node(order: 3, boss: true),
+        _node(order: 1, completed: true, unlocked: true),
+        _node(order: 2, completed: true, unlocked: true),
+        _node(order: 3, boss: true, unlocked: true),
       ]),
     );
 
@@ -120,8 +120,8 @@ void main() {
   });
 
   test('returns the next learning node for completion pipeline', () async {
-    final first = _node(order: 1, completed: true);
-    final second = _node(order: 2);
+    final first = _node(order: 1, completed: true, unlocked: true);
+    final second = _node(order: 2, unlocked: true);
 
     final controller = UnitPathController(
       unitId: 'sec_1_unit_1',
