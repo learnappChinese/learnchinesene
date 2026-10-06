@@ -708,10 +708,12 @@ class _BossBattleScreenState extends State<BossBattleScreen>
         correctIndex: correctIndex < 0 ? 0 : correctIndex,
         selectedAnswerIndex:
             selectedIndex == null || selectedIndex < 0 ? null : selectedIndex,
-        feedbackText: controller.feedbackText.isEmpty
-            ? controller.phaseHint
-            : controller.feedbackText,
-        onSpeak: () => _speakQuestion(question),
+        feedbackText: controller.lastAnswerCorrect.value == null
+            ? null
+            : controller.lastAnswerCorrect.value == true
+                ? 'Chính xác!'
+                : controller.feedbackText,
+        onSpeak: (_) => _speakQuestion(question),
         onAnswer: _handleAnswer,
       ),
     );
