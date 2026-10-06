@@ -105,7 +105,7 @@ class UnitLearningNode {
       challengeCount: asInt(map['challenge_count']),
       attempts: asInt(map['attempts']),
       bestScore: asInt(map['best_score']),
-      stars: asInt(map['stars']).clamp(0, 3),
+      stars: asInt(map['stars']).clamp(0, 3).toInt(),
       rawUnlocked: map['is_unlocked'] == true,
       completed: map['is_completed'] == true,
       inProgress: map['in_progress'] == true,
