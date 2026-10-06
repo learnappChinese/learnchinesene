@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../model/unit_learning_node.dart';
 
 class UnitBossNode extends StatelessWidget {
