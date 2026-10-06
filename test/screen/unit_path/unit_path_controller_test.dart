@@ -72,7 +72,7 @@ void main() {
     final controller = UnitPathController(
       unitId: 'sec_2_unit_1',
       repository: _FakeUnitLearningSource([
-        _node(order: 1, unlocked: true),
+        _node(order: 1),
         _node(order: 2),
         _node(order: 3, boss: true),
       ]),
