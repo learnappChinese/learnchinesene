@@ -10,7 +10,12 @@ import 'package:get/get.dart';
 class _HomeController extends HomeController {
   @override
   Future<void> refreshStats() async {
-    stats.value = {'streak': 9, 'learned': 24, 'correct': 10};
+    stats.value = {
+      'streak': 9,
+      'learned': 24,
+      'correct': 10,
+      'totalExp': 256,
+    };
   }
 }
 

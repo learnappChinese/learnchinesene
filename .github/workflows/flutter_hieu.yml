@@ -4,12 +4,15 @@ on:
   push:
     branches:
       - hieu
+  pull_request:
+    branches:
+      - hieu
   workflow_dispatch:
 
 jobs:
   verify-and-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -30,18 +33,31 @@ jobs:
       - name: Cloud-only data guard
         run: python3 tool/verify_cloud_only.py
 
+      - name: TTS singleton guard
+        run: python3 tool/verify_tts_singleton.py
+
       - name: Format game code
         run: >-
           dart format
+          lib/core/repositories/progress_repository.dart
+          lib/core/services/tts_service.dart
+          lib/screen/unit_path
           lib/screen/boss_battle
+          lib/screen/duolingo
           lib/screen/game_hub/game_hub_screen.dart
           test/screen/boss_battle
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Boss Battle tests
-        run: flutter test test/screen/boss_battle
+      - name: Core game tests
+        run: >-
+          flutter test --concurrency=1
+          test/screen/boss_battle
+          test/screen/unit_path
+
+      - name: Full test suite
+        run: flutter test --concurrency=1
 
       - name: Build optimized release APKs
         run: flutter build apk --release --split-per-abi

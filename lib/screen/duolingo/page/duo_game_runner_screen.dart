@@ -17,6 +17,9 @@ class DuoGameRunnerScreen extends StatefulWidget {
   final String gameCode;
   final String levelId;
   final String gameName;
+  final String? unitId;
+  final int? nextGameId;
+  final String? nextLevelId;
 
   const DuoGameRunnerScreen({
     super.key,
@@ -24,6 +27,9 @@ class DuoGameRunnerScreen extends StatefulWidget {
     required this.gameCode,
     required this.levelId,
     required this.gameName,
+    this.unitId,
+    this.nextGameId,
+    this.nextLevelId,
   });
 
   @override
@@ -42,6 +48,8 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
         gameId: widget.gameId,
         gameCode: widget.gameCode,
         levelId: widget.levelId,
+        nextGameId: widget.nextGameId,
+        nextLevelId: widget.nextLevelId,
       ),
       tag: tag,
     );
@@ -78,7 +86,8 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
         isAnswered: controller.isAnsweredCorrectly.value != null,
         onCheck: controller.submitAnswer,
       );
-    } else if (widget.gameCode == 'word_connect') {
+    } else if (widget.gameCode == 'word_connect' ||
+        widget.gameCode == 'match_pairs') {
       gameplayWidget = DuoWordConnectWidget(
         pairs: List<Map<String, String>>.from(controller.challenges),
         isAnswered: controller.isAnsweredCorrectly.value != null,

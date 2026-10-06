@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
 
 import '../../../core/database/db_helper.dart';
@@ -8,14 +7,16 @@ import '../../../core/models/example_sentence.dart';
 import '../../../core/models/hsk_level.dart';
 import '../../../core/models/word.dart';
 import '../../../core/services/gemini_service.dart';
+import '../../../core/services/tts_service.dart';
 
 class LessonsController extends GetxController {
-  LessonsController({DbHelper? database})
-      : _database = database ?? DbHelper.instance;
+  LessonsController({DbHelper? database, TtsService? tts})
+      : _database = database ?? DbHelper.instance,
+        _tts = tts ?? Get.find<TtsService>();
 
   final DbHelper _database;
   final GeminiService _gemini = Get.find<GeminiService>();
-  final FlutterTts _tts = FlutterTts();
+  final TtsService _tts;
 
   final selectedLevel = 1.obs;
   final levels = <HskLevel>[].obs;
@@ -37,14 +38,12 @@ class LessonsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _tts.setLanguage('zh-CN');
-    _tts.setSpeechRate(0.85);
     loadCurriculum();
   }
 
   Future<void> speak(String text) async {
     if (text.trim().isNotEmpty) {
-      await _tts.speak(text);
+      await _tts.speakChinese(text);
     }
   }
 

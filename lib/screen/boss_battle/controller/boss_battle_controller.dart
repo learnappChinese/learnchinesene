@@ -26,6 +26,7 @@ enum BossBattlePhase {
 class BossBattleController extends GetxController {
   BossBattleController({
     required BossBattleQuestionSource source,
+    BossBattleProgressSink? progressSink,
     BossBattleQuestionGenerator? generator,
     BossBattleRules? rules,
     this.stage,
@@ -33,6 +34,7 @@ class BossBattleController extends GetxController {
     this.attackDelay = const Duration(milliseconds: 560),
     this.transitionDelay = const Duration(milliseconds: 460),
   })  : _source = source,
+        _progressSink = progressSink,
         _generator = generator ?? BossBattleQuestionGenerator(),
         _rules = rules ?? const BossBattleRules();
 
@@ -40,6 +42,7 @@ class BossBattleController extends GetxController {
   static const int maxPlayerHp = 100;
 
   final BossBattleQuestionSource _source;
+  final BossBattleProgressSink? _progressSink;
   final BossBattleQuestionGenerator _generator;
   final BossBattleRules _rules;
   final BossBattleStage? stage;
@@ -65,8 +68,11 @@ class BossBattleController extends GetxController {
   final sessionId = ''.obs;
   final lastBossDamage = 0.obs;
   final lastPlayerDamage = 0.obs;
+  final resultStars = 0.obs;
+  final progressSaveFailed = false.obs;
 
   int _flowToken = 0;
+  bool _resultPersisted = false;
 
   BossBattleQuestion? get currentQuestion {
     final index = currentIndex.value;
@@ -267,7 +273,11 @@ class BossBattleController extends GetxController {
     if (token != _flowToken) return;
 
     isInputLocked.value = true;
+    resultStars.value = _starsForResult(won);
     phase.value = won ? BossBattlePhase.won : BossBattlePhase.lost;
+
+    await _persistResult(won: won);
+    if (token != _flowToken) return;
 
     if (!await _wait(attackDelay, token)) return;
 
@@ -277,6 +287,40 @@ class BossBattleController extends GetxController {
     }
 
     phase.value = BossBattlePhase.result;
+  }
+
+  int _starsForResult(bool won) {
+    if (!won) return 0;
+
+    final attempts = correctCount.value + wrongCount.value;
+    final accuracy =
+        attempts == 0 ? 1.0 : correctCount.value / attempts;
+
+    if (accuracy >= .9 && playerHealthFraction >= .6) return 3;
+    if (accuracy >= .75) return 2;
+    return 1;
+  }
+
+  Future<void> _persistResult({required bool won}) async {
+    final sink = _progressSink;
+    final battleStage = stage;
+    if (_resultPersisted || sink == null || battleStage == null) return;
+
+    _resultPersisted = true;
+    progressSaveFailed.value = false;
+
+    try {
+      await sink.recordResult(
+        stageId: battleStage.id,
+        score: score.value,
+        stars: resultStars.value,
+        bestCombo: maxCombo.value,
+        won: won,
+      );
+    } catch (_) {
+      progressSaveFailed.value = true;
+      _resultPersisted = false;
+    }
   }
 
   Future<bool> _wait(Duration duration, int token) async {
@@ -302,6 +346,9 @@ class BossBattleController extends GetxController {
     errorMessage.value = '';
     lastBossDamage.value = 0;
     lastPlayerDamage.value = 0;
+    resultStars.value = 0;
+    progressSaveFailed.value = false;
+    _resultPersisted = false;
   }
 
   @override
