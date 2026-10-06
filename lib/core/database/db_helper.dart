@@ -213,6 +213,32 @@ class DbHelper {
         .toList();
   }
 
+  Future<List<ExampleSentence>> getExamplesByUnit(int unitId) async {
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+          .from('lexicon_examples')
+          .select(
+            'id, word_id, example_order, sentence_cn, sentence_pinyin, sentence_vi',
+          )
+          .eq('unit_id', unitId)
+          .order('example_order')
+          .order('id'),
+    );
+
+    return rows
+        .map(
+          (row) => ExampleSentence.fromMap({
+            'id': row['id'],
+            'word_id': row['word_id'],
+            'chinese': row['sentence_cn'],
+            'pinyin': row['sentence_pinyin'],
+            'vietnamese': row['sentence_vi'],
+            'order_index': row['example_order'] ?? row['id'],
+          }),
+        )
+        .toList();
+  }
+
   Future<List<Word>> getReviewWords() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return <Word>[];
@@ -264,7 +290,8 @@ class DbHelper {
   }
 
   Future<Map<String, num>> getStats() async {
-    if (_client.auth.currentUser == null) {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
       return {
         'learned': 0,
         'mastered': 0,
@@ -272,20 +299,41 @@ class DbHelper {
         'wrong': 0,
         'speakingAttempts': 0,
         'speakingAverage': 0,
+        'streak': 0,
+        'totalExp': 0,
+        'favorites': 0,
+        'wordsMastered': 0,
       };
     }
-    final rows = List<Map<String, dynamic>>.from(
+
+    final learningRows = List<Map<String, dynamic>>.from(
       await _client.rpc('learning_stats'),
     );
-    final row = rows.isEmpty ? <String, dynamic>{} : rows.first;
+    final learning =
+        learningRows.isEmpty ? <String, dynamic>{} : learningRows.first;
+
+    final appRows = List<Map<String, dynamic>>.from(
+      await _client
+          .from('app_user_stats')
+          .select(
+            'total_exp, current_streak, total_words_mastered, total_favorites',
+          )
+          .eq('user_id', userId)
+          .limit(1),
+    );
+    final app = appRows.isEmpty ? <String, dynamic>{} : appRows.first;
 
     return {
-      'learned': (row['learned'] as num?) ?? 0,
-      'mastered': (row['mastered'] as num?) ?? 0,
-      'correct': (row['correct'] as num?) ?? 0,
-      'wrong': (row['wrong'] as num?) ?? 0,
-      'speakingAttempts': (row['speaking_attempts'] as num?) ?? 0,
-      'speakingAverage': (row['speaking_average'] as num?) ?? 0,
+      'learned': (learning['learned'] as num?) ?? 0,
+      'mastered': (learning['mastered'] as num?) ?? 0,
+      'correct': (learning['correct'] as num?) ?? 0,
+      'wrong': (learning['wrong'] as num?) ?? 0,
+      'speakingAttempts': (learning['speaking_attempts'] as num?) ?? 0,
+      'speakingAverage': (learning['speaking_average'] as num?) ?? 0,
+      'streak': (app['current_streak'] as num?) ?? 0,
+      'totalExp': (app['total_exp'] as num?) ?? 0,
+      'favorites': (app['total_favorites'] as num?) ?? 0,
+      'wordsMastered': (app['total_words_mastered'] as num?) ?? 0,
     };
   }
 

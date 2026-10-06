@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'duo_game_repository.dart';
 import '../../../core/database/duo_db_helper.dart';
+import '../../home/controller/home_controller.dart';
 
 class DuoGameRunnerController extends GetxController {
   final int gameId;
@@ -110,7 +111,7 @@ class DuoGameRunnerController extends GetxController {
       incorrectChallenges.add(challenges[currentIndex.value]);
     }
 
-    // Tự động lưu tiến trình dở dang vào SQLite
+    // Tự động lưu session dở dang vào Supabase (guest dùng local fallback)
     await DuoDbHelper.instance.saveActiveSession(
       gameId,
       levelId,
@@ -180,6 +181,10 @@ class DuoGameRunnerController extends GetxController {
       stars,
       passed,
     );
+
+    if (Get.isRegistered<HomeController>()) {
+      await Get.find<HomeController>().refreshStats();
+    }
 
     // Xử lý logic Unlock Level kế tiếp nếu thi đỗ
     if (passed) {
