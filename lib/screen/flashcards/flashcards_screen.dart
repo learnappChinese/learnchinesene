@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'controller/flashcards_controller.dart';
 import '../../core/models/word.dart';
 import '../../core/responsive/responsive_layout.dart';
+import '../../core/widgets/learning_scene_background.dart';
 
 class FlashcardsScreen extends StatefulWidget {
   const FlashcardsScreen({super.key});
@@ -107,7 +108,10 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: _buildBody(context),
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.lanternTown,
+        child: _buildBody(context),
+      ),
     );
   }
 

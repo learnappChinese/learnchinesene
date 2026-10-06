@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import 'package:get/get.dart';
 import '../controller/hanzi_writing_home_controller.dart';
 import '../../../core/models/hanzi_character.dart';
+import '../../../core/widgets/learning_scene_background.dart';
 import 'hanzi_writing_screen.dart';
 
 class HanziWritingHomeScreen extends StatefulWidget {
@@ -58,14 +59,16 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
           'Luyện viết chữ Hán',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: _buildBody(),
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.bambooVillage,
+        child: _buildBody(),
+      ),
     );
   }
 

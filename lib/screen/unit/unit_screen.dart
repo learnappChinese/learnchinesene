@@ -6,6 +6,7 @@ import '../../core/responsive/responsive_layout.dart';
 import '../learning_overview/learning_overview_screen.dart';
 import 'controller/unit_controller.dart';
 import '../../core/models/unit_model.dart';
+import '../../core/widgets/learning_scene_background.dart';
 
 class UnitScreen extends StatefulWidget {
   const UnitScreen({super.key});
@@ -33,7 +34,10 @@ class _UnitScreenState extends State<UnitScreen> {
         title: Text(controller.title,
             style: const TextStyle(fontWeight: FontWeight.w800)),
       ),
-      body: _buildUnitCatalog(context),
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.bambooVillage,
+        child: _buildUnitCatalog(context),
+      ),
     );
   }
 

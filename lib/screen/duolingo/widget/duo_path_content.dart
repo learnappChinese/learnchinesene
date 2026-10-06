@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/game_visual_tokens.dart';
 import '../duo_stage_node.dart';
 
 class DuoPathItem extends StatelessWidget {
@@ -42,43 +43,99 @@ class DuoPathItem extends StatelessWidget {
         if (showSectionHeader)
           Container(
             width: double.infinity,
-            margin: const EdgeInsets.only(top: 24, bottom: 8),
+            margin: const EdgeInsets.only(top: 28, bottom: 10),
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-            color: Colors.blue.shade800,
-            child: Text(
-              'PHẦN $secNum: $secTitle'.toUpperCase(),
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  GameVisualTokens.crimsonDark,
+                  GameVisualTokens.crimson,
+                  GameVisualTokens.crimsonDark,
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: GameVisualTokens.crimsonDark.withValues(alpha: 0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('🏮 ', style: TextStyle(fontSize: 16)),
+                Flexible(
+                  child: Text(
+                    'PHẦN $secNum: $secTitle'.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.1,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const Text(' 🏮', style: TextStyle(fontSize: 16)),
+              ],
             ),
           ),
         if (showUnitHeader)
           Container(
             width: double.infinity,
             margin:
-                const EdgeInsets.only(top: 8, bottom: 16, left: 16, right: 16),
+                const EdgeInsets.only(top: 8, bottom: 18, left: 16, right: 16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.shade200),
+              color: GameVisualTokens.parchment,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: GameVisualTokens.imperialGold.withValues(alpha: 0.45),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: Text(
-              'Chương $unitNum: $unitTitle',
-              style: TextStyle(
-                  color: Colors.blue.shade900,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: GameVisualTokens.jade.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text('📜', style: TextStyle(fontSize: 16)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Chương $unitNum: $unitTitle',
+                    style: const TextStyle(
+                      color: GameVisualTokens.templeWood,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         if (index > 0 && !showSectionHeader && !showUnitHeader)
           Container(
             width: 4,
             height: 30,
-            color: (isUnlocked && cCount > 0)
-                ? Colors.blue.shade300
-                : Colors.grey.shade300,
+            decoration: BoxDecoration(
+              color: (isUnlocked && cCount > 0)
+                  ? GameVisualTokens.imperialGold
+                  : Colors.grey.shade400,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
         Opacity(
           opacity: cCount == 0 ? 0.4 : 1.0,
@@ -118,39 +175,70 @@ class DuoPathHeader extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.1),
+              gradient: RadialGradient(
+                colors: [
+                  GameVisualTokens.imperialGold.withValues(alpha: 0.25),
+                  GameVisualTokens.imperialGold.withValues(alpha: 0.05),
+                ],
+              ),
               shape: BoxShape.circle,
+              border: Border.all(
+                color: GameVisualTokens.imperialGold.withValues(alpha: 0.5),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: GameVisualTokens.imperialGold.withValues(alpha: 0.2),
+                  blurRadius: 16,
+                ),
+              ],
             ),
             child: Icon(
               icon,
-              color: Colors.blue,
-              size: 64,
+              color: GameVisualTokens.imperialGold,
+              size: 56,
             ),
           ),
           const SizedBox(height: 16),
           Text(
             gameName.toUpperCase(),
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.1,
+              color: GameVisualTokens.templeWood,
+            ),
           ),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40.0),
             child: Text(
               description,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
               textAlign: TextAlign.center,
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            'TỔNG SỐ: $levelCount MÀN CHƠI',
-            style: TextStyle(
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: GameVisualTokens.jade.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: GameVisualTokens.jade.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Text(
+              'TỔNG SỐ: $levelCount MÀN CHƠI',
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue.shade700,
-                letterSpacing: 1.2),
+                color: GameVisualTokens.jadeDark,
+                letterSpacing: 1.2,
+              ),
+            ),
           ),
           const SizedBox(height: 24),
         ],

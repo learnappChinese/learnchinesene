@@ -3,6 +3,7 @@ import 'widget/conversation_bubble.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/primary_button.dart';
+import '../../core/widgets/learning_scene_background.dart';
 import 'controller/conversations_controller.dart';
 
 class ConversationsScreen extends StatefulWidget {
@@ -27,14 +28,16 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           'Hội thoại tình huống AI',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: _buildBody(context),
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.bambooVillage,
+        child: _buildBody(context),
+      ),
     );
   }
 

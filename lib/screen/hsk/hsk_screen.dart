@@ -7,6 +7,7 @@ import '../../core/responsive/responsive_layout.dart';
 import '../unit/unit_screen.dart';
 import 'controller/hsk_controller.dart';
 import '../../core/models/hsk_level.dart';
+import '../../core/widgets/learning_scene_background.dart';
 import '../subscription/controller/subscription_controller.dart';
 import '../../core/helper/upgrade_dialog_helper.dart';
 
@@ -38,7 +39,10 @@ class _HskScreenState extends State<HskScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: _buildLevelCatalog(context),
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.bambooVillage,
+        child: _buildLevelCatalog(context),
+      ),
     );
   }
 
@@ -124,7 +128,7 @@ class _HskScreenState extends State<HskScreen> {
                     maxCrossAxisExtent: 450,
                     mainAxisSpacing: 16,
                     crossAxisSpacing: 16,
-                    mainAxisExtent: 110,
+                    mainAxisExtent: 125,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => Obx(() {

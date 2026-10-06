@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'widget/lesson_content.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/game_visual_tokens.dart';
+import '../../core/widgets/learning_scene_background.dart';
 import 'controller/lessons_controller.dart';
 
 class LessonsScreen extends StatefulWidget {
@@ -26,14 +28,17 @@ class _LessonsScreenState extends State<LessonsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text(
           'Bài học theo lộ trình',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: _buildBody(),
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.bambooVillage,
+        child: _buildBody(),
+      ),
     );
   }
 
@@ -45,7 +50,22 @@ class _LessonsScreenState extends State<LessonsScreen> {
   Widget _buildLevelSelector() {
     return Obx(() => Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Card(
+          child: Container(
+            decoration: BoxDecoration(
+              color: GameVisualTokens.parchment,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: GameVisualTokens.imperialGold.withValues(alpha: 0.4),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Row(
@@ -157,7 +177,10 @@ class _LessonDetailView extends StatelessWidget {
             ],
           ),
         ),
-        body: _buildDetailContent(),
+        body: LearningSceneBackground(
+          theme: LearningSceneTheme.bambooVillage,
+          child: _buildDetailContent(),
+        ),
       ),
     );
   }

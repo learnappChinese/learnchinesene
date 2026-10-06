@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/game_visual_tokens.dart';
 
 class LessonDialogueTab extends StatelessWidget {
   const LessonDialogueTab(
@@ -271,13 +272,44 @@ class LessonTopicTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: GameVisualTokens.parchment,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: GameVisualTokens.imperialGold.withValues(alpha: 0.35),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: AppColors.red.withOpacity(0.1),
-          foregroundColor: AppColors.red,
-          child: Text('$number'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: GameVisualTokens.crimson.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: GameVisualTokens.crimson.withValues(alpha: 0.3),
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            '$number',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: GameVisualTokens.crimsonDark,
+              fontSize: 16,
+            ),
+          ),
         ),
         title: Text(
           title,
@@ -289,7 +321,7 @@ class LessonTopicTile extends StatelessWidget {
           style: const TextStyle(color: AppColors.muted, fontSize: 13),
         ),
         trailing: const Icon(Icons.arrow_forward_ios_rounded,
-            size: 16, color: AppColors.muted),
+            size: 16, color: GameVisualTokens.templeWood),
         onTap: onTap,
       ),
     );
