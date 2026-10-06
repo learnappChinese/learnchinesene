@@ -6,6 +6,7 @@ abstract final class DuoGameVisuals {
       case 'learn_words':
         return Icons.psychology;
       case 'word_connect':
+      case 'match_pairs':
         return Icons.link;
       case 'select_answer':
         return Icons.adjust;
@@ -33,6 +34,7 @@ abstract final class DuoGameVisuals {
       case 'learn_words':
         return Colors.green;
       case 'word_connect':
+      case 'match_pairs':
         return Colors.blue;
       case 'select_answer':
         return Colors.orange;
@@ -60,6 +62,7 @@ abstract final class DuoGameVisuals {
       case 'learn_words':
         return '🧠';
       case 'word_connect':
+      case 'match_pairs':
         return '🔗';
       case 'select_answer':
         return '🎯';
