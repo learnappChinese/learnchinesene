@@ -33,6 +33,9 @@ jobs:
       - name: Cloud-only data guard
         run: python3 tool/verify_cloud_only.py
 
+      - name: TTS singleton guard
+        run: python3 tool/verify_tts_singleton.py
+
       - name: Format game code
         run: >-
           dart format
