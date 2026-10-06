@@ -51,17 +51,26 @@ class UnitLevelNode extends StatelessWidget {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(24),
                   onTap: onTap,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
-                    child: Row(
-                      children: [
-                        _MissionBadge(
-                          icon: node.gameIcon,
-                          locked: locked,
-                          completed: completed,
-                          accent: accent,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final compact = constraints.maxWidth < 310;
+                      return Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          compact ? 10 : 14,
+                          13,
+                          compact ? 10 : 14,
+                          13,
                         ),
-                        const SizedBox(width: 12),
+                        child: Row(
+                          children: [
+                            _MissionBadge(
+                              icon: node.gameIcon,
+                              locked: locked,
+                              completed: completed,
+                              accent: accent,
+                              size: compact ? 44 : 54,
+                            ),
+                            SizedBox(width: compact ? 8 : 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,15 +154,19 @@ class UnitLevelNode extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          locked
-                              ? Icons.lock_rounded
-                              : Icons.chevron_right_rounded,
-                          color: accent,
+                            if (!compact) ...[
+                              const SizedBox(width: 8),
+                              Icon(
+                                locked
+                                    ? Icons.lock_rounded
+                                    : Icons.chevron_right_rounded,
+                                color: accent,
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -198,18 +211,20 @@ class _MissionBadge extends StatelessWidget {
     required this.locked,
     required this.completed,
     required this.accent,
+    required this.size,
   });
 
   final String icon;
   final bool locked;
   final bool completed;
   final Color accent;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 54,
-      height: 54,
+      width: size,
+      height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
