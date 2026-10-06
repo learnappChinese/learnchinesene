@@ -3,11 +3,12 @@ import 'package:get/get.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/game_visual_tokens.dart';
-import 'boss_battle_screen.dart';
 import 'data/boss_battle_repository.dart';
 import 'controller/boss_stage_map_controller.dart';
 import 'model/boss_battle_stage.dart';
 import 'widget/boss_battle_character_art.dart';
+import '../unit_path/binding/unit_path_binding.dart';
+import '../unit_path/page/unit_path_screen.dart';
 
 class BossBattleStageMapScreen extends StatefulWidget {
   const BossBattleStageMapScreen({super.key});
@@ -107,7 +108,8 @@ class _BossBattleStageMapScreenState extends State<BossBattleStageMapScreen> {
                     next: next,
                     index: index,
                     onTap: () => Get.to(
-                      () => BossBattleScreen(stage: stage),
+                      () => UnitPathScreen(stage: stage),
+                      binding: UnitPathBinding(unitId: stage.unitId),
                     ),
                   );
                 },
