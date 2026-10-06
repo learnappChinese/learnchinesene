@@ -4,7 +4,9 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
 
 import '../../../core/database/db_helper.dart';
+import '../../../core/models/example_sentence.dart';
 import '../../../core/models/hsk_level.dart';
+import '../../../core/models/word.dart';
 import '../../../core/services/gemini_service.dart';
 
 class LessonsController extends GetxController {
@@ -129,8 +131,8 @@ class LessonsController extends GetxController {
         _database.getUnitMetrics(unitId),
       ]);
 
-      final words = results[0] as dynamic;
-      final examples = results[1] as dynamic;
+      final words = results[0] as List<Word>;
+      final examples = results[1] as List<ExampleSentence>;
       final metrics = results[2] as Map<String, int>;
 
       keyVocabulary.assignAll(
