@@ -163,6 +163,32 @@ class DuoDbHelper {
     }).toList();
   }
 
+  /// Returns the persisted per-device state used by guest Unit journeys.
+  ///
+  /// Signed-in users are cloud-first, so callers should rely on the RPC state
+  /// and this method intentionally returns an empty map for them.
+  Future<Map<String, dynamic>> getGuestLevelState(
+    int gameId,
+    String levelId,
+  ) async {
+    if (_userId != null) return <String, dynamic>{};
+
+    final prefs = await SharedPreferences.getInstance();
+    final progress = _decodeMap(
+      prefs.getString(_progressKey(gameId, levelId)),
+    );
+    final session = _decodeMap(
+      prefs.getString(_sessionKey(gameId, levelId)),
+    );
+
+    return <String, dynamic>{
+      ...progress,
+      'in_progress': session['status'] == 'active',
+      'current_index':
+          (session['current_index'] as num?)?.toInt() ?? 0,
+    };
+  }
+
   Future<void> saveLevelProgress(
     int gameId,
     String levelId,
