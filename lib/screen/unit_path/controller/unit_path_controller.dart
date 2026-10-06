@@ -53,8 +53,9 @@ class UnitPathController extends GetxController {
 
     for (final node in loaded) {
       if (node.isBoss) {
-        final unlocked =
-            node.completed || (firstLearningSeen && allPreviousLearningCompleted);
+        final unlocked = node.completed ||
+            node.rawUnlocked ||
+            (firstLearningSeen && allPreviousLearningCompleted);
         result.add(
           node.copyWith(
             state: node.completed
@@ -68,7 +69,7 @@ class UnitPathController extends GetxController {
       }
 
       final unlocked =
-          node.rawUnlocked || !firstLearningSeen || allPreviousLearningCompleted;
+          node.rawUnlocked || (firstLearningSeen && allPreviousLearningCompleted);
       final state = node.completed
           ? UnitLearningNodeState.completed
           : node.inProgress
