@@ -14,7 +14,18 @@ abstract class BossBattleQuestionSource {
   Future<void> close();
 }
 
-class BossBattleRepository implements BossBattleQuestionSource {
+abstract class BossBattleProgressSink {
+  Future<void> recordResult({
+    required int stageId,
+    required int score,
+    required int stars,
+    required int bestCombo,
+    required bool won,
+  });
+}
+
+class BossBattleRepository
+    implements BossBattleQuestionSource, BossBattleProgressSink {
   BossBattleRepository({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
 
@@ -117,6 +128,28 @@ class BossBattleRepository implements BossBattleQuestionSource {
       }
     }
     return null;
+  }
+
+  @override
+  Future<void> recordResult({
+    required int stageId,
+    required int score,
+    required int stars,
+    required int bestCombo,
+    required bool won,
+  }) async {
+    if (_client.auth.currentUser == null) return;
+
+    await _client.rpc(
+      'record_boss_progress',
+      params: {
+        'p_stage_id': stageId,
+        'p_score': score,
+        'p_stars': stars,
+        'p_best_combo': bestCombo,
+        'p_won': won,
+      },
+    );
   }
 
   @override
