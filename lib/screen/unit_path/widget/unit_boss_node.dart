@@ -135,7 +135,7 @@ class UnitBossNode extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    locked ? Icons.lock_rounded : Icons.swords,
+                    locked ? Icons.lock_rounded : Icons.local_fire_department_rounded,
                     color: locked
                         ? Colors.white54
                         : const Color(0xFFFFD374),
