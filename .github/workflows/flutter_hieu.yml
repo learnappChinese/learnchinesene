@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - hieu
+  pull_request:
+    branches:
+      - hieu
   workflow_dispatch:
 
 jobs:
@@ -33,7 +36,11 @@ jobs:
       - name: Format game code
         run: >-
           dart format
+          lib/core/repositories/progress_repository.dart
+          lib/core/services/tts_service.dart
+          lib/screen/unit_path
           lib/screen/boss_battle
+          lib/screen/duolingo
           lib/screen/game_hub/game_hub_screen.dart
           test/screen/boss_battle
 
