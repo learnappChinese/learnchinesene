@@ -1,18 +1,25 @@
 import 'package:get/get.dart';
 import 'duo_game_repository.dart';
 import '../../../core/database/duo_db_helper.dart';
+import '../../../core/repositories/progress_repository.dart';
 import '../../home/controller/home_controller.dart';
 
 class DuoGameRunnerController extends GetxController {
   final int gameId;
   final String gameCode;
   final String levelId;
+  final int? nextGameId;
+  final String? nextLevelId;
+  final ProgressRepository _progressRepository;
 
   DuoGameRunnerController({
     required this.gameId,
     required this.gameCode,
     required this.levelId,
-  });
+    this.nextGameId,
+    this.nextLevelId,
+    ProgressRepository? progressRepository,
+  }) : _progressRepository = progressRepository ?? ProgressRepository();
 
   final isLoading = true.obs;
   
@@ -49,7 +56,7 @@ class DuoGameRunnerController extends GetxController {
       List<dynamic> list = [];
       if (gameCode == 'learn_words') {
         list = await DuoGameRepository.instance.getLearnWordsQuestions(levelId);
-      } else if (gameCode == 'word_connect') {
+      } else if (gameCode == 'word_connect' || gameCode == 'match_pairs') {
         list = await DuoGameRepository.instance.getWordConnectQuestions(levelId);
       } else if (gameCode == 'select_answer') {
         list = await DuoGameRepository.instance.getSelectQuestions(levelId);
@@ -173,21 +180,24 @@ class DuoGameRunnerController extends GetxController {
     // Xóa session dở dang vì đã hoàn thành
     await DuoDbHelper.instance.clearActiveSession(gameId, levelId);
 
-    // Lưu kết quả tiến trình & mở khóa màn sau
-    await DuoGameRepository.instance.saveProgress(
-      gameId,
-      levelId,
-      score.value,
-      stars,
-      passed,
+    // Một pipeline duy nhất: ghi cloud progress + mở node kế tiếp nếu
+    // Unit journey đã truyền nextGameId/nextLevelId.
+    await _progressRepository.completeLevel(
+      gameId: gameId,
+      levelId: levelId,
+      score: score.value,
+      stars: stars,
+      passed: passed,
+      nextGameId: nextGameId,
+      nextLevelId: nextLevelId,
     );
 
     if (Get.isRegistered<HomeController>()) {
       await Get.find<HomeController>().refreshStats();
     }
 
-    // Xử lý logic Unlock Level kế tiếp nếu thi đỗ
-    if (passed) {
+    // Luồng Game Center cũ vẫn mở level tiếp theo của cùng game.
+    if (passed && (nextGameId == null || nextLevelId == null)) {
       await _unlockNextAvailableLevel();
     }
   }
