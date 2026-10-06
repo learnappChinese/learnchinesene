@@ -1,11 +1,11 @@
-import '../../screen/duolingo/controller/duo_game_repository.dart';
+import '../database/duo_db_helper.dart';
 
 class ProgressRepository {
   ProgressRepository({
-    DuoGameRepository? duoRepository,
-  }) : _duoRepository = duoRepository ?? DuoGameRepository.instance;
+    DuoDbHelper? database,
+  }) : _database = database ?? DuoDbHelper.instance;
 
-  final DuoGameRepository _duoRepository;
+  final DuoDbHelper _database;
 
   Future<void> completeLevel({
     required int gameId,
@@ -16,7 +16,7 @@ class ProgressRepository {
     int? nextGameId,
     String? nextLevelId,
   }) async {
-    await _duoRepository.saveProgress(
+    await _database.saveLevelProgress(
       gameId,
       levelId,
       score,
@@ -26,7 +26,7 @@ class ProgressRepository {
 
     if (!passed || nextGameId == null || nextLevelId == null) return;
 
-    await _duoRepository.unlockLevel(
+    await _database.unlockLevel(
       nextGameId,
       nextLevelId,
     );
