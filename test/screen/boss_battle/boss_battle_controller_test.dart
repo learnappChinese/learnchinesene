@@ -148,6 +148,81 @@ void main() {
   });
 
 
+  test('boss win persists stage score stars and combo once', () async {
+    final sink = _FakeProgressSink();
+    final controller = BossBattleController(
+      source: _FakeQuestionSource(_questions()),
+      progressSink: sink,
+      stage: _stage,
+      generator: BossBattleQuestionGenerator(),
+      resolveDelay: Duration.zero,
+      attackDelay: Duration.zero,
+      transitionDelay: Duration.zero,
+    );
+    addTearDown(controller.onClose);
+
+    await controller.startBattle();
+    controller.beginBattle();
+
+    var guard = 0;
+    while (controller.phase.value != BossBattlePhase.result && guard < 12) {
+      final question = controller.currentQuestion;
+      if (question == null) break;
+      await controller.answer(question.correctAnswer);
+      guard += 1;
+    }
+
+    expect(sink.calls, 1);
+    expect(sink.stageId, _stage.id);
+    expect(sink.won, isTrue);
+    expect(sink.score, greaterThan(0));
+    expect(sink.stars, inInclusiveRange(1, 3));
+    expect(sink.bestCombo, greaterThan(0));
+  });
+
+  test('boss loss persists attempt without victory stars', () async {
+    final sink = _FakeProgressSink();
+    const fragileStage = BossBattleStage(
+      id: 78,
+      unitId: 'sec_1_unit_2',
+      stageOrder: 2,
+      sectionNumber: 1,
+      unitNumber: 2,
+      title: 'Boss Unit 2',
+      questionCount: 12,
+      difficulty: 3,
+      bossName: 'Rồng Lửa',
+      bossHp: 100,
+      playerHp: 20,
+      themeCode: 'sunset',
+    );
+    final controller = BossBattleController(
+      source: _FakeQuestionSource(_questions()),
+      progressSink: sink,
+      stage: fragileStage,
+      generator: BossBattleQuestionGenerator(),
+      resolveDelay: Duration.zero,
+      attackDelay: Duration.zero,
+      transitionDelay: Duration.zero,
+    );
+    addTearDown(controller.onClose);
+
+    await controller.startBattle();
+    controller.beginBattle();
+    final question = controller.currentQuestion!;
+    final wrong = question.answers.firstWhere(
+      (answer) => answer != question.correctAnswer,
+    );
+    await controller.answer(wrong);
+
+    expect(controller.phase.value, BossBattlePhase.result);
+    expect(sink.calls, 1);
+    expect(sink.stageId, fragileStage.id);
+    expect(sink.won, isFalse);
+    expect(sink.stars, 0);
+  });
+
+
   test('stage victory persists boss progress exactly once', () async {
     final sink = _FakeProgressSink();
     const stage = BossBattleStage(
