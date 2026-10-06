@@ -8,6 +8,7 @@ import 'core/services/gemini_service.dart';
 import 'core/services/history_service.dart';
 import 'core/backend/supabase_service.dart';
 import 'core/services/iap_service.dart';
+import 'core/services/tts_service.dart';
 import 'screen/subscription/controller/subscription_controller.dart';
 
 void initDI() {
@@ -19,9 +20,7 @@ void initDI() {
   Get.lazyPut(() => HistoryService(), fenix: true);
   Get.lazyPut(() => SplashController(), fenix: true);
   Get.lazyPut(() => HomeController(), fenix: true);
-  Get.lazyPut(() => IAPService(), fenix: true);
-  Get.lazyPut(() => SubscriptionController(Get.find<IAPService>()),
-      fenix: true);
+  Get.put<TtsService>(TtsService(), permanent: true);
   Get.lazyPut(() => IAPService(), fenix: true);
   Get.lazyPut(() => SubscriptionController(Get.find<IAPService>()),
       fenix: true);
