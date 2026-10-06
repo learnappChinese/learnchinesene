@@ -243,7 +243,7 @@ class _ChapterHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'CHAPTER ${sectionNumber} · UNIT ${unitNumber}',
+                  'CHAPTER $sectionNumber · UNIT $unitNumber',
                   style: const TextStyle(
                     color: Color(0xFF9A5F20),
                     fontSize: 10,
