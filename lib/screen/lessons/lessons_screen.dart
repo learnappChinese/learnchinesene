@@ -29,7 +29,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
-          'Bài học chuyên đề AI',
+          'Bài học theo lộ trình',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
@@ -57,26 +57,35 @@ class _LessonsScreenState extends State<LessonsScreen> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: DropdownButton<int>(
-                      value: controller.selectedLevel.value,
-                      isExpanded: true,
-                      underline: const SizedBox(),
-                      items: List.generate(6, (index) {
-                        final lvl = index + 1;
-                        return DropdownMenuItem(
-                          value: lvl,
-                          child: Text('HSK $lvl',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600)),
-                        );
-                      }),
-                      onChanged: (val) {
-                        if (val != null) {
-                          controller.selectedLevel.value = val;
-                          controller.loadTopics();
-                        }
-                      },
-                    ),
+                    child: controller.levels.isEmpty
+                        ? const Text(
+                            'Đang tải cấp độ...',
+                            style: TextStyle(color: AppColors.muted),
+                          )
+                        : DropdownButton<int>(
+                            value: controller.selectedLevel.value,
+                            isExpanded: true,
+                            underline: const SizedBox(),
+                            items: controller.levels
+                                .map(
+                                  (level) => DropdownMenuItem<int>(
+                                    value: level.id,
+                                    child: Text(
+                                      level.title,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                controller.selectedLevel.value = val;
+                                controller.loadTopics();
+                              }
+                            },
+                          ),
                   ),
                 ],
               ),
