@@ -270,7 +270,7 @@ class _ChapterHeader extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(99),
                         child: LinearProgressIndicator(
-                          value: progress.clamp(0.0, 1.0),
+                          value: progress.clamp(0.0, 1.0).toDouble(),
                           minHeight: 7,
                           backgroundColor: const Color(0xFFE5D8BE),
                           valueColor: const AlwaysStoppedAnimation<Color>(
