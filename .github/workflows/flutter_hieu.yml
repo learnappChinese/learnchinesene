@@ -47,8 +47,11 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Boss Battle tests
-        run: flutter test test/screen/boss_battle
+      - name: Core game tests
+        run: >-
+          flutter test --concurrency=1
+          test/screen/boss_battle
+          test/screen/unit_path
 
       - name: Build optimized release APKs
         run: flutter build apk --release --split-per-abi
