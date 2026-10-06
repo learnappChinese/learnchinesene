@@ -6,10 +6,15 @@ import 'package:flash_learn_chinese/screen/dragon_panda/screens/boss_battle/boss
 import 'package:flash_learn_chinese/screen/dragon_panda/screens/boss_battle/boss_battle_victory_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
-import 'model/boss_battle_stage.dart';
+
+import '../../core/services/tts_service.dart';
+import '../home/controller/home_controller.dart';
 import '../dragon_panda/screens/boss_battle/widgets/boss_battle_gameplay_widgets.dart';
+import 'controller/boss_battle_controller.dart';
+import 'data/boss_battle_repository.dart';
+import 'model/boss_battle_question.dart';
+import 'model/boss_battle_stage.dart';
 
 enum _ActorState { idle, attacking, hurt, victory, defeated }
 
@@ -34,12 +39,12 @@ class _FloatingDamage {
 }
 
 class BossBattleScreen extends StatefulWidget {
-  final BossBattleStage? stage;
-
   const BossBattleScreen({
-    Key? key,
+    super.key,
     this.stage,
-  }) : super(key: key);
+  });
+
+  final BossBattleStage? stage;
 
   @override
   State<BossBattleScreen> createState() => _BossBattleScreenState();
@@ -47,19 +52,13 @@ class BossBattleScreen extends StatefulWidget {
 
 class _BossBattleScreenState extends State<BossBattleScreen>
     with SingleTickerProviderStateMixin {
-  late int bossHp;
-  late int maxBossHp;
-  late int playerHp;
-  final int maxPlayerHp = 200;
-  int combo = 3;
-  int maxCombo = 3;
-  int score = 0;
-  int correctCount = 0;
-  int currentQuestionIndex = 0;
+  static int _nextControllerId = 0;
 
-  bool isAnimating = false;
-  String? feedbackText;
-  int? selectedAnswerIndex;
+  late final String _controllerTag;
+  late final BossBattleController controller;
+  late final Worker _phaseWorker;
+  late final TtsService _tts;
+  late final AnimationController _ticker;
 
   _ActorState pandaState = _ActorState.idle;
   _ActorState dragonState = _ActorState.idle;
@@ -72,66 +71,75 @@ class _BossBattleScreenState extends State<BossBattleScreen>
   double screenFlashAlpha = 0.0;
   Offset cameraShakeOffset = Offset.zero;
 
-  final List<_FloatingDamage> _floatingDamages = [];
-
+  final List<_FloatingDamage> _floatingDamages = <_FloatingDamage>[];
   Timer? battleTimer;
   Timer? _damageTimer;
-  late final AnimationController _ticker;
   double _gameTime = 0.0;
 
   ui.Image? _bgImage;
   ui.Image? _pandaImage;
   ui.Image? _dragonImage;
-  bool _assetsLoaded = false;
 
-  final FlutterTts _tts = FlutterTts();
-
-  late List<_BattleQuestion> _questions;
+  bool? _wonResult;
+  bool _resultShown = false;
 
   @override
   void initState() {
     super.initState();
-    _initQuestions();
-    maxBossHp = widget.stage != null ? widget.stage!.bossHp : 500;
-    bossHp = widget.stage != null ? (widget.stage!.bossHp * 0.64).toInt() : 320;
-    playerHp = widget.stage != null ? widget.stage!.playerHp : 180;
-    _initTts();
+
+    _tts = Get.find<TtsService>();
+    _controllerTag =
+        'boss-battle-${widget.stage?.id ?? 'free'}-${_nextControllerId++}';
+
+    final repository = BossBattleRepository();
+    controller = Get.put(
+      BossBattleController(
+        source: repository,
+        progressSink: repository,
+        stage: widget.stage,
+      ),
+      tag: _controllerTag,
+    );
+
+    _phaseWorker = ever<BossBattlePhase>(
+      controller.phase,
+      _handlePhase,
+    );
+
     _loadImages();
 
     _ticker = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
     )..addListener(() {
-        setState(() {
-          _gameTime += 0.035;
-        });
+        if (!mounted) return;
+        setState(() => _gameTime += .035);
       });
     _ticker.repeat();
   }
 
   Future<void> _loadImages() async {
     try {
-      final results = await Future.wait([
+      final results = await Future.wait<ui.Image>([
         _loadUiImage('assets/images/backgrounds/boss_battle_bg.png'),
         _loadUiImage('assets/images/characters/panda_archer.png'),
         _loadUiImage('assets/images/characters/dragon_fire.png'),
       ], cleanUp: (image) => image.dispose());
+
       if (!mounted) {
         for (final image in results) {
           image.dispose();
         }
         return;
       }
-      if (mounted) {
-        setState(() {
-          _bgImage = results[0];
-          _pandaImage = results[1];
-          _dragonImage = results[2];
-          _assetsLoaded = true;
-        });
-      }
+
+      setState(() {
+        _bgImage = results[0];
+        _pandaImage = results[1];
+        _dragonImage = results[2];
+      });
     } catch (_) {
-      if (mounted) setState(() => _assetsLoaded = true);
+      // Canvas has a dark fallback while assets are unavailable.
     }
   }
 
@@ -146,360 +154,502 @@ class _BossBattleScreenState extends State<BossBattleScreen>
     }
   }
 
-  void _initQuestions() {
-    _questions = [
-      const _BattleQuestion(
-        prompt: 'nước lọc',
-        answers: [
-          _BattleAnswer(hanzi: '果汁', pinyin: 'guǒzhī'),
-          _BattleAnswer(hanzi: '水', pinyin: 'shuǐ'),
-          _BattleAnswer(hanzi: '茶', pinyin: 'chá'),
-          _BattleAnswer(hanzi: '可乐', pinyin: 'kělè'),
-        ],
-        correctIndex: 1,
-      ),
-      const _BattleQuestion(
-        prompt: 'uống trà',
-        answers: [
-          _BattleAnswer(hanzi: '喝茶', pinyin: 'hē chá'),
-          _BattleAnswer(hanzi: '吃饭', pinyin: 'chī fàn'),
-          _BattleAnswer(hanzi: '看书', pinyin: 'kàn shū'),
-          _BattleAnswer(hanzi: '睡觉', pinyin: 'shuì jiào'),
-        ],
-        correctIndex: 0,
-      ),
-      const _BattleQuestion(
-        prompt: 'ăn cơm',
-        answers: [
-          _BattleAnswer(hanzi: '喝水', pinyin: 'hē shuǐ'),
-          _BattleAnswer(hanzi: '跑步', pinyin: 'pǎo bù'),
-          _BattleAnswer(hanzi: '吃饭', pinyin: 'chī fàn'),
-          _BattleAnswer(hanzi: '说话', pinyin: 'shuō huà'),
-        ],
-        correctIndex: 2,
-      ),
-      const _BattleQuestion(
-        prompt: 'đọc sách',
-        answers: [
-          _BattleAnswer(hanzi: '听音乐', pinyin: 'tīng yīnyuè'),
-          _BattleAnswer(hanzi: '看书', pinyin: 'kàn shū'),
-          _BattleAnswer(hanzi: '写字', pinyin: 'xiě zì'),
-          _BattleAnswer(hanzi: '买东西', pinyin: 'mǎi dōngxi'),
-        ],
-        correctIndex: 1,
-      ),
-      const _BattleQuestion(
-        prompt: 'cà phê',
-        answers: [
-          _BattleAnswer(hanzi: '咖啡', pinyin: 'kāfēi'),
-          _BattleAnswer(hanzi: '牛奶', pinyin: 'niúnǎi'),
-          _BattleAnswer(hanzi: '果汁', pinyin: 'guǒzhī'),
-          _BattleAnswer(hanzi: '绿茶', pinyin: 'lǜchá'),
-        ],
-        correctIndex: 0,
-      ),
-    ];
-  }
+  void _handlePhase(BossBattlePhase phase) {
+    if (!mounted) return;
 
-  Future<void> _initTts() async {
-    try {
-      await _tts.setLanguage('zh-CN');
-      await _tts.setSpeechRate(0.45);
-      await _tts.setVolume(1.0);
-    } catch (_) {}
-  }
-
-  Future<void> _speak(String text) async {
-    try {
-      await _tts.stop();
-      await _tts.speak(text);
-    } catch (_) {}
-  }
-
-  _BattleQuestion get _currentQuestion =>
-      _questions[currentQuestionIndex % _questions.length];
-
-  void _handleAnswer(int index) {
-    if (isAnimating) return;
-
-    final q = _currentQuestion;
-    final bool isCorrect = (index == q.correctIndex);
-
-    _speak(q.answers[index].hanzi);
-
-    setState(() {
-      isAnimating = true;
-      selectedAnswerIndex = index;
-    });
-
-    if (isCorrect) {
-      // PANDA SHOOTS ARROW TO DRAGON (-120)
-      setState(() {
-        combo += 1;
-        if (combo > maxCombo) maxCombo = combo;
-        correctCount += 1;
-        score += 100 + (combo * 20);
-        feedbackText = 'Chính xác!';
-        pandaState = _ActorState.attacking;
-      });
-
-      Timer(const Duration(milliseconds: 220), () {
-        if (!mounted) return;
-        setState(() {
-          isArrowActive = true;
-          arrowProgress = 0.0;
-        });
-
-        const int steps = 24;
-        int currentStep = 0;
+    switch (phase) {
+      case BossBattlePhase.question:
         battleTimer?.cancel();
-        battleTimer = Timer.periodic(const Duration(milliseconds: 18), (timer) {
-          currentStep++;
-          if (currentStep >= steps) {
-            timer.cancel();
-            setState(() {
-              arrowProgress = 1.0;
-              isArrowActive = false;
-              pandaState = _ActorState.idle;
-              dragonState = _ActorState.hurt;
-              bossHp = (bossHp - 120).clamp(0, maxBossHp);
-              _addFloatingDamage('-120', const Color(0xFFFFD54F), true);
-            });
-
-            _runCameraShake(7.0, 200);
-
-            // Reset Dragon Hurt after 380ms
-            Timer(const Duration(milliseconds: 380), () {
-              if (!mounted) return;
-              setState(() {
-                dragonState = _ActorState.idle;
-              });
-            });
-
-            Timer(const Duration(milliseconds: 950), () {
-              if (!mounted) return;
-              if (bossHp <= 0) {
-                _onVictory();
-              } else {
-                setState(() {
-                  isAnimating = false;
-                  feedbackText = null;
-                  arrowProgress = 0.0;
-                  selectedAnswerIndex = null;
-                  currentQuestionIndex++;
-                });
-              }
-            });
-          } else {
-            setState(() {
-              arrowProgress = currentStep / steps;
-            });
-          }
-        });
-      });
-    } else {
-      // DRAGON BREATHES FIRE TO PANDA (-30)
-      setState(() {
-        combo = 0;
-        feedbackText = 'Sai rồi!';
-        dragonMouthGlow = 0.8;
-      });
-
-      // Dragon Charge -> Fire Stream
-      Timer(const Duration(milliseconds: 200), () {
-        if (!mounted) return;
         setState(() {
-          dragonMouthGlow = 0.0;
-          dragonState = _ActorState.attacking;
-          isFireActive = true;
-          fireProgress = 0.0;
-          screenFlashAlpha = 0.28;
+          pandaState = _ActorState.idle;
+          dragonState = _ActorState.idle;
+          isArrowActive = false;
+          isFireActive = false;
+          arrowProgress = 0;
+          fireProgress = 0;
         });
-
-        const int steps = 25;
-        int currentStep = 0;
-        battleTimer?.cancel();
-        battleTimer = Timer.periodic(const Duration(milliseconds: 18), (timer) {
-          currentStep++;
-          if (currentStep >= steps) {
-            timer.cancel();
-            setState(() {
-              fireProgress = 1.0;
-              isFireActive = false;
-              dragonState = _ActorState.idle;
-              pandaState = _ActorState.hurt;
-              playerHp = (playerHp - 30).clamp(0, maxPlayerHp);
-              _addFloatingDamage('-30', const Color(0xFFFF5252), false);
-            });
-
-            _runCameraShake(11.0, 220);
-            _decayScreenFlash();
-
-            // Reset Panda hurt
-            Timer(const Duration(milliseconds: 380), () {
-              if (!mounted) return;
-              setState(() {
-                pandaState = _ActorState.idle;
-              });
-            });
-
-            Timer(const Duration(milliseconds: 950), () {
-              if (!mounted) return;
-              if (playerHp <= 0) {
-                _onDefeat();
-              } else {
-                setState(() {
-                  isAnimating = false;
-                  feedbackText = null;
-                  fireProgress = 0.0;
-                  selectedAnswerIndex = null;
-                  currentQuestionIndex++;
-                });
-              }
-            });
-          } else {
-            setState(() {
-              fireProgress = currentStep / steps;
-            });
-          }
+        break;
+      case BossBattlePhase.playerAttack:
+        _animatePlayerAttack(controller.lastBossDamage.value);
+        break;
+      case BossBattlePhase.bossAttack:
+        _animateBossAttack(controller.lastPlayerDamage.value);
+        break;
+      case BossBattlePhase.won:
+      case BossBattlePhase.reward:
+        _wonResult = true;
+        setState(() {
+          pandaState = _ActorState.victory;
+          dragonState = _ActorState.defeated;
         });
-      });
+        break;
+      case BossBattlePhase.lost:
+        _wonResult = false;
+        setState(() {
+          pandaState = _ActorState.defeated;
+          dragonState = _ActorState.victory;
+        });
+        break;
+      case BossBattlePhase.result:
+        if (!_resultShown) {
+          _resultShown = true;
+          unawaited(_openResult());
+        }
+        break;
+      default:
+        break;
     }
   }
 
+  void _animatePlayerAttack(int damage) {
+    battleTimer?.cancel();
+    setState(() {
+      pandaState = _ActorState.attacking;
+      dragonState = _ActorState.idle;
+      isArrowActive = false;
+      arrowProgress = 0;
+    });
+
+    // Bow-draw/readiness beat before projectile release.
+    battleTimer = Timer(const Duration(milliseconds: 150), () {
+      if (!mounted ||
+          controller.phase.value != BossBattlePhase.playerAttack) {
+        return;
+      }
+
+      setState(() => isArrowActive = true);
+
+      const steps = 20;
+      var step = 0;
+      battleTimer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
+        if (!mounted ||
+            controller.phase.value != BossBattlePhase.playerAttack) {
+          timer.cancel();
+          return;
+        }
+
+        step += 1;
+        if (step >= steps) {
+          timer.cancel();
+          setState(() {
+            isArrowActive = false;
+            arrowProgress = 1;
+            pandaState = _ActorState.idle;
+            dragonState = _ActorState.hurt;
+          });
+          _addFloatingDamage(
+            '-$damage',
+            const Color(0xFFFFD54F),
+            true,
+          );
+          _runCameraShake(7, 180);
+
+          Timer(const Duration(milliseconds: 170), () {
+            if (!mounted) return;
+            setState(() => dragonState = _ActorState.idle);
+          });
+        } else {
+          setState(() => arrowProgress = step / steps);
+        }
+      });
+    });
+  }
+
+  void _animateBossAttack(int damage) {
+    battleTimer?.cancel();
+    setState(() {
+      dragonMouthGlow = .82;
+      dragonState = _ActorState.attacking;
+      pandaState = _ActorState.idle;
+      isFireActive = false;
+      fireProgress = 0;
+    });
+
+    battleTimer = Timer(const Duration(milliseconds: 120), () {
+      if (!mounted ||
+          controller.phase.value != BossBattlePhase.bossAttack) {
+        return;
+      }
+
+      setState(() {
+        dragonMouthGlow = 0;
+        isFireActive = true;
+        screenFlashAlpha = .25;
+      });
+
+      const steps = 20;
+      var step = 0;
+      battleTimer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
+        if (!mounted ||
+            controller.phase.value != BossBattlePhase.bossAttack) {
+          timer.cancel();
+          return;
+        }
+
+        step += 1;
+        if (step >= steps) {
+          timer.cancel();
+          setState(() {
+            isFireActive = false;
+            fireProgress = 1;
+            dragonState = _ActorState.idle;
+            pandaState = _ActorState.hurt;
+          });
+          _addFloatingDamage(
+            '-$damage',
+            const Color(0xFFFF5252),
+            false,
+          );
+          _runCameraShake(10, 190);
+          _decayScreenFlash();
+
+          Timer(const Duration(milliseconds: 170), () {
+            if (!mounted) return;
+            setState(() => pandaState = _ActorState.idle);
+          });
+        } else {
+          setState(() => fireProgress = step / steps);
+        }
+      });
+    });
+  }
+
   void _runCameraShake(double amplitude, int durationMs) {
-    final int steps = (durationMs / 25).toInt();
-    int current = 0;
+    final steps = math.max(1, (durationMs / 25).round());
+    var current = 0;
+
     Timer.periodic(const Duration(milliseconds: 25), (timer) {
-      current++;
+      current += 1;
       if (current >= steps || !mounted) {
         timer.cancel();
-        if (mounted) setState(() => cameraShakeOffset = Offset.zero);
-      } else {
-        final decay = 1.0 - (current / steps);
-        final rx = (math.Random().nextDouble() * 2.0 - 1.0) * amplitude * decay;
-        final ry = (math.Random().nextDouble() * 2.0 - 1.0) * amplitude * decay;
-        if (mounted) setState(() => cameraShakeOffset = Offset(rx, ry));
+        if (mounted) {
+          setState(() => cameraShakeOffset = Offset.zero);
+        }
+        return;
       }
+
+      final decay = 1 - (current / steps);
+      final random = math.Random();
+      final x = (random.nextDouble() * 2 - 1) * amplitude * decay;
+      final y = (random.nextDouble() * 2 - 1) * amplitude * decay;
+      setState(() => cameraShakeOffset = Offset(x, y));
     });
   }
 
   void _decayScreenFlash() {
-    int step = 0;
+    var step = 0;
     Timer.periodic(const Duration(milliseconds: 20), (timer) {
-      step++;
+      step += 1;
       if (step >= 10 || !mounted) {
         timer.cancel();
-        if (mounted) setState(() => screenFlashAlpha = 0.0);
-      } else {
-        if (mounted) {
-          setState(() {
-            screenFlashAlpha = (0.28 * (1.0 - (step / 10.0))).clamp(0.0, 0.28);
-          });
-        }
+        if (mounted) setState(() => screenFlashAlpha = 0);
+        return;
       }
+      setState(() {
+        screenFlashAlpha =
+            (.25 * (1 - step / 10)).clamp(0.0, .25).toDouble();
+      });
     });
   }
 
   void _addFloatingDamage(String text, Color color, bool isBoss) {
-    final dmg = _FloatingDamage(
-      id: DateTime.now().millisecondsSinceEpoch,
+    final damage = _FloatingDamage(
+      id: DateTime.now().microsecondsSinceEpoch,
       text: text,
       color: color,
       isBoss: isBoss,
-      scale: 1.25,
-      alpha: 1.0,
-      y: 0.0,
     );
-    _floatingDamages.add(dmg);
+    _floatingDamages.add(damage);
 
-    int step = 0;
+    var step = 0;
     _damageTimer?.cancel();
     _damageTimer = Timer.periodic(const Duration(milliseconds: 25), (timer) {
-      step++;
+      step += 1;
       if (step >= 24 || !mounted) {
         timer.cancel();
         if (mounted) {
           setState(() {
-            _floatingDamages.removeWhere((d) => d.id == dmg.id);
+            _floatingDamages.removeWhere((item) => item.id == damage.id);
           });
         }
-      } else {
-        final progress = step / 24.0;
-        if (mounted) {
-          setState(() {
-            dmg.y = -45.0 * progress;
-            dmg.alpha = (1.0 - progress).clamp(0.0, 1.0);
-            dmg.scale = 1.25 - (progress * 0.25);
-          });
-        }
+        return;
       }
+
+      final progress = step / 24;
+      setState(() {
+        damage.y = -45 * progress;
+        damage.alpha = (1 - progress).clamp(0.0, 1.0);
+        damage.scale = 1.25 - progress * .25;
+      });
     });
   }
 
-  void _onVictory() {
-    Get.off(
-      () => BossBattleVictoryScreen(
-        onContinue: () {
-          Get.off(() => BossBattleScreen(stage: widget.stage));
-        },
-        onBackToHub: () {
-          Get.back();
-        },
-      ),
+  Future<void> _speakQuestion(BossBattleQuestion question) {
+    return _tts.playUrlOrSpeak(
+      url: question.audioUrl,
+      text: question.correctAnswer,
     );
   }
 
-  void _onDefeat() {
-    Get.off(
-      () => BossBattleDefeatScreen(
-        onRetry: () {
-          Get.off(() => BossBattleScreen(stage: widget.stage));
-        },
-        onBackToHub: () {
-          Get.back();
-        },
-      ),
-    );
+  Future<void> _handleAnswer(int index) async {
+    final question = controller.currentQuestion;
+    if (!controller.canAnswer ||
+        question == null ||
+        index < 0 ||
+        index >= question.answers.length) {
+      return;
+    }
+
+    final answer = question.answers[index];
+    unawaited(_tts.speakChinese(answer));
+    await controller.answer(answer);
+  }
+
+  Future<void> _openResult() async {
+    if (Get.isRegistered<HomeController>()) {
+      await Get.find<HomeController>().refreshStats();
+    }
+    if (!mounted) return;
+
+    final won = _wonResult ?? controller.bossHp.value <= 0;
+    if (won) {
+      Get.off(
+        () => BossBattleVictoryScreen(
+          onContinue: () => Get.back<void>(),
+          onBackToHub: () => Get.back<void>(),
+        ),
+      );
+    } else {
+      Get.off(
+        () => BossBattleDefeatScreen(
+          onRetry: () {
+            Get.off(() => BossBattleScreen(stage: widget.stage));
+          },
+          onBackToHub: () => Get.back<void>(),
+        ),
+      );
+    }
   }
 
   @override
   void dispose() {
     battleTimer?.cancel();
     _damageTimer?.cancel();
+    _phaseWorker.dispose();
     _ticker.dispose();
     _bgImage?.dispose();
     _pandaImage?.dispose();
     _dragonImage?.dispose();
-    _tts.stop();
+    unawaited(_tts.stop());
+
+    if (Get.isRegistered<BossBattleController>(tag: _controllerTag)) {
+      Get.delete<BossBattleController>(tag: _controllerTag);
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final q = _currentQuestion;
-    final int level = widget.stage?.stageOrder ?? 3;
-
     return Scaffold(
       backgroundColor: const Color(0xFF140B18),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 1. COLUMN LAYOUT
-          _buildBattleLayout(q, level),
+      body: Obx(() {
+        final phase = controller.phase.value;
 
-          // Red Screen Flash
-          if (screenFlashAlpha > 0.01)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  color:
-                      Colors.red.withOpacity(screenFlashAlpha.clamp(0.0, 0.4)),
+        if (phase == BossBattlePhase.loading) {
+          return _buildLoading();
+        }
+        if (phase == BossBattlePhase.error) {
+          return _buildError();
+        }
+        if (phase == BossBattlePhase.intro) {
+          return _buildIntro();
+        }
+
+        final question = controller.currentQuestion;
+        if (question == null) return _buildLoading();
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildBattleLayout(question),
+            if (screenFlashAlpha > .01)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: ColoredBox(
+                    color: Colors.red.withValues(
+                      alpha: screenFlashAlpha.clamp(0.0, .4),
+                    ),
+                  ),
                 ),
               ),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _buildLoading() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          'assets/images/backgrounds/boss_battle_bg.png',
+          fit: BoxFit.cover,
+        ),
+        const ColoredBox(color: Color(0x66000000)),
+        const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFFC653),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildError() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          'assets/images/backgrounds/boss_battle_bg.png',
+          fit: BoxFit.cover,
+        ),
+        const ColoredBox(color: Color(0x99000000)),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  'assets/images/characters/panda_dizzy.png',
+                  width: 120,
+                  height: 120,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  controller.errorMessage.value,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: controller.startBattle,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Tải lại trận đấu'),
+                ),
+              ],
             ),
-        ],
-      ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIntro() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          'assets/images/backgrounds/boss_intro_bg.png',
+          fit: BoxFit.cover,
+        ),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0x33000000),
+                Color(0xB3120811),
+              ],
+            ),
+          ),
+        ),
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton.filledTonal(
+                    onPressed: Get.back,
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  controller.stageLabel.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFFFD36C),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  controller.bossName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 34,
+                    fontWeight: FontWeight.w900,
+                    shadows: [
+                      Shadow(color: Colors.black54, blurRadius: 12),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '${controller.questions.length} câu hỏi lấy trực tiếp từ Unit này',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 26),
+                FilledButton.icon(
+                  onPressed: controller.beginBattle,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFD73627),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(220, 56),
+                  ),
+                  icon: const Icon(Icons.local_fire_department_rounded),
+                  label: const Text(
+                    'BẮT ĐẦU CHIẾN',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
+                const Spacer(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBattleLayout(BossBattleQuestion question) {
+    return Column(
+      children: [
+        BossBattleTopBar(
+          bossHp: controller.bossHp.value,
+          maxBossHp: controller.bossHpMax,
+          level: controller.bossLevel,
+          bossName: controller.bossName,
+          onExit: () => Get.back<void>(),
+          onSpeak: () => _speakQuestion(question),
+        ),
+        _buildArena(),
+        _buildQuestionPanel(question),
+      ],
     );
   }
 
@@ -526,53 +676,44 @@ class _BossBattleScreenState extends State<BossBattleScreen>
               gameTime: _gameTime,
             ),
           ),
-
-          // Arena Bottom Overlay: Player HP Badge & Combo Badge
           BossBattleArenaHud(
-              playerHp: playerHp, maxPlayerHp: maxPlayerHp, combo: combo),
+            playerHp: controller.playerHp.value,
+            maxPlayerHp: controller.playerHpMax,
+            combo: controller.combo.value,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildQuestionPanel(_BattleQuestion q) {
+  Widget _buildQuestionPanel(BossBattleQuestion question) {
+    final correctIndex = question.answers.indexOf(question.correctAnswer);
+    final selected = controller.selectedAnswer.value;
+    final selectedIndex =
+        selected == null ? null : question.answers.indexOf(selected);
+
     return Expanded(
       flex: 10,
       child: BossBattleQuestionPanel(
-          prompt: q.prompt,
-          hanziPrompt: q.answers[q.correctIndex].hanzi,
-          options: q.answers
-              .map((answer) => <String, dynamic>{
-                    'hanzi': answer.hanzi,
-                    'pinyin': answer.pinyin
-                  })
-              .toList(),
-          correctIndex: q.correctIndex,
-          selectedAnswerIndex: selectedAnswerIndex,
-          feedbackText: feedbackText,
-          onSpeak: _speak,
-          onAnswer: _handleAnswer),
-    );
-  }
-
-  Widget _buildBattleLayout(_BattleQuestion q, int level) {
-    return Column(
-      children: [
-        // 1. TOP BAR
-        BossBattleTopBar(
-            bossHp: bossHp,
-            maxBossHp: maxBossHp,
-            level: level,
-            bossName: widget.stage?.bossName ?? 'Rồng Lửa',
-            onExit: () => Get.back(),
-            onSpeak: () => _speak(q.answers[q.correctIndex].hanzi)),
-
-        // 2. BATTLE ARENA CANVAS
-        _buildArena(),
-
-        // 3. QUIZ & ANSWER PANEL (BOTTOM HALF)
-        _buildQuestionPanel(q),
-      ],
+        prompt: question.prompt,
+        hanziPrompt: question.correctAnswer,
+        options: question.answers
+            .map(
+              (answer) => <String, dynamic>{
+                'hanzi': answer,
+                'pinyin': '',
+              },
+            )
+            .toList(growable: false),
+        correctIndex: correctIndex < 0 ? 0 : correctIndex,
+        selectedAnswerIndex:
+            selectedIndex == null || selectedIndex < 0 ? null : selectedIndex,
+        feedbackText: controller.feedbackText.isEmpty
+            ? controller.phaseHint
+            : controller.feedbackText,
+        onSpeak: () => _speakQuestion(question),
+        onAnswer: _handleAnswer,
+      ),
     );
   }
 }
@@ -993,26 +1134,4 @@ class _BattleArenaCanvasPainter extends CustomPainter {
   bool shouldRepaint(covariant _BattleArenaCanvasPainter oldDelegate) {
     return true;
   }
-}
-
-class _BattleQuestion {
-  final String prompt;
-  final List<_BattleAnswer> answers;
-  final int correctIndex;
-
-  const _BattleQuestion({
-    required this.prompt,
-    required this.answers,
-    required this.correctIndex,
-  });
-}
-
-class _BattleAnswer {
-  final String hanzi;
-  final String pinyin;
-
-  const _BattleAnswer({
-    required this.hanzi,
-    required this.pinyin,
-  });
 }
