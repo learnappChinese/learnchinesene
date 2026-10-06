@@ -38,7 +38,7 @@ class UnitLevelNode extends StatelessWidget {
       child: Align(
         alignment: alignLeft ? Alignment.centerLeft : Alignment.centerRight,
         child: FractionallySizedBox(
-          widthFactor: .84,
+          widthFactor: MediaQuery.sizeOf(context).width <= 360 ? .96 : .84,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
