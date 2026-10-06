@@ -213,6 +213,32 @@ class DbHelper {
         .toList();
   }
 
+  Future<List<ExampleSentence>> getExamplesByUnit(int unitId) async {
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+          .from('lexicon_examples')
+          .select(
+            'id, word_id, example_order, sentence_cn, sentence_pinyin, sentence_vi',
+          )
+          .eq('unit_id', unitId)
+          .order('example_order')
+          .order('id'),
+    );
+
+    return rows
+        .map(
+          (row) => ExampleSentence.fromMap({
+            'id': row['id'],
+            'word_id': row['word_id'],
+            'chinese': row['sentence_cn'],
+            'pinyin': row['sentence_pinyin'],
+            'vietnamese': row['sentence_vi'],
+            'order_index': row['example_order'] ?? row['id'],
+          }),
+        )
+        .toList();
+  }
+
   Future<List<Word>> getReviewWords() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return <Word>[];
