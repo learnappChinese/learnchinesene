@@ -3,6 +3,32 @@ import 'package:flash_learn_chinese/screen/boss_battle/controller/boss_battle_co
 import 'package:flash_learn_chinese/screen/boss_battle/data/boss_battle_repository.dart';
 import 'package:flash_learn_chinese/screen/boss_battle/domain/boss_battle_question_generator.dart';
 import 'package:flash_learn_chinese/screen/boss_battle/model/boss_battle_question.dart';
+import 'package:flash_learn_chinese/screen/boss_battle/model/boss_battle_stage.dart';
+
+class _FakeProgressSink implements BossBattleProgressSink {
+  int calls = 0;
+  int? stageId;
+  int? score;
+  int? stars;
+  int? bestCombo;
+  bool? won;
+
+  @override
+  Future<void> recordResult({
+    required int stageId,
+    required int score,
+    required int stars,
+    required int bestCombo,
+    required bool won,
+  }) async {
+    calls += 1;
+    this.stageId = stageId;
+    this.score = score;
+    this.stars = stars;
+    this.bestCombo = bestCombo;
+    this.won = won;
+  }
+}
 
 class _FakeQuestionSource implements BossBattleQuestionSource {
   _FakeQuestionSource(this.questions);
@@ -33,10 +59,15 @@ List<BossBattleQuestion> _questions() {
   );
 }
 
-BossBattleController _controller() {
+BossBattleController _controller({
+  BossBattleStage? stage,
+  BossBattleProgressSink? progressSink,
+}) {
   return BossBattleController(
     source: _FakeQuestionSource(_questions()),
+    progressSink: progressSink,
     generator: BossBattleQuestionGenerator(),
+    stage: stage,
     resolveDelay: Duration.zero,
     attackDelay: Duration.zero,
     transitionDelay: Duration.zero,
@@ -114,5 +145,41 @@ void main() {
     expect(controller.phase.value, BossBattlePhase.result);
     expect(controller.bossHp.value, 0);
     expect(controller.playerHp.value, greaterThan(0));
+  });
+
+
+  test('stage victory persists boss progress exactly once', () async {
+    final sink = _FakeProgressSink();
+    const stage = BossBattleStage(
+      id: 77,
+      unitId: 'sec_1_unit_1',
+      stageOrder: 1,
+      sectionNumber: 1,
+      unitNumber: 1,
+      title: 'Boss Unit 1',
+      questionCount: 4,
+      difficulty: 1,
+      bossName: 'Rồng Lửa',
+      bossHp: 20,
+      playerHp: 100,
+      themeCode: 'sunset',
+    );
+    final controller = _controller(
+      stage: stage,
+      progressSink: sink,
+    );
+    addTearDown(controller.onClose);
+
+    await controller.startBattle();
+    controller.beginBattle();
+    await controller.answer(controller.currentQuestion!.correctAnswer);
+
+    expect(controller.phase.value, BossBattlePhase.result);
+    expect(sink.calls, 1);
+    expect(sink.stageId, stage.id);
+    expect(sink.won, isTrue);
+    expect(sink.score, greaterThan(0));
+    expect(sink.stars, inInclusiveRange(1, 3));
+    expect(sink.bestCombo, 1);
   });
 }
