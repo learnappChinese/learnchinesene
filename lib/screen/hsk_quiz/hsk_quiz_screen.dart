@@ -1,9 +1,9 @@
 import 'controller/hsk_quiz_controller.dart';
 import 'package:flutter/material.dart';
 import 'widget/hsk_quiz_content.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/gemini_service.dart';
+import '../../core/services/tts_service.dart';
 import '../../core/responsive/responsive_layout.dart';
 import 'package:get/get.dart';
 import '../subscription/controller/subscription_controller.dart';
@@ -17,8 +17,6 @@ class HskQuizScreen extends StatefulWidget {
 }
 
 class _HskQuizScreenState extends State<HskQuizScreen> {
-  final FlutterTts _tts = FlutterTts();
-
   int _selectedLevel = 1;
   static int _nextControllerId = 0;
   late final String _controllerTag;
@@ -45,17 +43,13 @@ class _HskQuizScreenState extends State<HskQuizScreen> {
   void dispose() {
     _errorWorker.dispose();
     Get.delete<HskQuizController>(tag: _controllerTag);
-    _tts.stop();
     super.dispose();
   }
 
   Future<void> _generateQuestions() => controller.generate(_selectedLevel);
 
-  Future<void> _playTts(String text) async {
-    try {
-      await _tts.setLanguage('zh-CN');
-      await _tts.speak(text);
-    } catch (_) {}
+  Future<void> _playTts(String text) {
+    return Get.find<TtsService>().speakChinese(text);
   }
 
   @override
