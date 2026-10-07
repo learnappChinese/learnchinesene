@@ -27,7 +27,10 @@ import '../subscription/page/subscription_page.dart';
 import '../subscription/controller/subscription_controller.dart';
 import '../../core/helper/upgrade_dialog_helper.dart';
 import '../duolingo/duo_game_center_screen.dart';
+import '../chapter_adventure/binding/chapter_adventure_binding.dart';
+import '../chapter_adventure/page/chapter_adventure_screen.dart';
 import '../game_hub/game_hub_screen.dart';
+import '../review/review_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   static const routeName = '/home';
@@ -72,12 +75,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return Obx(() {
       final stats = controller.stats;
       return HomeDashboard(
+        journey: controller.journey.value,
+        isLoading: controller.isJourneyLoading.value,
+        errorMessage: controller.journeyError.value,
         streak: stats['streak']?.toInt() ?? 0,
         lessons: stats['learned']?.toInt() ?? 0,
         xp: stats['totalExp']?.toInt() ??
             (((stats['correct'] ?? 0) * 10).toInt() + 156),
         onRefresh: controller.refreshStats,
-        onStartLearning: () => Get.to(() => const HskScreen()),
+        onRetry: controller.refreshStats,
+        onStartLearning: _openCurrentJourney,
         onGrammar: () => _runIfFeatureUnlocked(
           'lessons',
           'Mở khóa Bài học AI',
@@ -92,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         onChallenge: () => Get.to(() => const HskQuizScreen()),
         onProgress: () => controller.setIndex(3),
+        onReview: () => Get.to(() => const ReviewScreen()),
         onViewAllQuickActions: () => controller.setIndex(1),
       );
     });
@@ -125,6 +133,18 @@ class _HomeScreenState extends State<HomeScreen> {
           () => Get.to(() => const ConversationsScreen()),
         ),
       );
+
+  void _openCurrentJourney() {
+    final journey = controller.journey.value;
+    if (journey == null) {
+      Get.to(() => const HskScreen());
+      return;
+    }
+    Get.to(
+      () => const ChapterAdventureScreen(),
+      binding: ChapterAdventureBinding(levelId: journey.levelId),
+    )?.then((_) => controller.refreshStats());
+  }
 
   Widget _buildGamesTab() {
     return const GameHubScreen(embedded: true);
@@ -203,6 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(title: const Text('Luyện tập')),
       body: SafeArea(
           child: HomePracticeTab(
+              onReview: () => Get.to(() => const ReviewScreen()),
               onSpeaking: () => Get.to(() => const SpeakingScreen(),
                   arguments: const {'standalone': true}),
               onWriting: () => Get.to(() => const HanziWritingHomeScreen()),

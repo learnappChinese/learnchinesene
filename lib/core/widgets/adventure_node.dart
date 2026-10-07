@@ -3,14 +3,14 @@ import '../theme/game_visual_tokens.dart';
 import 'panda_companion.dart';
 
 enum AdventureNodeType {
-  learn,      // 📚
-  listening,  // 🎧
-  select,     // 🧠
-  hanzi,      // ✍️
-  speaking,   // 🎤
-  dialogue,   // 💬
-  game,       // 🎮
-  boss,       // 🐉
+  learn,
+  listening,
+  select,
+  hanzi,
+  speaking,
+  dialogue,
+  game,
+  boss,
 }
 
 enum AdventureNodeState {
@@ -30,6 +30,7 @@ class AdventureNode extends StatelessWidget {
     this.stars = 0,
     this.isActive = false,
     this.horizontalOffset = 0.0,
+    this.rewardPreview,
     required this.onTap,
   });
 
@@ -39,26 +40,27 @@ class AdventureNode extends StatelessWidget {
   final int stars;
   final bool isActive;
   final double horizontalOffset;
+  final String? rewardPreview;
   final VoidCallback onTap;
 
-  String _getEmoji() {
+  IconData _getIcon() {
     switch (type) {
       case AdventureNodeType.learn:
-        return '📚';
+        return Icons.menu_book_rounded;
       case AdventureNodeType.listening:
-        return '🎧';
+        return Icons.headphones_rounded;
       case AdventureNodeType.select:
-        return '🧠';
+        return Icons.extension_rounded;
       case AdventureNodeType.hanzi:
-        return '✍️';
+        return Icons.gesture_rounded;
       case AdventureNodeType.speaking:
-        return '🎤';
+        return Icons.mic_rounded;
       case AdventureNodeType.dialogue:
-        return '💬';
+        return Icons.forum_rounded;
       case AdventureNodeType.game:
-        return '🎮';
+        return Icons.sports_esports_rounded;
       case AdventureNodeType.boss:
-        return '🐉';
+        return Icons.local_fire_department_rounded;
     }
   }
 
@@ -132,34 +134,39 @@ class AdventureNode extends StatelessWidget {
                     mood: isBoss ? PandaMood.archer : PandaMood.happy,
                   ),
                 ),
-              GestureDetector(
-                onTap: onTap,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  width: nodeSize,
-                  height: nodeSize,
-                  decoration: BoxDecoration(
-                    color: bgColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: borderColor,
-                      width: isActive ? 4.0 : 3.0,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: glowColor.withValues(alpha: isActive ? 0.45 : 0.2),
-                        blurRadius: isActive ? 16 : 8,
-                        offset: const Offset(0, 4),
+              Semantics(
+                button: true,
+                enabled: !isLocked,
+                label: '$title, ${state.name}',
+                child: GestureDetector(
+                  onTap: isLocked ? null : onTap,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    width: nodeSize,
+                    height: nodeSize,
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: borderColor,
+                        width: isActive ? 4.0 : 3.0,
                       ),
-                    ],
-                  ),
-                  child: Center(
-                    child: isLocked
-                        ? const Icon(Icons.lock_rounded, color: Color(0xFF94A3B8), size: 28)
-                        : Text(
-                            _getEmoji(),
-                            style: TextStyle(fontSize: isBoss ? 38 : 30),
-                          ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: glowColor.withValues(
+                              alpha: isActive ? 0.45 : 0.2),
+                          blurRadius: isActive ? 16 : 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Icon(
+                        isLocked ? Icons.lock_rounded : _getIcon(),
+                        color: isLocked ? const Color(0xFF94A3B8) : glowColor,
+                        size: isBoss ? 38 : 30,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -174,7 +181,8 @@ class AdventureNode extends StatelessWidget {
                 return Icon(
                   Icons.star_rounded,
                   size: 14,
-                  color: i < stars ? GameVisualTokens.gold : Colors.grey.shade300,
+                  color:
+                      i < stars ? GameVisualTokens.gold : Colors.grey.shade300,
                 );
               }),
             ),
@@ -188,6 +196,24 @@ class AdventureNode extends StatelessWidget {
               color: isLocked ? const Color(0xFF94A3B8) : GameVisualTokens.ink,
             ),
           ),
+          if (rewardPreview != null) ...[
+            const SizedBox(height: 3),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: GameVisualTokens.imperialGold.withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                rewardPreview!,
+                style: const TextStyle(
+                  color: GameVisualTokens.templeWood,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -3,18 +3,21 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/responsive/responsive_layout.dart';
 
 class HomePracticeTab extends StatelessWidget {
-  const HomePracticeTab(
-      {super.key,
-      required this.onSpeaking,
-      required this.onWriting,
-      required this.onFlashcards,
-      required this.onLearningPath,
-      required this.onQuiz});
+  const HomePracticeTab({
+    super.key,
+    required this.onSpeaking,
+    required this.onWriting,
+    required this.onFlashcards,
+    required this.onLearningPath,
+    required this.onQuiz,
+    this.onReview,
+  });
   final VoidCallback onSpeaking;
   final VoidCallback onWriting;
   final VoidCallback onFlashcards;
   final VoidCallback onLearningPath;
   final VoidCallback onQuiz;
+  final VoidCallback? onReview;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +33,16 @@ class HomePracticeTab extends StatelessWidget {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 18),
+            if (onReview != null) ...[
+              HomePracticeActionTile(
+                icon: Icons.history_edu_rounded,
+                title: 'Trung tâm Ôn luyện',
+                subtitle: 'Ôn tập thích ứng 4 kỹ năng: Từ vựng, Nghe, Nói, Hán tự',
+                color: AppColors.redDark,
+                onTap: onReview!,
+              ),
+              const SizedBox(height: 12),
+            ],
             HomePracticeActionTile(
               icon: Icons.record_voice_over_rounded,
               title: 'Luyện phát âm',

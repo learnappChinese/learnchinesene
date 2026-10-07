@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'screen/home/controller/home_controller.dart';
+import 'screen/home/data/home_journey_repository.dart';
 import 'screen/splash/controller/splash_controller.dart';
 import 'core/services/gemini_service.dart';
 import 'core/services/history_service.dart';
@@ -18,7 +19,14 @@ void initDI() {
       fenix: true);
   Get.lazyPut(() => HistoryService(), fenix: true);
   Get.lazyPut(() => SplashController(), fenix: true);
-  Get.lazyPut(() => HomeController(), fenix: true);
+  Get.lazyPut<HomeJourneyRepository>(() => CloudHomeJourneyRepository(),
+      fenix: true);
+  Get.lazyPut(
+    () => HomeController(
+      journeyRepository: Get.find<HomeJourneyRepository>(),
+    ),
+    fenix: true,
+  );
   Get.lazyPut(() => IAPService(), fenix: true);
   Get.lazyPut(() => SubscriptionController(Get.find<IAPService>()),
       fenix: true);

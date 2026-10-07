@@ -165,7 +165,7 @@ void main() {
     await tester.tap(find.text('Open HSK'));
     await tester.pumpAndSettle();
     final first = Get.find<HskController>();
-    expect(find.text('Không thể tải cấp độ'), findsOneWidget);
+    expect(find.text('Không thể mở bản đồ thế giới'), findsOneWidget);
     await tester.pump();
     expect(Get.find<HskController>(), same(first));
     Get.back();
