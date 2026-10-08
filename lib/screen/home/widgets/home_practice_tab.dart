@@ -37,7 +37,8 @@ class HomePracticeTab extends StatelessWidget {
               HomePracticeActionTile(
                 icon: Icons.history_edu_rounded,
                 title: 'Trung tâm Ôn luyện',
-                subtitle: 'Ôn tập thích ứng 4 kỹ năng: Từ vựng, Nghe, Nói, Hán tự',
+                subtitle:
+                    'Ôn tập thích ứng 4 kỹ năng: Từ vựng, Nghe, Nói, Hán tự',
                 color: AppColors.redDark,
                 onTap: onReview!,
               ),

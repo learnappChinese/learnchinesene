@@ -35,7 +35,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon:
+              const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: const Text(
@@ -49,7 +50,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: GameVisualTokens.imperialGold),
+            icon: const Icon(Icons.refresh_rounded,
+                color: GameVisualTokens.imperialGold),
             tooltip: 'Làm mới',
             onPressed: controller.loadInitialData,
           ),
@@ -67,13 +69,16 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     maxWidth: ResponsiveHelper.contentMaxWidth(context),
                   ),
                   child: Obx(() {
-                    if (controller.isLoading.value && controller.summary.value == null) {
+                    if (controller.isLoading.value &&
+                        controller.summary.value == null) {
                       return const Center(
-                        child: CircularProgressIndicator(color: GameVisualTokens.jade),
+                        child: CircularProgressIndicator(
+                            color: GameVisualTokens.jade),
                       );
                     }
 
-                    final summary = controller.summary.value ?? const ReviewSummary();
+                    final summary =
+                        controller.summary.value ?? const ReviewSummary();
                     final selectedCat = controller.selectedCategory.value;
                     final items = controller.items;
 
@@ -108,7 +113,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                   const Padding(
                                     padding: EdgeInsets.symmetric(vertical: 40),
                                     child: Center(
-                                      child: CircularProgressIndicator(color: GameVisualTokens.jade),
+                                      child: CircularProgressIndicator(
+                                          color: GameVisualTokens.jade),
                                     ),
                                   )
                                 else if (items.isEmpty)
@@ -116,40 +122,47 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                     category: selectedCat,
                                     onSwitch: () {
                                       // Switch to next category that has items
-                                      if (summary.wordsDue > 0 && selectedCat != ReviewCategory.words) {
-                                        controller.selectCategory(ReviewCategory.words);
-                                      } else if (summary.listeningDue > 0 && selectedCat != ReviewCategory.listening) {
-                                        controller.selectCategory(ReviewCategory.listening);
-                                      } else if (summary.speakingDue > 0 && selectedCat != ReviewCategory.speaking) {
-                                        controller.selectCategory(ReviewCategory.speaking);
+                                      if (summary.wordsDue > 0 &&
+                                          selectedCat != ReviewCategory.words) {
+                                        controller.selectCategory(
+                                            ReviewCategory.words);
+                                      } else if (summary.listeningDue > 0 &&
+                                          selectedCat !=
+                                              ReviewCategory.listening) {
+                                        controller.selectCategory(
+                                            ReviewCategory.listening);
+                                      } else if (summary.speakingDue > 0 &&
+                                          selectedCat !=
+                                              ReviewCategory.speaking) {
+                                        controller.selectCategory(
+                                            ReviewCategory.speaking);
                                       } else {
-                                        controller.selectCategory(ReviewCategory.hanzi);
+                                        controller.selectCategory(
+                                            ReviewCategory.hanzi);
                                       }
                                     },
                                   )
                                 else ...[
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 4, vertical: 6),
                                     child: Row(
                                       children: [
-                                        const Text(
-                                          'DANH SÁCH CẦN ÔN',
-                                          style: TextStyle(
-                                            color: GameVisualTokens.imperialGold,
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 12,
-                                            letterSpacing: 0.8,
+                                        Expanded(
+                                          child: Text(
+                                            'DANH SÁCH CẦN ÔN (${items.length})',
+                                            style: const TextStyle(
+                                              color:
+                                                  GameVisualTokens.imperialGold,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 12,
+                                              letterSpacing: 0.8,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        Text(
-                                          ' (${items.length})',
-                                          style: const TextStyle(
-                                            color: GameVisualTokens.imperialGold,
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                        const Spacer(),
+                                        const SizedBox(width: 8),
                                         const Text(
                                           'Ưu tiên mục yếu',
                                           style: TextStyle(
@@ -164,7 +177,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                     _ReviewItemCard(
                                       key: ValueKey(item.id),
                                       item: item,
-                                      onTap: () => controller.openItemPractice(item),
+                                      onTap: () =>
+                                          controller.openItemPractice(item),
                                     ),
                                 ],
                               ],
@@ -176,7 +190,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         _ReviewBottomAction(
                           category: selectedCat,
                           hasItems: items.isNotEmpty,
-                          onPressed: () => controller.startCategoryReview(context),
+                          onPressed: () =>
+                              controller.startCategoryReview(context),
                         ),
                       ],
                     );
@@ -228,7 +243,8 @@ class _ReviewHeroCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: GameVisualTokens.crimson.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
@@ -238,7 +254,9 @@ class _ReviewHeroCard extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    totalDue > 0 ? '$totalDue MỤC CẦN ÔN HÔM NAY' : 'ĐÃ HOÀN TẤT ÔN TẬP',
+                    totalDue > 0
+                        ? '$totalDue MỤC CẦN ÔN HÔM NAY'
+                        : 'ĐÃ HOÀN TẤT ÔN TẬP',
                     style: const TextStyle(
                       color: GameVisualTokens.crimson,
                       fontWeight: FontWeight.w900,
@@ -288,8 +306,18 @@ class _CategorySelectorBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tabs = [
-      (ReviewCategory.words, 'Từ vựng', summary.wordsDue, Icons.menu_book_rounded),
-      (ReviewCategory.listening, 'Nghe', summary.listeningDue, Icons.headphones_rounded),
+      (
+        ReviewCategory.words,
+        'Từ vựng',
+        summary.wordsDue,
+        Icons.menu_book_rounded
+      ),
+      (
+        ReviewCategory.listening,
+        'Nghe',
+        summary.listeningDue,
+        Icons.headphones_rounded
+      ),
       (ReviewCategory.speaking, 'Nói', summary.speakingDue, Icons.mic_rounded),
       (ReviewCategory.hanzi, 'Hán tự', summary.hanziDue, Icons.draw_rounded),
     ];
@@ -305,7 +333,8 @@ class _CategorySelectorBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? GameVisualTokens.jade.withValues(alpha: 0.25)
@@ -324,38 +353,48 @@ class _CategorySelectorBar extends StatelessWidget {
                     Icon(
                       tab.$4,
                       size: 18,
-                      color: isSelected ? GameVisualTokens.jade : Colors.white60,
+                      color:
+                          isSelected ? GameVisualTokens.jade : Colors.white60,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      tab.$2,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white60,
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        fontSize: 11,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        tab.$2,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.white60,
+                          fontWeight:
+                              isSelected ? FontWeight.w800 : FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: tab.$3 > 0
-                            ? (isSelected
-                                ? GameVisualTokens.imperialGold
-                                : GameVisualTokens.night)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${tab.$3}',
-                        style: TextStyle(
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
                           color: tab.$3 > 0
-                              ? (isSelected ? Colors.black87 : GameVisualTokens.imperialGold)
-                              : Colors.white30,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 10,
+                              ? (isSelected
+                                  ? GameVisualTokens.imperialGold
+                                  : GameVisualTokens.night)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${tab.$3}',
+                          style: TextStyle(
+                            color: tab.$3 > 0
+                                ? (isSelected
+                                    ? Colors.black87
+                                    : GameVisualTokens.imperialGold)
+                                : Colors.white30,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                          ),
                         ),
                       ),
                     ),
@@ -411,7 +450,8 @@ class _ReviewItemCard extends StatelessWidget {
                     color: GameVisualTokens.parchment.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: GameVisualTokens.imperialGold.withValues(alpha: 0.3),
+                      color:
+                          GameVisualTokens.imperialGold.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -449,16 +489,19 @@ class _ReviewItemCard extends StatelessWidget {
                           ),
                           if (item.isWeak && item.wrongCount > 0)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: GameVisualTokens.crimson.withValues(alpha: 0.2),
+                                color: GameVisualTokens.crimson
+                                    .withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Icon(Icons.warning_amber_rounded,
-                                      size: 12, color: GameVisualTokens.crimson),
+                                      size: 12,
+                                      color: GameVisualTokens.crimson),
                                   const SizedBox(width: 3),
                                   Text(
                                     '${item.wrongCount} lần sai',
@@ -558,14 +601,18 @@ class _EmptyCategoryCard extends StatelessWidget {
           const SizedBox(height: 18),
           OutlinedButton.icon(
             onPressed: onSwitch,
-            icon: const Icon(Icons.explore_rounded, color: GameVisualTokens.imperialGold, size: 16),
+            icon: const Icon(Icons.explore_rounded,
+                color: GameVisualTokens.imperialGold, size: 16),
             label: const Text(
               'Xem Kỹ Năng Khác',
-              style: TextStyle(color: GameVisualTokens.imperialGold, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                  color: GameVisualTokens.imperialGold,
+                  fontWeight: FontWeight.w700),
             ),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: GameVisualTokens.imperialGold),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],

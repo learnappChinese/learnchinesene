@@ -94,7 +94,8 @@ class ReviewController extends GetxController {
   void startCategoryReview(BuildContext context) {
     switch (selectedCategory.value) {
       case ReviewCategory.words:
-        final wordList = words.isNotEmpty ? words.toList() : _mapItemsToWords(items);
+        final wordList =
+            words.isNotEmpty ? words.toList() : _mapItemsToWords(items);
         if (wordList.isEmpty) return;
         Get.to(
           () => const QuizScreen(),
@@ -105,7 +106,8 @@ class ReviewController extends GetxController {
         );
         break;
       case ReviewCategory.listening:
-        final wordList = words.isNotEmpty ? words.toList() : _mapItemsToWords(items);
+        final wordList =
+            words.isNotEmpty ? words.toList() : _mapItemsToWords(items);
         if (wordList.isNotEmpty) {
           Get.to(
             () => const QuizScreen(),
@@ -125,7 +127,8 @@ class ReviewController extends GetxController {
         );
         break;
       case ReviewCategory.hanzi:
-        final firstItem = items.firstWhereOrNull((it) => it.category == ReviewCategory.hanzi);
+        final firstItem =
+            items.firstWhereOrNull((it) => it.category == ReviewCategory.hanzi);
         final cid = int.tryParse(firstItem?.id.replaceAll('hanzi_', '') ?? '');
         if (cid != null && cid > 0) {
           Get.to(() => HanziWritingScreen(characterId: cid));
@@ -160,7 +163,8 @@ class ReviewController extends GetxController {
           () => const QuizScreen(),
           arguments: {
             'unitTitle': 'Luyện nghe câu: ${item.title}',
-            'reviewWords': words.isNotEmpty ? words.toList() : _mapItemsToWords(items),
+            'reviewWords':
+                words.isNotEmpty ? words.toList() : _mapItemsToWords(items),
           },
         );
         break;
