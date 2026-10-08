@@ -70,9 +70,8 @@ class SpeakingResultCard extends StatelessWidget {
         color: const Color(0xFFFFFDF7),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: correct
-              ? GameVisualTokens.jadeLight
-              : GameVisualTokens.crimson,
+          color:
+              correct ? GameVisualTokens.jadeLight : GameVisualTokens.crimson,
           width: 2,
         ),
         boxShadow: [
@@ -96,7 +95,10 @@ class SpeakingResultCard extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: correct
                         ? [GameVisualTokens.jadeLight, GameVisualTokens.jade]
-                        : [GameVisualTokens.crimson, GameVisualTokens.crimsonDark],
+                        : [
+                            GameVisualTokens.crimson,
+                            GameVisualTokens.crimsonDark
+                          ],
                   ),
                   shape: BoxShape.circle,
                   boxShadow: const [
@@ -232,7 +234,8 @@ class SpeakingPromptCard extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: GameVisualTokens.imperialGold.withValues(alpha: 0.15),
+                      color:
+                          GameVisualTokens.imperialGold.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                       border: Border.all(color: GameVisualTokens.gold),
                     ),
@@ -310,7 +313,8 @@ class SpeakingPromptCard extends StatelessWidget {
             GestureDetector(
               onTap: onPlayAudio,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],

@@ -1,13 +1,18 @@
 import 'package:get/get.dart';
 import '../../../core/database/db_helper.dart';
+import '../../../core/learning/service/learning_reward_service.dart';
 import '../../../core/models/hanzi_character.dart';
+import '../../home/controller/home_controller.dart';
 import '../models/hanzi_practice_config.dart';
 
 class HanziWritingController extends GetxController {
-  HanziWritingController({DbHelper? database})
-      : _database = database ?? DbHelper.instance;
+  HanziWritingController(
+      {DbHelper? database, LearningRewardService? rewardService})
+      : _database = database ?? DbHelper.instance,
+        _rewardService = rewardService ?? LearningRewardService();
 
   final DbHelper _database;
+  final LearningRewardService _rewardService;
 
   Future<HanziCharacter?> loadCharacter(int id) async {
     if (isClosed) return null;
@@ -27,6 +32,19 @@ class HanziWritingController extends GetxController {
         score: averageScore,
         attempts: attempts,
       );
+
+      final attId =
+          'hanzi_${characterId}_${DateTime.now().millisecondsSinceEpoch}';
+      await _rewardService.processHanziReward(
+        characterId: characterId,
+        attemptId: attId,
+        bestScore: averageScore,
+        attempts: attempts,
+      );
+
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().refreshStats();
+      }
     } catch (_) {
       // Session completion remains available when saving fails.
     }

@@ -90,7 +90,8 @@ class WritingCharacterTile extends StatelessWidget {
                     color: GameVisualTokens.jade.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                        color: GameVisualTokens.jadeLight.withValues(alpha: 0.4)),
+                        color:
+                            GameVisualTokens.jadeLight.withValues(alpha: 0.4)),
                   ),
                   child: Text(
                     'HSK ${char.hskLevel}',
@@ -158,4 +159,3 @@ class WritingCharacterTile extends StatelessWidget {
     );
   }
 }
-
