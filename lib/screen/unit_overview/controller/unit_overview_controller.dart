@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import '../../../core/learning/data/learning_journey_repository.dart';
 import '../../chapter_adventure/model/chapter_adventure.dart';
 
+import '../../../core/learning/model/learning_stage_models.dart';
+
 class UnitOverviewController extends GetxController {
   UnitOverviewController({
     LearningJourneyRepository? journeyRepository,
@@ -12,6 +14,7 @@ class UnitOverviewController extends GetxController {
   final isLoading = true.obs;
   final errorMessage = RxnString();
   final chapter = Rxn<ChapterAdventure>();
+  final stages = <LearningStageViewModel>[].obs;
 
   String unitId = 'sec_1_unit_1';
   String unitTitle = '';
@@ -35,16 +38,27 @@ class UnitOverviewController extends GetxController {
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      final journey = await _journeyRepo.getUnitJourney(unitId);
-      if (journey == null) {
+      final results = await Future.wait([
+        _journeyRepo.getUnitJourney(unitId),
+        _journeyRepo.getUnitStages(unitId),
+      ]);
+
+      final journey = results[0] as ChapterAdventure?;
+      final loadedStages = results[1] as List<LearningStageViewModel>;
+
+      stages.assignAll(loadedStages);
+
+      if (journey == null && loadedStages.isEmpty) {
         errorMessage.value = 'Không tìm thấy dữ liệu cho bài học này.';
       } else {
-        chapter.value = journey;
-        if (unitTitle.isEmpty) {
-          unitTitle = journey.title;
+        if (journey != null) {
+          chapter.value = journey;
+          if (unitTitle.isEmpty) {
+            unitTitle = journey.title;
+          }
+          sectionNumber = journey.regionNumber;
+          unitNumber = journey.chapterNumber;
         }
-        sectionNumber = journey.regionNumber;
-        unitNumber = journey.chapterNumber;
       }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối khi tải bài học: $e';
@@ -52,6 +66,20 @@ class UnitOverviewController extends GetxController {
       isLoading.value = false;
     }
   }
+
+  LearningStageViewModel? get nextPlayableStage {
+    if (stages.isEmpty) return null;
+    return stages.firstWhere(
+      (s) => s.isAvailable && !s.isCompleted,
+      orElse: () => stages.first,
+    );
+  }
+
+  int get completedStageCount => stages.where((s) => s.isCompleted).length;
+  int get totalStageCount => stages.length;
+
+  bool get areRequiredStagesCompleted =>
+      stages.where((s) => s.isRequired).every((s) => s.isCompleted);
 
   ChapterMission? get nextPlayableMission {
     final c = chapter.value;
