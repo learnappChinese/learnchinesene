@@ -179,7 +179,7 @@ void main() {
     await tester.tap(find.byTooltip('Trang chủ'));
     expect(calls, 0);
     await tester.tap(find.text('Trò chơi'));
-    await tester.tap(find.text('KHÁM PHÁ THẾ GIỚI'));
+    await tester.tap(find.text('Bắt đầu học'));
     expect(calls, 2);
     expect(tester.takeException(), isNull);
   });
