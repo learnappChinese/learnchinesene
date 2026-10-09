@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/database/db_helper.dart';
+import '../../../core/learning/model/learning_result.dart';
 import '../../../core/learning/service/learning_reward_service.dart';
 import '../../../core/models/speaking_practice_item.dart';
 import '../../../core/services/speech_service.dart';
@@ -30,6 +32,9 @@ class SpeakingController extends GetxController
   final recognized = ''.obs;
   final score = 0.0.obs;
   final correct = RxnBool();
+  final learningResult = Rxn<LearningResult>();
+  final LearningRewardService _rewardService = LearningRewardService();
+  String? _activeAttemptId;
 
   late final AnimationController pulse;
 
@@ -62,6 +67,14 @@ class SpeakingController extends GetxController
 
   @override
   void onClose() {
+    if (_activeAttemptId != null) {
+      unawaited(
+        _rewardService.abandonAttempt(
+          _activeAttemptId!,
+          metadata: const <String, dynamic>{'reason': 'speaking_closed'},
+        ),
+      );
+    }
     pulse.dispose();
     speech.stop();
     audioService.dispose();
@@ -126,6 +139,20 @@ class SpeakingController extends GetxController
 
     if (isClosed) return;
     final currentItem = items[currentIndex.value];
+    final sourceId =
+        'spk_${currentItem.wordId ?? currentItem.exampleId ?? currentIndex.value}';
+    final attemptId = 'spk_${DateTime.now().microsecondsSinceEpoch}';
+    final startedAt = DateTime.now();
+    _activeAttemptId = attemptId;
+
+    await _rewardService.startSpeakingAttempt(
+      sourceId: sourceId,
+      attemptId: attemptId,
+      wordId: currentItem.wordId,
+      exampleId: currentItem.exampleId,
+      targetText: currentItem.targetText,
+      unitId: unitId?.toString(),
+    );
 
     busy.value = true;
     recognized.value = '';
@@ -141,53 +168,47 @@ class SpeakingController extends GetxController
     pulse.value = 1;
 
     if (!result.isAvailable) {
+      await _rewardService.abandonAttempt(
+        attemptId,
+        metadata: const <String, dynamic>{'reason': 'speech_unavailable'},
+      );
+      _activeAttemptId = null;
       busy.value = false;
       return;
     }
 
-    if (currentItem.wordId != null || currentItem.exampleId != null) {
-      await DbHelper.instance.saveSpeakingPractice(
-        wordId: currentItem.wordId ?? 0,
+    try {
+      final reward = await _rewardService.processSpeakingReward(
+        sourceId: sourceId,
+        attemptId: attemptId,
+        accuracyScore: result.score,
+        pronunciationScore: result.pronunciationScore,
+        toneScore: result.toneScore,
+        fluencyScore: result.fluencyScore,
+        recognizedText: result.recognizedText,
+        wordId: currentItem.wordId,
         exampleId: currentItem.exampleId,
         targetText: currentItem.targetText,
-        recognizedText: result.recognizedText,
-        score: result.score,
-        isCorrect: result.isCorrect,
+        unitId: unitId?.toString(),
+        durationSeconds: DateTime.now().difference(startedAt).inSeconds,
       );
+      learningResult.value = reward;
+      _activeAttemptId = null;
 
-      // Unified learning reward & streak sync
-      try {
-        final rewardService = LearningRewardService();
-        final sid = 'spk_${currentItem.wordId ?? currentItem.exampleId ?? 0}';
-        final attId = 'spk_${DateTime.now().millisecondsSinceEpoch}';
-        await rewardService.processSpeakingReward(
-          sourceId: sid,
-          attemptId: attId,
-          accuracyScore: result.score,
-          pronunciationScore: result.score,
-          toneScore: result.isCorrect ? result.score : (result.score * 0.8),
-          fluencyScore: result.score,
-          recognizedText: result.recognizedText,
-        );
-
-        if (Get.isRegistered<HomeController>()) {
-          Get.find<HomeController>().refreshStats();
-        }
-      } catch (_) {}
-    }
-
-    if (currentItem.wordId != null) {
-      await DbHelper.instance.upsertProgress(
-        wordId: currentItem.wordId!,
-        isCorrect: result.isCorrect,
-      );
+      if (Get.isRegistered<HomeController>()) {
+        await Get.find<HomeController>().refreshStats();
+      }
+    } catch (error) {
+      if (!isClosed) {
+        errorMessage.value = 'Không thể lưu kết quả phát âm: $error';
+      }
     }
 
     if (isClosed) return;
     busy.value = false;
     recognized.value = result.recognizedText;
-    score.value = result.score;
-    correct.value = result.isCorrect;
+    score.value = learningResult.value?.score ?? result.score;
+    correct.value = learningResult.value?.passed ?? false;
   }
 
   void nextItem(BuildContext context) {

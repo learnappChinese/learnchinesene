@@ -7,6 +7,7 @@ class ChapterHeaderBanner extends StatelessWidget {
     required this.chapterNumber,
     required this.chineseTitle,
     required this.vietnameseTitle,
+    this.badgeLabel,
     this.objectives = const [],
     this.backgroundAsset = 'assets/images/backgrounds/learning_practice.png',
   });
@@ -14,6 +15,7 @@ class ChapterHeaderBanner extends StatelessWidget {
   final int chapterNumber;
   final String chineseTitle;
   final String vietnameseTitle;
+  final String? badgeLabel;
   final List<String> objectives;
   final String backgroundAsset;
 
@@ -79,7 +81,7 @@ class ChapterHeaderBanner extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'CHAPTER $chapterNumber',
+                          badgeLabel ?? 'BÀI $chapterNumber',
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w900,

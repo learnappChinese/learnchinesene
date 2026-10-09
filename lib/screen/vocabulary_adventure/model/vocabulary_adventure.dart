@@ -114,12 +114,16 @@ class VocabularyMission {
 
 class VocabularyRunSnapshot {
   const VocabularyRunSnapshot({
+    required this.attemptId,
+    required this.startedAt,
     required this.currentIndex,
     required this.score,
     required this.correctCount,
     required this.wrongCount,
   });
 
+  final String attemptId;
+  final DateTime startedAt;
   final int currentIndex;
   final int score;
   final int correctCount;

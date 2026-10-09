@@ -4,7 +4,10 @@ import 'package:get/get.dart';
 import '../../../core/responsive/responsive_layout.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/widgets/chapter_header_banner.dart';
+import '../../../core/widgets/adventure_node.dart';
 import '../../../core/widgets/learning_scene_background.dart';
+import '../../../core/widgets/learning_scaffold.dart';
+import '../../../core/widgets/locked_mission_sheet.dart';
 import '../../boss_battle/boss_battle_screen.dart';
 import '../../duolingo/page/duo_game_runner_screen.dart';
 import '../../vocabulary_adventure/binding/vocabulary_adventure_binding.dart';
@@ -17,9 +20,8 @@ class ChapterAdventureScreen extends GetView<ChapterAdventureController> {
   const ChapterAdventureScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('Chapter Adventure')),
+  Widget build(BuildContext context) => LearningScaffold(
+        title: 'Hành trình bài học',
         body: LearningSceneBackground(
           theme: LearningSceneTheme.bambooVillage,
           child: Obx(() => _buildState(context)),
@@ -40,7 +42,7 @@ class ChapterAdventureScreen extends GetView<ChapterAdventureController> {
     if (chapter == null || chapter.missions.isEmpty) {
       return _ChapterMapMessage(
         icon: Icons.map_outlined,
-        title: 'Chapter này chưa có nhiệm vụ khả dụng.',
+        title: 'Bài học này chưa có nhiệm vụ khả dụng.',
         action: 'TẢI LẠI',
         onTap: controller.loadChapter,
       );
@@ -57,6 +59,7 @@ class ChapterAdventureScreen extends GetView<ChapterAdventureController> {
           SliverToBoxAdapter(
             child: ChapterHeaderBanner(
               chapterNumber: chapter.chapterNumber,
+              badgeLabel: 'BÀI ${chapter.chapterNumber}',
               chineseTitle: '学习冒险',
               vietnameseTitle: chapter.title,
               objectives: [chapter.objective],
@@ -71,8 +74,9 @@ class ChapterAdventureScreen extends GetView<ChapterAdventureController> {
               child: AdventureMap(
                 missions: chapter.missions,
                 bossUnlocked: chapter.bossUnlocked && chapter.boss != null,
-                onMissionTap: (mission) => _openMission(chapter, mission),
-                onBossTap: () => _openBoss(chapter),
+                onMissionTap: (mission) =>
+                    _openMission(context, chapter, mission),
+                onBossTap: () => _openBoss(context, chapter),
               ),
             ),
           ),
@@ -82,7 +86,15 @@ class ChapterAdventureScreen extends GetView<ChapterAdventureController> {
     );
   }
 
-  void _openMission(ChapterAdventure chapter, ChapterMission mission) {
+  void _openMission(
+    BuildContext context,
+    ChapterAdventure chapter,
+    ChapterMission mission,
+  ) {
+    if (mission.state == AdventureNodeState.locked) {
+      _showLockedMission(context, chapter, mission);
+      return;
+    }
     if (mission.gameCode == 'learn_words') {
       Get.to(
         () => const VocabularyAdventureScreen(),
@@ -100,16 +112,68 @@ class ChapterAdventureScreen extends GetView<ChapterAdventureController> {
         gameCode: mission.gameCode,
         levelId: chapter.levelId,
         gameName: mission.title,
+        chapterNumber: chapter.chapterNumber,
+        missionNumber: chapter.missions.indexOf(mission) + 1,
+        missionCount: chapter.missions.length,
       ),
     )?.then((_) => controller.loadChapter());
   }
 
-  void _openBoss(ChapterAdventure chapter) {
+  void _openBoss(BuildContext context, ChapterAdventure chapter) {
     final boss = chapter.boss;
-    if (boss == null || !chapter.bossUnlocked) return;
+    if (boss == null) return;
+    if (!chapter.bossUnlocked) {
+      showLockedMissionSheet(
+        context,
+        title: 'Cổng Boss chưa mở',
+        message: _lockMessage(
+          chapter.bossLockReason,
+          chapter.bossRequiredMastery,
+        ),
+      );
+      return;
+    }
     Get.to(() => BossBattleScreen(stage: boss))
         ?.then((_) => controller.loadChapter());
   }
+
+  void _showLockedMission(
+    BuildContext context,
+    ChapterAdventure chapter,
+    ChapterMission mission,
+  ) {
+    final requiredGameId =
+        int.tryParse(mission.requiredNodeId?.split(':').first ?? '');
+    ChapterMission? required;
+    if (requiredGameId != null) {
+      for (final item in chapter.missions) {
+        if (item.gameId == requiredGameId) {
+          required = item;
+          break;
+        }
+      }
+    }
+    final requiredMission = required;
+    showLockedMissionSheet(
+      context,
+      title: 'Nhiệm vụ này chưa mở',
+      message: _lockMessage(mission.lockReason, mission.requiredMastery),
+      requiredTitle: requiredMission?.title,
+      onViewRequired: requiredMission == null
+          ? null
+          : () {
+              _openMission(context, chapter, requiredMission);
+            },
+    );
+  }
+
+  String _lockMessage(String? reason, double? mastery) => switch (reason) {
+        'mastery_too_low' =>
+          'Nâng mastery lên ít nhất ${((mastery ?? .7) * 100).round()}% để mở khóa.',
+        'boss_required' => 'Hãy đánh bại Boss của bài trước.',
+        'chapter_locked' => 'Hãy hoàn thành bài học trước để tiếp tục.',
+        _ => 'Hoàn thành nhiệm vụ trước trên bản đồ để mở khóa.',
+      };
 }
 
 class _ChapterProgress extends StatelessWidget {

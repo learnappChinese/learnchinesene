@@ -1,33 +1,26 @@
 import 'package:flutter/material.dart';
+import '../learning/model/learning_result.dart';
 import '../theme/game_visual_tokens.dart';
 import 'panda_companion.dart';
 
 class MissionCompleteOverlay extends StatelessWidget {
   const MissionCompleteOverlay({
     super.key,
-    required this.stars,
-    required this.score,
-    required this.accuracy,
-    required this.xpEarned,
-    this.bestCombo = 0,
-    this.wordsMastered = 0,
-    this.isRecord = false,
+    required this.result,
     required this.onNextMission,
     required this.onBackToMap,
   });
 
-  final int stars; // 1..3
-  final int score;
-  final int accuracy; // 0..100
-  final int xpEarned;
-  final int bestCombo;
-  final int wordsMastered;
-  final bool isRecord;
+  final LearningResult result;
   final VoidCallback onNextMission;
   final VoidCallback onBackToMap;
 
   @override
   Widget build(BuildContext context) {
+    final passed = result.passed;
+    final masteryGain = ((result.masteryAfter - result.masteryBefore) * 100)
+        .clamp(0, 100)
+        .round();
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -48,11 +41,10 @@ class MissionCompleteOverlay extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Stars Header
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(3, (i) {
-                final active = i < stars;
+                final active = i < result.stars;
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: Text(
@@ -64,18 +56,22 @@ class MissionCompleteOverlay extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // Banner Title
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [GameVisualTokens.crimson, GameVisualTokens.imperialGold],
+                gradient: LinearGradient(
+                  colors: passed
+                      ? const [
+                          GameVisualTokens.crimson,
+                          GameVisualTokens.imperialGold,
+                        ]
+                      : const [Color(0xFF9A3412), Color(0xFFF97316)],
                 ),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                'HOÀN THÀNH NHIỆM VỤ',
-                style: TextStyle(
+              child: Text(
+                passed ? 'HOÀN THÀNH NHIỆM VỤ' : 'CHƯA ĐẠT',
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
@@ -83,7 +79,7 @@ class MissionCompleteOverlay extends StatelessWidget {
                 ),
               ),
             ),
-            if (isRecord) ...[
+            if (passed && (result.perfect || result.firstClear)) ...[
               const SizedBox(height: 6),
               const Text(
                 '🏆 KỶ LỤC MỚI!',
@@ -97,11 +93,20 @@ class MissionCompleteOverlay extends StatelessWidget {
             ],
             const SizedBox(height: 16),
 
-            // Panda Celebration
-            const PandaCompanion(
+            PandaCompanion(
               size: 110,
-              mood: PandaMood.victory,
+              mood: passed ? PandaMood.victory : PandaMood.encourage,
             ),
+            if (!passed) ...[
+              const SizedBox(height: 8),
+              Text(
+                result.reason.isNotEmpty
+                    ? _reasonCopy(result.reason)
+                    : 'Cần ít nhất 70% để mở nhiệm vụ tiếp theo.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, height: 1.35),
+              ),
+            ],
             const SizedBox(height: 16),
 
             // Metrics Grid
@@ -112,25 +117,49 @@ class MissionCompleteOverlay extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.white12),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+              child: Wrap(
+                alignment: WrapAlignment.spaceAround,
+                runAlignment: WrapAlignment.center,
+                spacing: 18,
+                runSpacing: 12,
                 children: [
-                  _metricItem('ĐIỂM SỐ', '$score', GameVisualTokens.goldLight),
-                  _metricItem('CHÍNH XÁC', '$accuracy%', GameVisualTokens.jadeLight),
-                  _metricItem('XP NHẬN', '+$xpEarned', Colors.amberAccent),
-                  if (bestCombo > 0)
-                    _metricItem('COMBO', 'x$bestCombo', const Color(0xFFFF8A80)),
+                  _metricItem(
+                    'ĐIỂM SỐ',
+                    '${result.score.round()}',
+                    GameVisualTokens.goldLight,
+                  ),
+                  _metricItem(
+                    'CHÍNH XÁC',
+                    '${(result.accuracy * 100).round()}%',
+                    GameVisualTokens.jadeLight,
+                  ),
+                  _metricItem(
+                    'XP NHẬN',
+                    '+${result.xpEarned}',
+                    Colors.amberAccent,
+                  ),
+                  _metricItem(
+                    'MASTERY',
+                    '+$masteryGain%',
+                    GameVisualTokens.jadeLight,
+                  ),
+                  if (result.bestCombo > 0)
+                    _metricItem(
+                      'COMBO',
+                      'x${result.bestCombo}',
+                      const Color(0xFFFF8A80),
+                    ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
 
-            // CTA Buttons
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: GameVisualTokens.green,
+                  backgroundColor:
+                      passed ? GameVisualTokens.green : const Color(0xFFF97316),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
@@ -138,9 +167,13 @@ class MissionCompleteOverlay extends StatelessWidget {
                   elevation: 6,
                 ),
                 onPressed: onNextMission,
-                child: const Text(
-                  '⚔️ MỞ NHIỆM VỤ TIẾP THEO',
-                  style: TextStyle(
+                child: Text(
+                  passed
+                      ? (result.unlockedNext
+                          ? 'NHIỆM VỤ TIẾP THEO'
+                          : 'VỀ CHAPTER')
+                      : 'THỬ LẠI',
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -191,5 +224,22 @@ class MissionCompleteOverlay extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _reasonCopy(String reason) {
+    switch (reason) {
+      case 'accuracy_below_threshold':
+      case 'score_below_threshold':
+      case 'failed':
+        return 'Cần ít nhất 70% để mở nhiệm vụ tiếp theo.';
+      case 'speaking_pronunciation_below_minimum':
+        return 'Phát âm cần đạt ít nhất 60%. Hãy nghe chậm và thử lại.';
+      case 'speaking_tone_below_minimum':
+        return 'Thanh điệu cần đạt ít nhất 50%. Hãy nói chậm hơn.';
+      case 'boss_not_defeated':
+        return 'Hãy giữ HP và đưa HP của Boss về 0.';
+      default:
+        return 'Chỉ cần thêm một chút nữa. Hãy thử lại!';
+    }
   }
 }

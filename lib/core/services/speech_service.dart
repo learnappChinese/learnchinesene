@@ -8,12 +8,18 @@ class SpeechResult {
   final String recognizedText;
   final double score;
   final bool isCorrect;
+  final double? pronunciationScore;
+  final double? toneScore;
+  final double? fluencyScore;
 
   const SpeechResult({
     required this.isAvailable,
     required this.recognizedText,
     required this.score,
     required this.isCorrect,
+    this.pronunciationScore,
+    this.toneScore,
+    this.fluencyScore,
   });
 }
 

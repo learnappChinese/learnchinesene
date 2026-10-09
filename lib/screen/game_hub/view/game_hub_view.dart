@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -6,6 +6,7 @@ import '../../home/widgets/home_decorations.dart';
 import '../../home/widgets/shared_tab_background.dart';
 import '../../home/widgets/tab_header.dart';
 import '../../home/widgets/tab_card_text.dart';
+import '../../../core/theme/learning_theme.dart';
 import 'game_journey_button.dart';
 
 /// Shared illustrated game menu for the app and the standalone game preview.
@@ -18,11 +19,19 @@ class GameHubView extends StatelessWidget {
     required this.onRestaurant,
     required this.onQuickAnswer,
     this.onStageMap,
+    this.chapterNumber,
+    this.completedMissions,
+    this.totalMissions,
+    this.stars,
   });
 
   final VoidCallback onBossBattle, onRadicalBuilder, onToneNinja;
   final VoidCallback onRestaurant, onQuickAnswer;
   final VoidCallback? onStageMap;
+  final int? chapterNumber;
+  final int? completedMissions;
+  final int? totalMissions;
+  final int? stars;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +62,8 @@ class GameHubView extends StatelessWidget {
                   ink: const Color(0xFF7F190E),
                   accent: const Color(0xFFF51F17),
                   onTap: onBossBattle,
+                  progressLabel: _progressLabel,
+                  stars: stars,
                 ),
                 SizedBox(height: 8.w),
                 _GameCard(
@@ -62,6 +73,8 @@ class GameHubView extends StatelessWidget {
                   ink: const Color(0xFF004C3C),
                   accent: const Color(0xFF2DBD37),
                   onTap: onRadicalBuilder,
+                  progressLabel: _progressLabel,
+                  stars: stars,
                 ),
                 SizedBox(height: 8.w),
                 _GameCard(
@@ -72,6 +85,8 @@ class GameHubView extends StatelessWidget {
                   ink: const Color(0xFF32136F),
                   accent: const Color(0xFF8845F7),
                   onTap: onToneNinja,
+                  progressLabel: _progressLabel,
+                  stars: stars,
                 ),
                 SizedBox(height: 8.w),
                 _GameCard(
@@ -81,6 +96,8 @@ class GameHubView extends StatelessWidget {
                   ink: const Color(0xFF71320D),
                   accent: const Color(0xFFFF8900),
                   onTap: onRestaurant,
+                  progressLabel: _progressLabel,
+                  stars: stars,
                 ),
                 SizedBox(height: 8.w),
                 _GameCard(
@@ -90,6 +107,8 @@ class GameHubView extends StatelessWidget {
                   ink: const Color(0xFF003E7C),
                   accent: const Color(0xFF159CFF),
                   onTap: onQuickAnswer,
+                  progressLabel: _progressLabel,
+                  stars: stars,
                 ),
               ]),
             ),
@@ -97,6 +116,16 @@ class GameHubView extends StatelessWidget {
         ]),
       ),
     );
+  }
+
+  String? get _progressLabel {
+    final chapter = chapterNumber;
+    final completed = completedMissions;
+    final total = totalMissions;
+    if (chapter == null || completed == null || total == null || total <= 0) {
+      return null;
+    }
+    return 'CHAPTER $chapter  •  $completed / $total nhiệm vụ';
   }
 }
 
@@ -109,12 +138,16 @@ class _GameCard extends StatelessWidget {
     required this.accent,
     required this.onTap,
     this.character,
+    this.progressLabel,
+    this.stars,
   });
 
   final String title, description, asset;
   final Color ink, accent;
   final VoidCallback onTap;
   final String? character;
+  final String? progressLabel;
+  final int? stars;
 
   @override
   Widget build(BuildContext context) {
@@ -159,10 +192,44 @@ class _GameCard extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 padding: EdgeInsets.fromLTRB(
                     constraints.maxWidth * .38, 15.w, 58.w, 14.w),
-                child: TabCardText(
-                  title: title,
-                  description: description,
-                  titleColor: ink,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (progressLabel != null) ...[
+                      Text(
+                        progressLabel!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: LearningColors.jadeDark,
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: .45,
+                        ),
+                      ),
+                      SizedBox(height: 3.w),
+                    ],
+                    TabCardText(
+                      title: title,
+                      description: description,
+                      titleColor: ink,
+                    ),
+                    if (stars != null) ...[
+                      SizedBox(height: 4.w),
+                      Row(
+                        children: List.generate(3, (index) {
+                          return Icon(
+                            Icons.star_rounded,
+                            size: 13.sp,
+                            color: index < stars!.clamp(0, 3)
+                                ? LearningColors.gold
+                                : LearningColors.inkMuted.withValues(alpha: .3),
+                          );
+                        }),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               Positioned(

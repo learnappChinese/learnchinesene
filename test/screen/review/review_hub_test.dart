@@ -148,7 +148,7 @@ void main() {
       await tester.pumpWidget(buildTestScreen(const Size(360, 800)));
       await tester.pumpAndSettle();
 
-      expect(find.text('Trung Tâm Ôn Luyện'), findsOneWidget);
+      expect(find.text('Trung tâm Ôn luyện'), findsOneWidget);
       expect(find.textContaining('12 MỤC CẦN ÔN HÔM NAY'), findsOneWidget);
       expect(find.text('Từ vựng'), findsOneWidget);
       expect(find.text('Nghe'), findsOneWidget);
@@ -171,7 +171,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Trung Tâm Ôn Luyện'), findsOneWidget);
+      expect(find.text('Trung tâm Ôn luyện'), findsOneWidget);
     });
 
     testWidgets('switching category updates the item list in UI',

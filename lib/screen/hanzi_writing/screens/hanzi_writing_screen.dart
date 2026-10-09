@@ -13,6 +13,7 @@ import '../services/stroke_validator.dart';
 import '../services/svg_stroke_parser.dart';
 import '../models/hanzi_practice_config.dart';
 import '../../../core/responsive/responsive_layout.dart';
+import '../../../core/widgets/learning_scaffold.dart';
 
 class HanziWritingScreen extends StatefulWidget {
   final int characterId;
@@ -136,6 +137,9 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
         });
         return;
       }
+
+      await controller.beginPractice(widget.characterId);
+      if (!mounted || request != _loadRequest) return;
 
       setState(() {
         _character = char;
@@ -449,12 +453,10 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
             ? null
             : _roundConfigs[_currentRoundIndex];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_character != null
-            ? 'Viết chữ: ${_character!.character}'
-            : 'Viết chữ Hán'),
-      ),
+    return LearningScaffold(
+      title: _character != null
+          ? 'Viết chữ: ${_character!.character}'
+          : 'Viết chữ Hán',
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null

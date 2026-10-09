@@ -313,6 +313,19 @@ class _FakeRepository implements VocabularyAdventureRepository {
   }
 
   @override
+  Future<void> startMission({
+    required String levelId,
+    required int gameId,
+    required String attemptId,
+  }) async {}
+
+  @override
+  Future<void> abandonMission({
+    required String attemptId,
+    required String reason,
+  }) async {}
+
+  @override
   Future<VocabularyMasteryUpdate?> recordWordOutcome({
     required int wordId,
     required bool isCorrect,
@@ -328,8 +341,9 @@ class _FakeRepository implements VocabularyAdventureRepository {
   Future<LearningResult?> completeMission({
     required String levelId,
     required int gameId,
-    required int score,
-    required int stars,
+    required String attemptId,
+    required int totalQuestions,
+    required int durationSeconds,
     int correctCount = 0,
     int wrongCount = 0,
     int maxCombo = 0,
@@ -338,20 +352,20 @@ class _FakeRepository implements VocabularyAdventureRepository {
     return LearningResult(
       activityType: 'vocabulary',
       sourceId: levelId,
-      attemptId: 'test_attempt',
+      attemptId: attemptId,
       passed: true,
-      stars: stars,
-      score: score.toDouble(),
+      stars: 3,
+      score: 100,
       accuracy: 1.0,
       correctCount: correctCount,
       wrongCount: wrongCount,
-      xpEarned: score,
+      xpEarned: 30,
       baseXp: 20,
       bonusXp: 10,
       newTotalXp: 100,
-      newStreak: 1,
-      isFirstClear: true,
-      isPerfect: true,
+      currentStreak: 1,
+      firstClear: true,
+      perfect: true,
     );
   }
 }

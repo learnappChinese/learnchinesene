@@ -78,7 +78,6 @@ class GameHubScreen extends StatelessWidget {
         ));
   }
 
-
   void _selectTab(int index) {
     if (index == 2) return;
     if (Get.isRegistered<HomeController>()) {
@@ -120,6 +119,26 @@ class GameHubScreen extends StatelessWidget {
   }
 
   Widget _buildGameMenu() {
+    if (!Get.isRegistered<HomeController>()) {
+      return _buildGameView();
+    }
+    return Obx(() {
+      final journey = Get.find<HomeController>().journey.value;
+      return _buildGameView(
+        chapterNumber: journey?.chapterNumber,
+        completedMissions: journey?.completedMissions,
+        totalMissions: journey?.totalMissions,
+        stars: journey?.stars,
+      );
+    });
+  }
+
+  Widget _buildGameView({
+    int? chapterNumber,
+    int? completedMissions,
+    int? totalMissions,
+    int? stars,
+  }) {
     return GameHubView(
       onBossBattle: _openBossBattle,
       onRadicalBuilder: _openRadicalBuilder,
@@ -127,6 +146,10 @@ class GameHubScreen extends StatelessWidget {
       onRestaurant: _openRestaurant,
       onQuickAnswer: _openQuickAnswer,
       onStageMap: _openStageMap,
+      chapterNumber: chapterNumber,
+      completedMissions: completedMissions,
+      totalMissions: totalMissions,
+      stars: stars,
     );
   }
 }

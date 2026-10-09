@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../core/learning/model/learning_result.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/quiz_question.dart';
@@ -196,31 +197,21 @@ class QuizQuestionView extends StatelessWidget {
 class QuizResultView extends StatelessWidget {
   const QuizResultView(
       {super.key,
-      required this.score,
-      required this.questionCount,
+      required this.result,
       required this.onRetry,
       required this.onReview});
-  final int score;
-  final int questionCount;
+  final LearningResult result;
   final VoidCallback onRetry;
   final VoidCallback onReview;
 
   @override
   Widget build(BuildContext context) {
-    final percent = (score / questionCount * 100).round();
-    final stars = percent >= 85 ? 3 : percent >= 50 ? 2 : 1;
     return SingleChildScrollView(
       child: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 24),
           child: MissionCompleteOverlay(
-            stars: stars,
-            score: score * 10,
-            accuracy: percent,
-            xpEarned: score * 15,
-            bestCombo: score > 2 ? 3 : 1,
-            wordsMastered: score,
-            isRecord: percent == 100,
+            result: result,
             onNextMission: onRetry,
             onBackToMap: () => Get.back(),
           ),

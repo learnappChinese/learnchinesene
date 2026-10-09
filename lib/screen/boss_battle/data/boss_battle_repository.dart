@@ -11,14 +11,6 @@ abstract class BossBattleQuestionSource {
     int? stageId,
   });
 
-  Future<void> recordBossProgress({
-    required int stageId,
-    required int score,
-    required int stars,
-    required int bestCombo,
-    required bool won,
-  });
-
   Future<void> close();
 }
 
@@ -125,31 +117,6 @@ class BossBattleRepository implements BossBattleQuestionSource {
       }
     }
     return null;
-  }
-
-  @override
-  Future<void> recordBossProgress({
-    required int stageId,
-    required int score,
-    required int stars,
-    required int bestCombo,
-    required bool won,
-  }) async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId != null) {
-      try {
-        await _client.rpc(
-          'record_boss_progress',
-          params: {
-            'p_stage_id': stageId,
-            'p_score': score,
-            'p_stars': stars,
-            'p_best_combo': bestCombo,
-            'p_won': won,
-          },
-        );
-      } catch (_) {}
-    }
   }
 
   @override

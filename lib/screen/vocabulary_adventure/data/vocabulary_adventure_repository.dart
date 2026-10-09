@@ -27,6 +27,17 @@ abstract interface class VocabularyAdventureRepository {
     required VocabularyRunSnapshot snapshot,
   });
 
+  Future<void> startMission({
+    required String levelId,
+    required int gameId,
+    required String attemptId,
+  });
+
+  Future<void> abandonMission({
+    required String attemptId,
+    required String reason,
+  });
+
   Future<VocabularyMasteryUpdate?> recordWordOutcome({
     required int wordId,
     required bool isCorrect,
@@ -36,8 +47,9 @@ abstract interface class VocabularyAdventureRepository {
   Future<LearningResult?> completeMission({
     required String levelId,
     required int gameId,
-    required int score,
-    required int stars,
+    required String attemptId,
+    required int totalQuestions,
+    required int durationSeconds,
     int correctCount = 0,
     int wrongCount = 0,
     int maxCombo = 0,
@@ -257,6 +269,9 @@ class SupabaseVocabularyAdventureRepository
     final row = await _duoDatabase.getActiveSession(gameId, levelId);
     if (row == null) return null;
     return VocabularyRunSnapshot(
+      attemptId: '${row['attempt_id'] ?? ''}',
+      startedAt: DateTime.tryParse('${row['started_at'] ?? ''}')?.toLocal() ??
+          DateTime.now(),
       currentIndex: (row['current_index'] as num?)?.toInt() ?? 0,
       score: (row['score'] as num?)?.toInt() ?? 0,
       correctCount: (row['correct_count'] as num?)?.toInt() ?? 0,
@@ -277,6 +292,30 @@ class SupabaseVocabularyAdventureRepository
         snapshot.score,
         snapshot.correctCount,
         snapshot.wrongCount,
+        snapshot.attemptId,
+      );
+
+  @override
+  Future<void> startMission({
+    required String levelId,
+    required int gameId,
+    required String attemptId,
+  }) =>
+      _rewardService.startDuoGameAttempt(
+        gameId: gameId,
+        gameCode: 'learn_words',
+        levelId: levelId,
+        attemptId: attemptId,
+      );
+
+  @override
+  Future<void> abandonMission({
+    required String attemptId,
+    required String reason,
+  }) =>
+      _rewardService.abandonAttempt(
+        attemptId,
+        metadata: <String, dynamic>{'reason': reason},
       );
 
   @override
@@ -309,35 +348,37 @@ class SupabaseVocabularyAdventureRepository
   Future<LearningResult?> completeMission({
     required String levelId,
     required int gameId,
-    required int score,
-    required int stars,
+    required String attemptId,
+    required int totalQuestions,
+    required int durationSeconds,
     int correctCount = 0,
     int wrongCount = 0,
     int maxCombo = 0,
   }) async {
-    final attemptId =
-        'vocab_${levelId}_${DateTime.now().millisecondsSinceEpoch}';
     final reward = await _rewardService.processVocabularyReward(
       levelId: levelId,
       attemptId: attemptId,
+      gameId: gameId,
       correctCount: correctCount,
       wrongCount: wrongCount,
       maxCombo: maxCombo,
-      isFirstClear: true,
+      totalQuestions: totalQuestions,
+      durationSeconds: durationSeconds,
     );
 
-    await _duoDatabase.saveLevelProgress(
-      gameId,
-      levelId,
-      reward.score.toInt(),
-      reward.stars,
-      reward.passed,
-    );
-
-    if (reward.passed) {
-      await _unlockNextPlayableLevel(gameId, levelId);
+    if (!_duoDatabase.isSignedIn) {
+      await _duoDatabase.saveLevelProgress(
+        gameId,
+        levelId,
+        reward.score.toInt(),
+        reward.stars,
+        reward.passed,
+      );
+      if (reward.passed) {
+        await _unlockNextPlayableLevel(gameId, levelId);
+      }
+      await _duoDatabase.clearActiveSession(gameId, levelId);
     }
-    await _duoDatabase.clearActiveSession(gameId, levelId);
     return reward;
   }
 

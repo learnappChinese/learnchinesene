@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import '../controller/hanzi_writing_home_controller.dart';
 import '../../../core/models/hanzi_character.dart';
 import '../../../core/widgets/learning_scene_background.dart';
+import '../../../core/widgets/learning_scaffold.dart';
+import '../../../core/theme/learning_theme.dart';
 import 'hanzi_writing_screen.dart';
 
 class HanziWritingHomeScreen extends StatefulWidget {
@@ -58,13 +60,8 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Luyện viết chữ Hán',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ),
+    return LearningScaffold(
+      title: 'Luyện viết chữ Hán',
       body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: _buildBody(),
@@ -85,7 +82,7 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
           });
           _loadCharacters();
         },
-        selectedColor: AppColors.red.withOpacity(0.2),
+        selectedColor: AppColors.red.withValues(alpha: 0.2),
         checkmarkColor: AppColors.red,
         labelStyle: TextStyle(
           color: isSelected ? AppColors.red : Colors.black87,
@@ -191,18 +188,55 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
   }
 
   Widget _buildBody() {
-    return Column(
-      children: [
-        // Search Bar
-        _buildSearchField(),
-        // HSK filter chip row
-        _buildLevelFilters(),
-        const SizedBox(height: 8),
-        // Character List
-        Expanded(
-          child: _buildCharacterList(),
-        ),
-      ],
-    );
+    return Obx(() {
+      final due = _characters
+          .where((character) =>
+              character.learningState == HanziLearningState.needsReview ||
+              character.learningState == HanziLearningState.learning)
+          .length;
+      return Column(
+        children: [
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            padding: const EdgeInsets.all(LearningSpacing.md),
+            decoration: BoxDecoration(
+              color: LearningColors.jadeDark,
+              borderRadius: LearningRadius.card,
+              boxShadow: LearningShadow.card,
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.gesture_rounded,
+                    color: LearningColors.gold, size: 38),
+                const SizedBox(width: LearningSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('TODAY\'S HANZI MISSION',
+                          style: LearningTypography.eyebrow
+                              .copyWith(color: LearningColors.gold)),
+                      const SizedBox(height: 3),
+                      Text(
+                        due == 0
+                            ? 'Chọn một chữ mới để luyện'
+                            : '$due chữ cần luyện hôm nay',
+                        style: LearningTypography.cardTitle
+                            .copyWith(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _buildSearchField(),
+          _buildLevelFilters(),
+          const SizedBox(height: 8),
+          Expanded(child: _buildCharacterList()),
+        ],
+      );
+    });
   }
 }

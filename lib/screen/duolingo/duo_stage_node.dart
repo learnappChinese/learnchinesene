@@ -7,6 +7,9 @@ class DuoStageNode extends StatelessWidget {
   final String icon;
   final String status; // 'available', 'completed', 'locked'
   final int stars;
+  final int score;
+  final int currentIndex;
+  final int currentTotal;
   final VoidCallback onTap;
 
   const DuoStageNode({
@@ -16,6 +19,9 @@ class DuoStageNode extends StatelessWidget {
     required this.icon,
     required this.status,
     required this.stars,
+    this.score = 0,
+    this.currentIndex = 0,
+    this.currentTotal = 0,
     required this.onTap,
   });
 
@@ -23,24 +29,34 @@ class DuoStageNode extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isLocked = status == 'locked';
     final bool isCompleted = status == 'completed';
+    final bool isInProgress = status == 'in_progress';
+    final bool isFailed = status == 'failed';
 
     Color nodeBgColor = isLocked
         ? Colors.grey.shade300
         : isCompleted
             ? GameVisualTokens.jade
-            : GameVisualTokens.imperialGold;
+            : isFailed
+                ? const Color(0xFFE58B7C)
+                : isInProgress
+                    ? GameVisualTokens.orange
+                    : GameVisualTokens.imperialGold;
 
     Color shadowColor = isLocked
         ? Colors.grey.shade500
         : isCompleted
             ? GameVisualTokens.jadeDark
-            : const Color(0xFFB8860B);
+            : isFailed
+                ? GameVisualTokens.crimsonDark
+                : isInProgress
+                    ? const Color(0xFFB45309)
+                    : const Color(0xFFB8860B);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         GestureDetector(
-          onTap: isLocked ? null : onTap,
+          onTap: onTap,
           child: Container(
             width: 76,
             height: 76,
@@ -107,6 +123,36 @@ class DuoStageNode extends StatelessWidget {
                       size: 16,
                     );
                   }),
+                ),
+              ] else if (isInProgress && currentTotal > 0) ...[
+                const SizedBox(height: 3),
+                Text(
+                  'ĐANG HỌC  •  ${currentIndex + 1}/$currentTotal',
+                  style: const TextStyle(
+                    color: GameVisualTokens.orange,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ] else if (isFailed) ...[
+                const SizedBox(height: 3),
+                Text(
+                  'CHƯA ĐẠT  •  $score%',
+                  style: const TextStyle(
+                    color: GameVisualTokens.crimsonDark,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ] else if (isLocked) ...[
+                const SizedBox(height: 3),
+                const Text(
+                  'XEM ĐIỀU KIỆN',
+                  style: TextStyle(
+                    color: GameVisualTokens.muted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ],
             ],

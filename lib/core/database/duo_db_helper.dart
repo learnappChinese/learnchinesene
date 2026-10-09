@@ -23,6 +23,7 @@ class DuoDbHelper {
 
   SupabaseClient get _client => Supabase.instance.client;
   String? get _userId => _client.auth.currentUser?.id;
+  bool get isSignedIn => _userId != null;
 
   Future<SupabaseClient> get database async {
     await _client.from('duo_game_definitions').select('id').limit(1);
@@ -41,55 +42,52 @@ class DuoDbHelper {
           .order('game_order'),
     );
 
-    final levelRows = List<Map<String, dynamic>>.from(
-      await _client.from('duo_levels').select('id'),
-    );
-    final totalLevels = levelRows.length;
-
-    final userId = _userId;
-    final cloudRows = userId == null
-        ? <Map<String, dynamic>>[]
-        : List<Map<String, dynamic>>.from(
-            await _client
-                .from('duo_level_progress')
-                .select('game_id, is_completed, stars')
-                .eq('user_id', userId),
-          );
-    final prefs = userId == null ? await SharedPreferences.getInstance() : null;
+    final chapter = await _loadCurrentUnitPath();
+    final current = chapter.current;
+    final path = chapter.rows;
 
     return games.map((game) {
       final gameId = (game['id'] as num?)?.toInt() ?? 0;
-      var completedLevels = 0;
-      var bestStars = 0;
-
-      if (userId != null) {
-        for (final progress in cloudRows) {
-          if ((progress['game_id'] as num?)?.toInt() != gameId) continue;
-          if (progress['is_completed'] == true) completedLevels++;
-          bestStars = max(
-            bestStars,
-            (progress['stars'] as num?)?.toInt() ?? 0,
-          );
-        }
-      } else {
-        for (final key in prefs!.getKeys()) {
-          if (!key.startsWith('$_progressPrefix${gameId}_')) continue;
-          final progress = _decodeMap(prefs.getString(key));
-          if (progress['is_completed'] == true) completedLevels++;
-          bestStars = max(
-            bestStars,
-            (progress['stars'] as num?)?.toInt() ?? 0,
-          );
-        }
-      }
+      final missions = path
+          .where((row) =>
+              row['node_type'] == 'learning' &&
+              (row['game_id'] as num?)?.toInt() == gameId)
+          .toList(growable: false);
+      final completed =
+          missions.where((row) => row['is_completed'] == true).length;
+      final target = _currentTarget(missions);
+      final bestStars = missions.fold<int>(
+        0,
+        (best, row) => max(best, (row['stars'] as num?)?.toInt() ?? 0),
+      );
+      final state = target == null
+          ? (missions.isNotEmpty && completed == missions.length
+              ? 'completed'
+              : 'quick_practice')
+          : target['in_progress'] == true
+              ? 'in_progress'
+              : ((target['attempts'] as num?)?.toInt() ?? 0) > 0
+                  ? 'failed'
+                  : target['is_unlocked'] == true
+                      ? 'available'
+                      : 'locked';
 
       return <String, dynamic>{
         ...game,
         'id': gameId,
         'game_order': (game['game_order'] as num?)?.toInt() ?? 0,
-        'total_levels': totalLevels,
-        'completed_levels': completedLevels,
+        'unit_id': '${current['unit_id'] ?? ''}',
+        'chapter_number': (current['unit_number'] as num?)?.toInt() ?? 1,
+        'chapter_title': '${current['unit_title'] ?? ''}',
+        'total_levels': missions.length,
+        'completed_levels': completed,
         'best_stars': bestStars,
+        'state': state,
+        'target_level_id': target?['level_id'],
+        'current_index': (target?['current_index'] as num?)?.toInt() ?? 0,
+        'current_total': (target?['current_total'] as num?)?.toInt() ?? 0,
+        'best_score': (target?['best_score'] as num?)?.toInt() ?? 0,
+        'lock_reason': target?['lock_reason'],
       };
     }).toList();
   }
@@ -100,67 +98,99 @@ class DuoDbHelper {
   ) async {
     await _migrateLegacyStateIfNeeded();
 
-    final rows = List<Map<String, dynamic>>.from(
+    final chapter = await _loadCurrentUnitPath();
+    final current = chapter.current;
+    return chapter.rows
+        .where((row) =>
+            row['node_type'] == 'learning' && row['game_code'] == gameCode)
+        .map((row) => <String, dynamic>{
+              ...row,
+              'section_title': current['section_title'],
+              'unit_title': current['unit_title'],
+              'section_number': (row['section_number'] as num?)?.toInt() ?? 1,
+              'unit_number': (row['unit_number'] as num?)?.toInt() ?? 1,
+              'level_index': (row['level_index'] as num?)?.toInt() ?? 0,
+              'challenge_count': (row['challenge_count'] as num?)?.toInt() ?? 0,
+              'attempts': (row['attempts'] as num?)?.toInt() ?? 0,
+              'best_score': (row['best_score'] as num?)?.toInt() ?? 0,
+              'stars': (row['stars'] as num?)?.toInt() ?? 0,
+              'is_unlocked': row['is_unlocked'] == true ? 1 : 0,
+              'is_completed': row['is_completed'] == true ? 1 : 0,
+            })
+        .toList(growable: false);
+  }
+
+  Future<List<Map<String, dynamic>>> getUnitLearningPath(String unitId) async {
+    var rows = List<Map<String, dynamic>>.from(
       await _client.rpc(
-        'duo_game_path',
-        params: {'p_game_code': gameCode},
+        'unit_learning_path_v2',
+        params: <String, dynamic>{'p_unit_id': unitId},
       ),
     );
+    if (_userId == null) rows = await _overlayGuestPath(rows);
+    return rows;
+  }
 
-    final userId = _userId;
-    final progressByLevel = <String, Map<String, dynamic>>{};
-
-    SharedPreferences? prefs;
-    if (userId != null) {
-      final progressRows = List<Map<String, dynamic>>.from(
-        await _client
-            .from('duo_level_progress')
-            .select(
-              'level_id, attempts, best_score, stars, is_unlocked, '
-              'is_completed, last_played_at, completed_at',
-            )
-            .eq('user_id', userId)
-            .eq('game_id', gameId),
-      );
-      for (final row in progressRows) {
-        progressByLevel['${row['level_id'] ?? ''}'] = row;
-      }
-    } else {
-      prefs = await SharedPreferences.getInstance();
+  Future<
+      ({
+        Map<String, dynamic> current,
+        List<Map<String, dynamic>> rows,
+      })> _loadCurrentUnitPath() async {
+    final response = await _client.rpc('current_learning_unit_v2');
+    final current = response is Map
+        ? Map<String, dynamic>.from(response)
+        : <String, dynamic>{};
+    final unitId = '${current['unit_id'] ?? ''}';
+    if (unitId.isEmpty) {
+      return (current: current, rows: const <Map<String, dynamic>>[]);
     }
 
-    var unlockedFirstPlayable = false;
+    final rows = await getUnitLearningPath(unitId);
+    return (current: current, rows: rows);
+  }
 
+  Future<List<Map<String, dynamic>>> _overlayGuestPath(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
     return rows.map((row) {
+      if (row['node_type'] != 'learning') return row;
+      final gameId = (row['game_id'] as num?)?.toInt() ?? 0;
       final levelId = '${row['level_id'] ?? ''}';
-      final progress = userId != null
-          ? (progressByLevel[levelId] ?? <String, dynamic>{})
-          : _decodeMap(prefs!.getString(_progressKey(gameId, levelId)));
-      final challengeCount =
-          (row['challenge_count'] as num?)?.toInt() ?? 0;
-
-      var isUnlocked = progress['is_unlocked'] == true;
-      if (!unlockedFirstPlayable && challengeCount > 0) {
-        unlockedFirstPlayable = true;
-        if (progress.isEmpty) isUnlocked = true;
-      }
-
+      final progress =
+          _decodeMap(prefs.getString(_progressKey(gameId, levelId)));
+      final active = _decodeMap(prefs.getString(_sessionKey(gameId, levelId)));
+      final inProgress = active['status'] == 'active';
       return <String, dynamic>{
         ...row,
-        'section_number':
-            (row['section_number'] as num?)?.toInt() ?? 0,
-        'unit_number': (row['unit_number'] as num?)?.toInt() ?? 0,
-        'level_index': (row['level_index'] as num?)?.toInt() ?? 0,
-        'challenge_count': challengeCount,
-        'attempts': (progress['attempts'] as num?)?.toInt() ?? 0,
-        'best_score': (progress['best_score'] as num?)?.toInt() ?? 0,
-        'stars': (progress['stars'] as num?)?.toInt() ?? 0,
-        'is_unlocked': isUnlocked ? 1 : 0,
-        'is_completed': progress['is_completed'] == true ? 1 : 0,
-        'last_played_at': progress['last_played_at'],
-        'completed_at': progress['completed_at'],
+        'attempts': (progress['attempts'] as num?)?.toInt() ?? row['attempts'],
+        'best_score':
+            (progress['best_score'] as num?)?.toInt() ?? row['best_score'],
+        'stars': (progress['stars'] as num?)?.toInt() ?? row['stars'],
+        'is_unlocked': row['is_unlocked'] == true ||
+            progress['is_unlocked'] == true ||
+            progress['is_completed'] == true,
+        'is_completed': progress['is_completed'] == true,
+        'in_progress': inProgress,
+        'current_index': inProgress
+            ? (active['current_index'] as num?)?.toInt() ?? 0
+            : row['current_index'],
+        'current_total': row['current_total'],
       };
-    }).toList();
+    }).toList(growable: false);
+  }
+
+  Map<String, dynamic>? _currentTarget(List<Map<String, dynamic>> missions) {
+    for (final row in missions) {
+      if (row['in_progress'] == true) return row;
+    }
+    for (final row in missions) {
+      if (row['is_unlocked'] == true && row['is_completed'] != true) return row;
+    }
+    for (final row in missions) {
+      if (row['is_completed'] != true) return row;
+    }
+    return null;
   }
 
   Future<void> saveLevelProgress(
@@ -172,17 +202,10 @@ class DuoDbHelper {
   ) async {
     final userId = _userId;
     if (userId != null) {
-      await _client.rpc(
-        'record_duo_level_progress',
-        params: {
-          'p_game_id': gameId,
-          'p_level_id': levelId,
-          'p_score': max(0, score),
-          'p_stars': stars.clamp(0, 3),
-          'p_passed': passed,
-        },
+      throw StateError(
+        'Cloud level progress must be written by '
+        'complete_learning_activity_v2.',
       );
-      return;
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -204,9 +227,8 @@ class DuoDbHelper {
         'is_unlocked': true,
         'is_completed': passed || current['is_completed'] == true,
         'last_played_at': now,
-        'completed_at': passed
-            ? (current['completed_at'] ?? now)
-            : current['completed_at'],
+        'completed_at':
+            passed ? (current['completed_at'] ?? now) : current['completed_at'],
       }),
     );
   }
@@ -214,14 +236,9 @@ class DuoDbHelper {
   Future<void> unlockLevel(int gameId, String levelId) async {
     final userId = _userId;
     if (userId != null) {
-      await _client.rpc(
-        'unlock_duo_level',
-        params: {
-          'p_game_id': gameId,
-          'p_level_id': levelId,
-        },
+      throw StateError(
+        'Cloud unlocks must be derived by complete_learning_activity_v2.',
       );
-      return;
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -287,7 +304,7 @@ class DuoDbHelper {
             .from('duo_active_sessions')
             .select(
               'game_id, level_id, current_index, score, correct_count, '
-              'wrong_count, started_at, status, updated_at',
+              'wrong_count, attempt_id, started_at, status, updated_at',
             )
             .eq('user_id', userId)
             .eq('game_id', gameId)
@@ -313,6 +330,7 @@ class DuoDbHelper {
     int score,
     int correct,
     int wrong,
+    String attemptId,
   ) async {
     final userId = _userId;
     if (userId != null) {
@@ -326,6 +344,7 @@ class DuoDbHelper {
           'score': max(0, score),
           'correct_count': max(0, correct),
           'wrong_count': max(0, wrong),
+          'attempt_id': attemptId,
           'status': 'active',
           'updated_at': now,
         },
@@ -347,9 +366,9 @@ class DuoDbHelper {
         'score': score,
         'correct_count': correct,
         'wrong_count': wrong,
+        'attempt_id': attemptId,
         'started_at':
-            existing['started_at'] ??
-                DateTime.now().toUtc().toIso8601String(),
+            existing['started_at'] ?? DateTime.now().toUtc().toIso8601String(),
         'status': 'active',
       }),
     );
@@ -392,20 +411,7 @@ class DuoDbHelper {
     final migrationKey = '$_migrationPrefix$userId';
     if (prefs.getBool(migrationKey) == true) return;
 
-    final cloudProgressRows = List<Map<String, dynamic>>.from(
-      await _client
-          .from('duo_level_progress')
-          .select(
-            'game_id, level_id, attempts, best_score, stars, is_unlocked, '
-            'is_completed, last_played_at, completed_at',
-          )
-          .eq('user_id', userId),
-    );
-
-    final cloudProgress = <String, Map<String, dynamic>>{
-      for (final row in cloudProgressRows)
-        '${row['game_id']}_${row['level_id']}': row,
-    };
+    final localProgress = <Map<String, dynamic>>[];
 
     final cloudSessionRows = List<Map<String, dynamic>>.from(
       await _client
@@ -425,42 +431,17 @@ class DuoDbHelper {
         final local = _decodeMap(prefs.getString(key));
         if (local.isEmpty) continue;
 
-        final composite = '${parsed.gameId}_${parsed.levelId}';
-        final remote = cloudProgress[composite] ?? <String, dynamic>{};
-        final localCompleted = local['is_completed'] == true;
-        final remoteCompleted = remote['is_completed'] == true;
-
-        await _client.from('duo_level_progress').upsert(
-          {
-            'user_id': userId,
-            'game_id': parsed.gameId,
-            'level_id': parsed.levelId,
-            'attempts': max(
-              (local['attempts'] as num?)?.toInt() ?? 0,
-              (remote['attempts'] as num?)?.toInt() ?? 0,
-            ),
-            'best_score': max(
-              (local['best_score'] as num?)?.toInt() ?? 0,
-              (remote['best_score'] as num?)?.toInt() ?? 0,
-            ),
-            'stars': max(
-              (local['stars'] as num?)?.toInt() ?? 0,
-              (remote['stars'] as num?)?.toInt() ?? 0,
-            ).clamp(0, 3),
-            'is_unlocked':
-                local['is_unlocked'] == true ||
-                remote['is_unlocked'] == true,
-            'is_completed': localCompleted || remoteCompleted,
-            'last_played_at': _latestIso(
-              local['last_played_at'],
-              remote['last_played_at'],
-            ),
-            'completed_at':
-                remote['completed_at'] ?? local['completed_at'],
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          },
-          onConflict: 'user_id,game_id,level_id',
-        );
+        localProgress.add(<String, dynamic>{
+          'game_id': parsed.gameId,
+          'level_id': parsed.levelId,
+          'attempts': (local['attempts'] as num?)?.toInt() ?? 0,
+          'best_score': (local['best_score'] as num?)?.toInt() ?? 0,
+          'stars': (local['stars'] as num?)?.toInt() ?? 0,
+          'is_unlocked': local['is_unlocked'] == true,
+          'is_completed': local['is_completed'] == true,
+          'last_played_at': local['last_played_at'],
+          'completed_at': local['completed_at'],
+        });
       } else if (key.startsWith(_sessionPrefix)) {
         final parsed = _parseLegacyCompositeKey(key, _sessionPrefix);
         if (parsed == null) continue;
@@ -476,22 +457,26 @@ class DuoDbHelper {
             'user_id': userId,
             'game_id': parsed.gameId,
             'level_id': parsed.levelId,
-            'current_index':
-                (local['current_index'] as num?)?.toInt() ?? 0,
+            'current_index': (local['current_index'] as num?)?.toInt() ?? 0,
             'score': (local['score'] as num?)?.toInt() ?? 0,
-            'correct_count':
-                (local['correct_count'] as num?)?.toInt() ?? 0,
-            'wrong_count':
-                (local['wrong_count'] as num?)?.toInt() ?? 0,
+            'correct_count': (local['correct_count'] as num?)?.toInt() ?? 0,
+            'wrong_count': (local['wrong_count'] as num?)?.toInt() ?? 0,
+            'attempt_id': local['attempt_id'],
             'status': 'active',
             'started_at':
-                local['started_at'] ??
-                DateTime.now().toUtc().toIso8601String(),
+                local['started_at'] ?? DateTime.now().toUtc().toIso8601String(),
             'updated_at': DateTime.now().toUtc().toIso8601String(),
           },
           onConflict: 'user_id,game_id,level_id',
         );
       }
+    }
+
+    if (localProgress.isNotEmpty) {
+      await _client.rpc(
+        'merge_guest_duo_progress_v2',
+        params: <String, dynamic>{'p_progress': localProgress},
+      );
     }
 
     await prefs.setBool(migrationKey, true);
@@ -512,16 +497,6 @@ class DuoDbHelper {
       gameId: gameId,
       levelId: rest.substring(separator + 1),
     );
-  }
-
-  static String? _latestIso(dynamic a, dynamic b) {
-    final aDate = DateTime.tryParse('${a ?? ''}');
-    final bDate = DateTime.tryParse('${b ?? ''}');
-    if (aDate == null) return bDate?.toUtc().toIso8601String();
-    if (bDate == null) return aDate.toUtc().toIso8601String();
-    return aDate.isAfter(bDate)
-        ? aDate.toUtc().toIso8601String()
-        : bDate.toUtc().toIso8601String();
   }
 
   static String _progressKey(int gameId, String levelId) =>

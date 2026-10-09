@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/helper/permission_helper.dart';
+import '../../../core/services/speech_service.dart';
 
 class DuoSpeakingWidget extends StatefulWidget {
   final dynamic challenge;
   final bool isAnswered;
-  final Function(bool isCorrect) onCheck;
+  final ValueChanged<SpeechResult> onCheck;
 
   const DuoSpeakingWidget({
     super.key,
@@ -19,6 +21,24 @@ class DuoSpeakingWidget extends StatefulWidget {
 
 class _DuoSpeakingWidgetState extends State<DuoSpeakingWidget> {
   bool isListening = false;
+  final SpeechService _speech = SpeechService();
+
+  @override
+  void dispose() {
+    _speech.stop();
+    super.dispose();
+  }
+
+  Future<void> _listen(String targetText) async {
+    if (isListening || widget.isAnswered) return;
+    final granted = await PermissionHelper.requestSpeakingPermissions();
+    if (!granted || !mounted) return;
+    setState(() => isListening = true);
+    final result = await _speech.listenAndScore(targetText: targetText);
+    if (!mounted) return;
+    setState(() => isListening = false);
+    if (result.isAvailable) widget.onCheck(result);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,17 +63,8 @@ class _DuoSpeakingWidgetState extends State<DuoSpeakingWidget> {
           ),
           const Spacer(),
           GestureDetector(
-            onTap: widget.isAnswered
-                ? null
-                : () {
-                    setState(() {
-                      isListening = !isListening;
-                    });
-                    if (!isListening) {
-                      // Kết thúc giả lập nghe -> Trả về kết quả đúng
-                      widget.onCheck(true);
-                    }
-                  },
+            onTap:
+                widget.isAnswered || isListening ? null : () => _listen(text),
             child: Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(

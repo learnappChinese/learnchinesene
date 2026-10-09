@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'widget/duo_game_card.dart';
 import 'duo_game_visuals.dart';
 import 'package:get/get.dart';
+import '../../core/widgets/learning_scaffold.dart';
+import '../../core/widgets/learning_scene_background.dart';
 import 'controller/duo_game_center_controller.dart';
 import 'page/duo_game_path_screen.dart';
 
@@ -26,13 +28,12 @@ class _DuoGameCenterScreenState extends State<DuoGameCenterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Game Center'),
-        backgroundColor: Colors.white,
-        elevation: 1,
+    return LearningScaffold(
+      title: 'Game Center',
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.lanternTown,
+        child: _buildGameCatalog(context),
       ),
-      body: _buildGameCatalog(context),
     );
   }
 
@@ -59,6 +60,11 @@ class _DuoGameCenterScreenState extends State<DuoGameCenterScreen> {
           final totalLevels = game['total_levels'] as int;
           final completedLevels = game['completed_levels'] as int;
           final bestStars = game['best_stars'] as int? ?? 0;
+          final chapterNumber = game['chapter_number'] as int? ?? 1;
+          final chapterTitle = '${game['chapter_title'] ?? ''}';
+          final state = '${game['state'] ?? 'quick_practice'}';
+          final currentIndex = game['current_index'] as int? ?? 0;
+          final currentTotal = game['current_total'] as int? ?? 0;
 
           final IconData iconData = DuoGameVisuals.icon(gameCode);
           final Color gameColor = DuoGameVisuals.color(gameCode);
@@ -70,6 +76,11 @@ class _DuoGameCenterScreenState extends State<DuoGameCenterScreen> {
               totalLevels: totalLevels,
               completedLevels: completedLevels,
               bestStars: bestStars,
+              chapterNumber: chapterNumber,
+              chapterTitle: chapterTitle,
+              state: state,
+              currentIndex: currentIndex,
+              currentTotal: currentTotal,
               iconData: iconData,
               gameColor: gameColor,
               onTap: () {

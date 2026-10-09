@@ -1,3 +1,5 @@
+import '../../../core/learning/model/learning_recommendation.dart';
+
 class HomeJourney {
   const HomeJourney({
     required this.gameId,
@@ -5,6 +7,7 @@ class HomeJourney {
     required this.gameName,
     required this.gameDescription,
     required this.levelId,
+    this.unitId,
     required this.worldNumber,
     required this.chapterNumber,
     required this.chapterTitle,
@@ -15,6 +18,7 @@ class HomeJourney {
     required this.stars,
     required this.bossProgress,
     required this.nextRewardXp,
+    this.recommendation,
   });
 
   final int gameId;
@@ -22,6 +26,7 @@ class HomeJourney {
   final String gameName;
   final String gameDescription;
   final String levelId;
+  final String? unitId;
   final int worldNumber;
   final int chapterNumber;
   final String chapterTitle;
@@ -32,6 +37,7 @@ class HomeJourney {
   final int stars;
   final double bossProgress;
   final int nextRewardXp;
+  final LearningRecommendation? recommendation;
 
   double get chapterProgress =>
       totalMissions == 0 ? 0 : completedMissions / totalMissions;

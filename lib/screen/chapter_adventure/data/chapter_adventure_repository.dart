@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/presentation/learning_presentation_mapper.dart';
+import '../../../core/database/duo_db_helper.dart';
 import '../../../core/widgets/adventure_node.dart';
 import '../../boss_battle/model/boss_battle_stage.dart';
 import '../model/chapter_adventure.dart';
@@ -9,165 +11,127 @@ abstract interface class ChapterAdventureRepository {
 }
 
 class SupabaseChapterAdventureRepository implements ChapterAdventureRepository {
-  SupabaseChapterAdventureRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseChapterAdventureRepository({
+    SupabaseClient? client,
+    DuoDbHelper? duoDbHelper,
+  })  : _client = client ?? Supabase.instance.client,
+        _duoDbHelper = duoDbHelper ?? DuoDbHelper.instance;
 
   final SupabaseClient _client;
+  final DuoDbHelper _duoDbHelper;
 
   @override
   Future<ChapterAdventure?> loadChapter(String levelId) async {
     final levelRows = List<Map<String, dynamic>>.from(
       await _client
           .from('duo_levels')
-          .select('id, unit_id, teaching_objective, level_type, level_subtype')
+          .select('id, unit_id, teaching_objective')
           .eq('id', levelId)
           .limit(1),
     );
     if (levelRows.isEmpty) return null;
+
     final level = levelRows.first;
     final unitId = '${level['unit_id'] ?? ''}';
+    final rows = await _duoDbHelper.getUnitLearningPath(unitId);
+    if (rows.isEmpty) return null;
 
-    final unitRows = List<Map<String, dynamic>>.from(
-      await _client
-          .from('duo_units')
-          .select('id, section_id, unit_number, title')
-          .eq('id', unitId)
-          .limit(1),
-    );
-    if (unitRows.isEmpty) return null;
-    final unit = unitRows.first;
-
-    final sectionRows = List<Map<String, dynamic>>.from(
-      await _client
-          .from('duo_sections')
-          .select('section_number, title')
-          .eq('id', '${unit['section_id'] ?? ''}')
-          .limit(1),
-    );
-    final section =
-        sectionRows.isEmpty ? <String, dynamic>{} : sectionRows.first;
-
-    final sessionRows = List<Map<String, dynamic>>.from(
-      await _client.from('duo_sessions').select('id').eq('level_id', levelId),
-    );
-    final sessionIds = sessionRows
-        .map((row) => (row['id'] as num?)?.toInt())
-        .whereType<int>()
+    final learningRows = rows
+        .where((row) => row['node_type'] == 'learning')
         .toList(growable: false);
-    final challengeTypes = <String>{};
-    if (sessionIds.isNotEmpty) {
-      final challengeRows = List<Map<String, dynamic>>.from(
-        await _client
-            .from('duo_challenges')
-            .select('type')
-            .inFilter('session_id', sessionIds),
-      );
-      challengeTypes.addAll(challengeRows.map((row) => '${row['type'] ?? ''}'));
-    }
+    final bossRows =
+        rows.where((row) => row['node_type'] == 'boss').toList(growable: false);
+    if (learningRows.isEmpty) return null;
 
-    final gameRows = List<Map<String, dynamic>>.from(
-      await _client
-          .from('duo_game_definitions')
-          .select('id, game_code, game_order, name_vi, description_vi')
-          .order('game_order'),
-    ).where((game) => _supports(game['game_code'], challengeTypes)).toList();
-
-    final userId = _client.auth.currentUser?.id;
-    final progressRows = userId == null
-        ? <Map<String, dynamic>>[]
-        : List<Map<String, dynamic>>.from(
-            await _client
-                .from('duo_level_progress')
-                .select('game_id, attempts, stars, is_unlocked, is_completed')
-                .eq('user_id', userId)
-                .eq('level_id', levelId),
-          );
-    final progressByGame = <int, Map<String, dynamic>>{
-      for (final row in progressRows)
-        if ((row['game_id'] as num?)?.toInt() case final int id) id: row,
-    };
-
-    final firstGameId =
-        gameRows.isEmpty ? null : (gameRows.first['id'] as num?)?.toInt();
-    final firstCompleted = firstGameId != null &&
-        progressByGame[firstGameId]?['is_completed'] == true;
-    final missions = <ChapterMission>[];
-    for (var index = 0; index < gameRows.length; index++) {
-      final game = gameRows[index];
-      final gameId = (game['id'] as num?)?.toInt() ?? 0;
-      final progress = progressByGame[gameId] ?? const <String, dynamic>{};
-      final completed = progress['is_completed'] == true;
-      final stars = ((progress['stars'] as num?)?.toInt() ?? 0).clamp(0, 3);
-      final attempts = (progress['attempts'] as num?)?.toInt() ?? 0;
-      final explicitlyUnlocked = progress['is_unlocked'] == true;
-      final branchAvailable = index == 1 || index == 2;
-      final available = index == 0 ||
-          explicitlyUnlocked ||
-          (branchAvailable && firstCompleted) ||
-          (index >= 3 && missions.every((mission) => mission.isCompleted));
-
+    final missions = learningRows.map((row) {
+      final completed = row['is_completed'] == true;
+      final unlocked = row['is_unlocked'] == true;
+      final inProgress = row['in_progress'] == true;
+      final stars = ((row['stars'] as num?)?.toInt() ?? 0).clamp(0, 3);
+      final attempts = (row['attempts'] as num?)?.toInt() ?? 0;
       final state = completed
           ? (stars == 3
               ? AdventureNodeState.perfect
               : AdventureNodeState.completed)
-          : attempts > 0
+          : inProgress
               ? AdventureNodeState.inProgress
-              : available
-                  ? AdventureNodeState.available
-                  : AdventureNodeState.locked;
+              : !unlocked
+                  ? AdventureNodeState.locked
+                  : attempts > 0
+                      ? AdventureNodeState.failed
+                      : AdventureNodeState.available;
 
-      missions.add(ChapterMission(
-        gameId: gameId,
-        gameCode: '${game['game_code'] ?? ''}',
-        title: '${game['name_vi'] ?? 'Nhiệm vụ'}',
-        description: '${game['description_vi'] ?? ''}',
-        type: _nodeType('${game['game_code'] ?? ''}'),
+      return ChapterMission(
+        gameId: (row['game_id'] as num?)?.toInt() ?? 0,
+        gameCode: '${row['game_code'] ?? ''}',
+        title: LearningPresentationMapper.missionTitle(
+          row['game_name'],
+          '${row['game_code'] ?? ''}',
+          (row['node_order'] as num?)?.toInt() ?? 1,
+        ),
+        description: LearningPresentationMapper.missionSubtitle(
+          row['game_description'],
+          '${row['game_code'] ?? ''}',
+        ),
+        type: _nodeType('${row['game_code'] ?? ''}'),
         state: state,
         stars: stars,
-      ));
-    }
+        attempts: attempts,
+        bestScore: (row['best_score'] as num?)?.toInt() ?? 0,
+        currentIndex: (row['current_index'] as num?)?.toInt() ?? 0,
+        currentTotal: (row['current_total'] as num?)?.toInt() ?? 0,
+        lockReason: row['lock_reason'] as String?,
+        requiredNodeId: row['required_node_id'] as String?,
+        requiredMastery: (row['required_mastery'] as num?)?.toDouble(),
+      );
+    }).toList(growable: false);
 
-    final bossRows = List<Map<String, dynamic>>.from(
-      await _client.from('boss_stages').select().eq('unit_id', unitId).limit(1),
-    );
+    final first = learningRows.first;
+    final bossRow = bossRows.isEmpty ? null : bossRows.first;
+    final boss = bossRow == null
+        ? null
+        : BossBattleStage.fromMap(<String, dynamic>{
+            'id': bossRow['boss_stage_id'],
+            'unit_id': unitId,
+            'stage_order': bossRow['node_order'],
+            'section_number': bossRow['section_number'],
+            'unit_number': bossRow['unit_number'],
+            'title': bossRow['game_name'],
+            'question_count': bossRow['challenge_count'],
+            'difficulty': bossRow['difficulty'],
+            'boss_name': bossRow['boss_name'],
+            'boss_hp': bossRow['boss_hp'],
+            'player_hp': bossRow['player_hp'],
+            'theme_code': 'sunset',
+          });
 
     return ChapterAdventure(
       levelId: levelId,
       unitId: unitId,
-      regionNumber: (section['section_number'] as num?)?.toInt() ?? 1,
-      chapterNumber: (unit['unit_number'] as num?)?.toInt() ?? 1,
-      title: '${unit['title'] ?? 'Chương mới'}',
-      objective: '${level['teaching_objective'] ?? unit['title'] ?? ''}',
+      regionNumber: (first['section_number'] as num?)?.toInt() ?? 1,
+      chapterNumber: (first['unit_number'] as num?)?.toInt() ?? 1,
+      title: LearningPresentationMapper.chapterTitle(
+        first['unit_title'],
+        (first['unit_number'] as num?)?.toInt() ?? 1,
+      ),
+      objective: '${level['teaching_objective'] ?? first['unit_title'] ?? ''}',
       missions: missions,
-      boss: bossRows.isEmpty ? null : BossBattleStage.fromMap(bossRows.first),
+      overallMastery: (first['overall_mastery'] as num?)?.toDouble() ?? 0.0,
+      bossUnlocked: bossRow?['is_unlocked'] == true,
+      bossLockReason: bossRow?['lock_reason'] as String?,
+      bossRequiredNodeId: bossRow?['required_node_id'] as String?,
+      bossRequiredMastery: (bossRow?['required_mastery'] as num?)?.toDouble(),
+      boss: boss,
     );
-  }
-
-  static bool _supports(dynamic codeValue, Set<String> types) {
-    final code = '$codeValue';
-    if (types.isEmpty) return false;
-    return switch (code) {
-      'learn_words' => true,
-      'select_answer' => types.contains('select') || types.contains('assist'),
-      'listen_select' =>
-        types.any((type) => type.toLowerCase().contains('listen')),
-      'translate' => types.contains('translate'),
-      'gap_fill' => types.any((type) => type.toLowerCase().contains('gap')),
-      'tap_complete' => types.contains('tapComplete'),
-      'match_pairs' => types.contains('match'),
-      'dialogue' =>
-        types.any((type) => type.toLowerCase().contains('dialogue')),
-      'sentence_order' =>
-        types.any((type) => type.toLowerCase().contains('order')),
-      'speaking' => types.any((type) => type.toLowerCase().contains('speak')),
-      _ => false,
-    };
   }
 
   static AdventureNodeType _nodeType(String code) => switch (code) {
         'learn_words' => AdventureNodeType.learn,
         'listen_select' => AdventureNodeType.listening,
-        'select_answer' || 'match_pairs' => AdventureNodeType.select,
+        'select_answer' ||
+        'match_pairs' ||
+        'word_connect' =>
+          AdventureNodeType.select,
         'dialogue' => AdventureNodeType.dialogue,
         'speaking' => AdventureNodeType.speaking,
         _ => AdventureNodeType.game,

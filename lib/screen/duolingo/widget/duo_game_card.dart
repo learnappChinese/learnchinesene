@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/learning_theme.dart';
+
 class DuoGameCard extends StatelessWidget {
   const DuoGameCard(
       {super.key,
@@ -8,6 +10,11 @@ class DuoGameCard extends StatelessWidget {
       required this.totalLevels,
       required this.completedLevels,
       required this.bestStars,
+      required this.chapterNumber,
+      required this.chapterTitle,
+      required this.state,
+      required this.currentIndex,
+      required this.currentTotal,
       required this.iconData,
       required this.gameColor,
       required this.onTap});
@@ -16,19 +23,36 @@ class DuoGameCard extends StatelessWidget {
   final int totalLevels;
   final int completedLevels;
   final int bestStars;
+  final int chapterNumber;
+  final String chapterTitle;
+  final String state;
+  final int currentIndex;
+  final int currentTotal;
   final IconData iconData;
   final Color gameColor;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final cta = switch (state) {
+      'in_progress' => 'TIẾP TỤC',
+      'failed' => 'THỬ LẠI',
+      'available' => 'BẮT ĐẦU',
+      'completed' => 'CHƠI LẠI',
+      'locked' => 'XEM ĐIỀU KIỆN',
+      _ => 'LUYỆN NHANH',
+    };
     return Card(
-      elevation: 4,
-      shadowColor: gameColor.withValues(alpha: 0.2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 0,
+      color: LearningColors.surface,
+      shadowColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(LearningRadius.lg),
+        side: BorderSide(color: gameColor.withValues(alpha: .24)),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(LearningRadius.lg),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -71,12 +95,33 @@ class DuoGameCard extends StatelessWidget {
                       color: Colors.grey, size: 18),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
+              Text(
+                'CHAPTER $chapterNumber',
+                style: LearningTypography.label,
+              ),
+              if (chapterTitle.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  chapterTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: LearningColors.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Tiến trình: $completedLevels / $totalLevels Cấp độ',
+                    state == 'in_progress' && currentTotal > 0
+                        ? 'Đang học: ${currentIndex + 1} / $currentTotal câu'
+                        : totalLevels > 0
+                            ? '$completedLevels / $totalLevels nhiệm vụ'
+                            : 'Quick Practice',
                     style: const TextStyle(
                         fontSize: 13, fontWeight: FontWeight.bold),
                   ),
@@ -102,6 +147,30 @@ class DuoGameCard extends StatelessWidget {
                   minHeight: 8,
                   backgroundColor: Colors.grey.shade200,
                   color: gameColor,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: state == 'locked'
+                        ? LearningColors.surfaceStrong
+                        : LearningColors.jade,
+                    borderRadius: BorderRadius.circular(LearningRadius.pill),
+                  ),
+                  child: Text(
+                    cta,
+                    style: TextStyle(
+                      color: state == 'locked'
+                          ? LearningColors.muted
+                          : Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ),
             ],

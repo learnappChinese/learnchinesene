@@ -1,6 +1,10 @@
 import 'dart:async';
 
 import 'package:flash_learn_chinese/core/database/db_helper.dart';
+import 'package:flash_learn_chinese/core/learning/data/learning_progress_repository.dart';
+import 'package:flash_learn_chinese/core/learning/model/learning_activity_submission.dart';
+import 'package:flash_learn_chinese/core/learning/model/learning_result.dart';
+import 'package:flash_learn_chinese/core/learning/service/learning_reward_service.dart';
 import 'package:flash_learn_chinese/core/models/hanzi_character.dart';
 import 'package:flash_learn_chinese/core/models/unit_model.dart';
 import 'package:flash_learn_chinese/core/models/word.dart';
@@ -23,18 +27,9 @@ class _Database implements DbHelper {
   final searches = <String?, Future<List<HanziCharacter>>>{};
   final ratings = <(int, bool)>[];
   Future<HanziCharacter?> character = Future.value(null);
-  final writingProgress = <(int, double, int)>[];
 
   @override
   Future<HanziCharacter?> getCharacterForWritingById(int id) => character;
-
-  @override
-  Future<void> saveHanziWritingProgress(
-      {required int characterId,
-      required double score,
-      required int attempts}) async {
-    writingProgress.add((characterId, score, attempts));
-  }
 
   @override
   Future<List<Word>> getReviewWords() => review;
@@ -55,6 +50,24 @@ class _Database implements DbHelper {
   Future<void> upsertProgress(
       {required int wordId, required bool isCorrect, int level = 1}) async {
     ratings.add((wordId, isCorrect));
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _LearningProgressRepository implements LearningProgressRepository {
+  final completions = <LearningActivitySubmission>[];
+
+  @override
+  Future<LearningResult> completeActivity(
+    LearningActivitySubmission submission,
+  ) async {
+    completions.add(submission);
+    return LearningResult.fromMap(<String, dynamic>{
+      ...submission.toJson(),
+      'passed': true,
+    });
   }
 
   @override
@@ -318,7 +331,11 @@ void main() {
 
   test('Writing session saves the average score and sum of attempts', () async {
     final database = _Database();
-    final controller = Get.put(HanziWritingController(database: database));
+    final progress = _LearningProgressRepository();
+    final controller = Get.put(HanziWritingController(
+      database: database,
+      rewardService: LearningRewardService(repository: progress),
+    ));
     await controller.saveProgress(7, const [
       HanziRoundResult(
           roundNumber: 1,
@@ -336,10 +353,15 @@ void main() {
           durationMilliseconds: 20),
     ]);
     await controller.saveProgress(7, []);
-    expect(database.writingProgress, [(7, 90.0, 9), (7, 0.0, 0)]);
+    expect(progress.completions, hasLength(2));
+    expect(progress.completions[0].sourceId, '7');
+    expect(progress.completions[0].hanziScore, 90);
+    expect(progress.completions[0].metadata['practice_attempts'], 9);
+    expect(progress.completions[1].hanziScore, 0);
+    expect(progress.completions[1].metadata['practice_attempts'], 0);
     await Get.delete<HanziWritingController>();
     await controller.saveProgress(7, []);
-    expect(database.writingProgress, hasLength(2));
+    expect(progress.completions, hasLength(2));
   });
 
   test(

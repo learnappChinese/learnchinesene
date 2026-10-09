@@ -18,15 +18,6 @@ class _FakeQuestionSource implements BossBattleQuestionSource {
   }
 
   @override
-  Future<void> recordBossProgress({
-    required int stageId,
-    required int score,
-    required int stars,
-    required int bestCombo,
-    required bool won,
-  }) async {}
-
-  @override
   Future<void> close() async {}
 }
 

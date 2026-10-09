@@ -17,6 +17,7 @@ enum AdventureNodeState {
   locked,
   available,
   inProgress,
+  failed,
   completed,
   perfect,
 }
@@ -31,6 +32,8 @@ class AdventureNode extends StatelessWidget {
     this.isActive = false,
     this.horizontalOffset = 0.0,
     this.rewardPreview,
+    this.progressLabel,
+    this.ctaLabel,
     required this.onTap,
   });
 
@@ -41,6 +44,8 @@ class AdventureNode extends StatelessWidget {
   final bool isActive;
   final double horizontalOffset;
   final String? rewardPreview;
+  final String? progressLabel;
+  final String? ctaLabel;
   final VoidCallback onTap;
 
   IconData _getIcon() {
@@ -101,6 +106,12 @@ class AdventureNode extends StatelessWidget {
           GameVisualTokens.blue,
           const Color(0xFF0369A1),
         );
+      case AdventureNodeState.failed:
+        return (
+          const Color(0xFFFFF7ED),
+          const Color(0xFFF97316),
+          const Color(0xFFC2410C),
+        );
       case AdventureNodeState.locked:
         return (
           const Color(0xFFE2E8F0),
@@ -136,10 +147,10 @@ class AdventureNode extends StatelessWidget {
                 ),
               Semantics(
                 button: true,
-                enabled: !isLocked,
+                enabled: true,
                 label: '$title, ${state.name}',
                 child: GestureDetector(
-                  onTap: isLocked ? null : onTap,
+                  onTap: onTap,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     width: nodeSize,
@@ -196,6 +207,42 @@ class AdventureNode extends StatelessWidget {
               color: isLocked ? const Color(0xFF94A3B8) : GameVisualTokens.ink,
             ),
           ),
+          if (progressLabel != null) ...[
+            const SizedBox(height: 3),
+            Text(
+              progressLabel!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isLocked
+                    ? const Color(0xFF64748B)
+                    : GameVisualTokens.templeWood,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          if (ctaLabel != null) ...[
+            const SizedBox(height: 5),
+            Container(
+              constraints: const BoxConstraints(minHeight: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              decoration: BoxDecoration(
+                color: borderColor.withValues(alpha: .14),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: borderColor.withValues(alpha: .35)),
+              ),
+              child: Text(
+                ctaLabel!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: glowColor,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: .35,
+                ),
+              ),
+            ),
+          ],
           if (rewardPreview != null) ...[
             const SizedBox(height: 3),
             Container(

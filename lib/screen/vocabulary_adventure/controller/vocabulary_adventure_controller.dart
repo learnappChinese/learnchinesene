@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 
-import '../../../core/learning/learning_rules_config.dart';
 import '../../../core/learning/model/learning_result.dart';
 import '../../home/controller/home_controller.dart';
 import '../data/vocabulary_adventure_repository.dart';
@@ -47,6 +46,9 @@ class VocabularyAdventureController extends GetxController {
   final learningResult = Rxn<LearningResult>();
   final List<Future<void>> _pendingWrites = [];
   var _requestId = 0;
+  late String _attemptId;
+  late DateTime _startedAt;
+  bool _attemptStarted = false;
 
   VocabularyGameplayEvent? get currentEvent {
     final value = mission.value;
@@ -63,9 +65,7 @@ class VocabularyAdventureController extends GetxController {
     return total == 0 ? 100 : ((correctCount.value / total) * 100).round();
   }
 
-  int get stars =>
-      learningResult.value?.stars ??
-      LearningRulesConfig.evaluateStars(accuracy / 100.0);
+  int get stars => learningResult.value?.stars ?? 0;
 
   @override
   void onInit() {
@@ -103,6 +103,18 @@ class VocabularyAdventureController extends GetxController {
       xpEarned.value = active?.score ?? 0;
       correctCount.value = active?.correctCount ?? 0;
       wrongCount.value = active?.wrongCount ?? 0;
+      _attemptId = active?.attemptId.trim() ?? '';
+      if (_attemptId.isEmpty) {
+        _attemptId =
+            'vocab_${levelId}_${DateTime.now().microsecondsSinceEpoch}';
+      }
+      _startedAt = active?.startedAt ?? DateTime.now();
+      await _repository.startMission(
+        levelId: levelId,
+        gameId: gameId,
+        attemptId: _attemptId,
+      );
+      _attemptStarted = true;
       isIntroVisible.value = active == null ||
           (active.currentIndex == 0 &&
               active.correctCount == 0 &&
@@ -232,11 +244,13 @@ class VocabularyAdventureController extends GetxController {
       final res = await _repository.completeMission(
         levelId: levelId,
         gameId: gameId,
-        score: score.value,
-        stars: stars,
+        attemptId: _attemptId,
+        totalQuestions:
+            mission.value!.events.where((event) => !event.isDiscovery).length,
+        durationSeconds: DateTime.now().difference(_startedAt).inSeconds,
         correctCount: correctCount.value,
         wrongCount: wrongCount.value,
-        maxCombo: combo.value,
+        maxCombo: bestCombo.value,
       );
       if (isClosed) return;
       learningResult.value = res;
@@ -309,6 +323,8 @@ class VocabularyAdventureController extends GetxController {
         levelId: levelId,
         gameId: gameId,
         snapshot: VocabularyRunSnapshot(
+          attemptId: _attemptId,
+          startedAt: _startedAt,
           currentIndex: currentIndex.value,
           score: score.value,
           correctCount: correctCount.value,
@@ -343,6 +359,14 @@ class VocabularyAdventureController extends GetxController {
   @override
   void onClose() {
     _requestId++;
+    if (_attemptStarted && !isCompleted.value) {
+      unawaited(
+        _repository.abandonMission(
+          attemptId: _attemptId,
+          reason: 'vocabulary_closed',
+        ),
+      );
+    }
     _audioService.dispose();
     super.onClose();
   }
