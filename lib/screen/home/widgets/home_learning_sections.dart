@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../core/theme/game_visual_tokens.dart';
-import '../../../core/widgets/panda_companion.dart';
+import '../model/home_journey.dart';
 import 'home_decorations.dart';
 import 'home_green_button.dart';
 import 'home_landscape_accent.dart';
@@ -19,11 +18,13 @@ class HomeLearningSections extends StatelessWidget {
     required this.onSpeaking,
     required this.onChallenge,
     required this.onViewAllQuickActions,
+    this.journey,
   });
 
   final int streak, lessons, xp;
   final VoidCallback onStartLearning, onGrammar, onListening, onSpeaking;
   final VoidCallback onChallenge, onViewAllQuickActions;
+  final HomeJourney? journey;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -90,258 +91,129 @@ class HomeLearningSections extends StatelessWidget {
         children: [
           _SurfaceCard(
             onTap: onStartLearning,
-            radius: 20.r,
-            border: BorderSide(
-              color: GameVisualTokens.gold.withValues(alpha: .5),
-              width: 1.5.w,
-            ),
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFFFFDF5),
-                    Color(0xFFF7F4E9),
-                    Color(0xFFEFF5EA),
-                  ],
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: const HomeLandscapeAccent(color: Color(0xFF4AB56A)),
-                  ),
-                  Padding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.w),
-                    child: Column(
+            child: SizedBox(
+              height: 76.w,
+              child: Stack(children: [
+                Positioned.fill(
+                    child: const HomeLandscapeAccent(color: Color(0xFF4AB56A))),
+                Padding(
+                  padding: EdgeInsets.all(8.w),
+                  child: Row(children: [
+                    const _LessonBook(),
+                    SizedBox(width: 9.w),
+                    Expanded(
+                        child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 8.w, vertical: 3.w),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      GameVisualTokens.gold,
-                                      Color(0xFFD49A00)
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(6.r),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: GameVisualTokens.gold
-                                          .withValues(alpha: .3),
-                                      blurRadius: 4.r,
-                                      offset: Offset(0, 1.w),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  'CHƯƠNG 1 • KHỞI HÀNH',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9.sp,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 8.w),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.star_rounded,
-                                      color: GameVisualTokens.gold, size: 14),
-                                  SizedBox(width: 2.w),
-                                  Text(
-                                    'Thành thục: 65%',
-                                    style: TextStyle(
-                                      fontSize: 10.sp,
-                                      fontWeight: FontWeight.w700,
-                                      color: GameVisualTokens.templeWood,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                        Text(
+                          journey != null
+                              ? 'BÀI ${journey!.chapterNumber}: ${journey!.chapterTitle}'
+                              : 'Từ vựng cơ bản',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: homeInk,
+                              fontSize: 14.sp,
+                              height: 1.05,
+                              fontWeight: FontWeight.w900),
                         ),
-                        SizedBox(height: 6.w),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const _LessonBook(),
-                            SizedBox(width: 10.w),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Từ vựng cơ bản',
-                                    maxLines: 1,
-                                    style: TextStyle(
-                                      color: homeInk,
-                                      fontSize: 15.sp,
-                                      height: 1.1,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2.w),
-                                  FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'Nhiệm vụ: ',
-                                          style: TextStyle(
-                                            color: const Color(0xFF65655F),
-                                            fontSize: 10.sp,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        Text(
-                                          '🎧 Nghe và chọn',
-                                          style: TextStyle(
-                                            color: GameVisualTokens.jadeDark,
-                                            fontSize: 10.sp,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(height: 6.w),
-                                  Row(
-                                    children: [
-                                      Expanded(child: _progress(4 / 7)),
-                                      SizedBox(width: 8.w),
-                                      Text(
-                                        '4/7 nhiệm vụ',
-                                        style: TextStyle(
-                                          fontSize: 9.5.sp,
-                                          fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF5D6559),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                        SizedBox(height: 3.w),
+                        Text(
+                          journey != null
+                              ? (journey!.missionTitle.isNotEmpty
+                                  ? 'Nhiệm vụ: ${journey!.missionTitle}'
+                                  : 'Chủ đề: Giao tiếp')
+                              : 'Chủ đề: Gia đình',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: const Color(0xFF65655F),
+                              fontSize: 10.sp,
+                              height: 1.05),
+                        ),
+                        SizedBox(height: 7.w),
+                        Row(children: [
+                          Expanded(
+                            child: _progress(
+                              journey != null
+                                  ? (journey!.totalMissions > 0
+                                      ? (journey!.completedMissions /
+                                              journey!.totalMissions)
+                                          .clamp(0.0, 1.0)
+                                      : journey!.bossProgress.clamp(0.0, 1.0))
+                                  : (3 / 8),
                             ),
-                            SizedBox(width: 6.w),
-                            PandaCompanion(
-                              mood: PandaMood.happy,
-                              size: 52.w,
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 8.w),
-                        SizedBox(
-                          width: double.infinity,
-                          child: HomeGreenButton(
-                            label: 'Tiếp tục',
-                            onTap: onStartLearning,
-                            playIcon: true,
                           ),
-                        ),
+                          SizedBox(width: 6.w),
+                          Text(
+                            journey != null
+                                ? (journey!.totalMissions > 0
+                                    ? '${journey!.completedMissions}/${journey!.totalMissions}'
+                                    : '${(journey!.bossProgress * 100).round()}%')
+                                : '3/8',
+                            style: TextStyle(
+                                fontSize: 9.sp,
+                                color: const Color(0xFF747871),
+                                height: 1),
+                          ),
+                        ]),
                       ],
+                    )),
+                    SizedBox(width: 12.w),
+                    SizedBox(
+                      width: 88.w,
+                      child: HomeGreenButton(
+                        label: 'Tiếp tục',
+                        onTap: onStartLearning,
+                        chevronIcon: false,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ]),
+                ),
+              ]),
             ),
           ),
           Positioned(
-            right: -3.w,
-            top: -4.w,
-            child: HomeLeaves(size: 38.w, rotation: .35),
-          ),
+              right: -3.w,
+              bottom: -4.w,
+              child: HomeLeaves(size: 38.w, rotation: .35)),
         ],
       );
 
   Widget _challenge() => _SurfaceCard(
         onTap: onChallenge,
-        radius: 18.r,
-        border: BorderSide(
-          color: GameVisualTokens.gold.withValues(alpha: .4),
-          width: 1.2.w,
-        ),
         child: SizedBox(
-          height: 64.w,
+          height: 60.w,
           child: Stack(children: [
             Positioned.fill(
                 child: const HomeLandscapeAccent(color: Color(0xFF70B399))),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.w),
+              padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 7.w),
               child: Row(children: [
                 Container(
-                    width: 48.w,
-                    height: 48.w,
+                    width: 47.w,
+                    height: 47.w,
                     decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFF7E6), Color(0xFFFFE8B2)],
-                        ),
-                        borderRadius: BorderRadius.circular(15.r),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x1F855B1B),
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ]),
+                        color: const Color(0xFFFFF7E6),
+                        borderRadius: BorderRadius.circular(15.r)),
                     child: Center(
                         child:
                             HomeLearningIcon(label: 'Thử thách', size: 39.w))),
-                SizedBox(width: 10.w),
+                SizedBox(width: 9.w),
                 Expanded(
                     child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('Hoàn thành 10 câu hỏi',
-                              maxLines: 1,
-                              style: TextStyle(
-                                  color: homeInk,
-                                  fontSize: 13.sp,
-                                  height: 1.05,
-                                  fontWeight: FontWeight.w900)),
-                          SizedBox(width: 6.w),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 5.w, vertical: 1.w),
-                            decoration: BoxDecoration(
-                              color: GameVisualTokens.crimson
-                                  .withValues(alpha: .12),
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                            child: Text(
-                              '+50 XP',
-                              style: TextStyle(
-                                fontSize: 9.sp,
-                                fontWeight: FontWeight.w800,
-                                color: GameVisualTokens.crimsonDark,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 7.w),
+                    Text('Hoàn thành 10 câu hỏi',
+                        maxLines: 1,
+                        style: TextStyle(
+                            color: homeInk,
+                            fontSize: 13.sp,
+                            height: 1.05,
+                            fontWeight: FontWeight.w900)),
+                    SizedBox(height: 8.w),
                     Row(children: [
                       Expanded(child: _progress(.6)),
                       SizedBox(width: 7.w),
@@ -349,13 +221,12 @@ class HomeLearningSections extends StatelessWidget {
                           style: TextStyle(
                               fontSize: 9.sp,
                               height: 1,
-                              fontWeight: FontWeight.w700,
                               color: const Color(0xFF7B807A))),
                     ]),
                   ],
                 )),
-                SizedBox(width: 10.w),
-                const Text('🎁', style: TextStyle(fontSize: 34)),
+                SizedBox(width: 12.w),
+                Text('🎁', style: TextStyle(fontSize: 38.sp)),
               ]),
             ),
           ]),
