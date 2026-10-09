@@ -378,13 +378,17 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
       return;
     }
 
+    final targetLevelId = stage.sourceLevelIds.isNotEmpty
+        ? stage.sourceLevelIds.first
+        : chapter.levelId;
+
     switch (stage.activityType) {
       case LearningStageActivityType.vocabulary:
         final firstSession = stage.sourceSessionIds.isNotEmpty ? stage.sourceSessionIds.first : 1;
         Get.to(
           () => const VocabularyAdventureScreen(),
           binding: VocabularyAdventureBinding(
-            levelId: chapter.levelId,
+            levelId: targetLevelId,
             gameId: firstSession,
             gameName: stage.title,
           ),
@@ -419,7 +423,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
           () => DuoGameRunnerScreen(
             gameId: firstSession,
             gameCode: gameCode,
-            levelId: chapter.levelId,
+            levelId: targetLevelId,
             gameName: stage.title,
             chapterNumber: chapter.chapterNumber,
             missionNumber: controller.stages.indexOf(stage) + 1,

@@ -3,7 +3,8 @@ import 'widget/unit_progress_tile.dart';
 import 'package:get/get.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../../core/responsive/responsive_layout.dart';
-import '../learning_overview/learning_overview_screen.dart';
+import '../unit_overview/binding/unit_overview_binding.dart';
+import '../unit_overview/page/unit_overview_screen.dart';
 import 'controller/unit_controller.dart';
 import '../../core/models/unit_model.dart';
 import '../../core/widgets/learning_scene_background.dart';
@@ -40,16 +41,27 @@ class _UnitScreenState extends State<UnitScreen> {
   }
 
   Widget _buildUnitMetrics(List<UnitModel> units, int i) {
+    final unit = units[i];
+    final numPart = RegExp(r'\d+').firstMatch(unit.id)?.group(0);
+    final unitNum = numPart != null ? int.tryParse(numPart) ?? (i + 1) : (i + 1);
+
     return FutureBuilder<Map<String, int>>(
-      key: ValueKey(units[i].id),
-      future: controller.metricsFor(units[i].id),
+      key: ValueKey(unit.id),
+      future: controller.metricsFor(unit.id),
       builder: (context, snapshot) => UnitProgressTile(
-        unit: units[i],
+        unit: unit,
         number: i + 1,
         words: snapshot.data?['words'] ?? 0,
         learned: snapshot.data?['learned'] ?? 0,
-        onTap: () => Get.to(() => const LearningOverviewScreen(),
-            arguments: {'unitId': units[i].id, 'unitTitle': units[i].title}),
+        onTap: () => Get.to(
+          () => const UnitOverviewScreen(),
+          binding: UnitOverviewBinding(
+            unitId: unit.id,
+            unitTitle: unit.title,
+            sectionNumber: 1,
+            unitNumber: unitNum,
+          ),
+        ),
       ),
     );
   }

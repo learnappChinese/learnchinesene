@@ -58,6 +58,22 @@ class UnitOverviewController extends GetxController {
           }
           sectionNumber = journey.regionNumber;
           unitNumber = journey.chapterNumber;
+        } else if (loadedStages.isNotEmpty) {
+          final boss = loadedStages.where((s) => s.bossStage != null).firstOrNull?.bossStage;
+          final allReqDone = loadedStages.where((s) => s.isRequired).every((s) => s.isCompleted);
+          final avgMastery = loadedStages.map((s) => s.mastery).reduce((a, b) => a + b) / loadedStages.length;
+          chapter.value = ChapterAdventure(
+            levelId: unitId,
+            unitId: unitId,
+            regionNumber: sectionNumber,
+            chapterNumber: unitNumber,
+            title: unitTitle.isNotEmpty ? unitTitle : 'Gọi tên món ăn và đồ uống',
+            objective: loadedStages.firstOrNull?.learningObjective ?? 'Nắm vững kiến thức bài học.',
+            missions: const [],
+            overallMastery: avgMastery,
+            bossUnlocked: allReqDone && boss != null,
+            boss: boss,
+          );
         }
       }
     } catch (e) {
