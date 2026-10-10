@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../presentation/learning_presentation_mapper.dart';
 import '../../widgets/adventure_node.dart';
 import '../../../screen/boss_battle/model/boss_battle_stage.dart';
 import '../model/learning_stage_models.dart';
@@ -7,6 +8,194 @@ import '../model/learning_stage_models.dart';
 /// into pedagogical Stages (Ải) with dynamic item counts.
 class LearningStageGroupingService {
   const LearningStageGroupingService();
+
+  /// Builds the canonical Unit Stage map from the server-authoritative path.
+  ///
+  /// One path node is one pedagogical Stage. Its segments are the real
+  /// challenges belonging to that node; no fixed-size client chunking is used.
+  List<LearningStageViewModel> groupServerPath({
+    required String unitId,
+    required List<Map<String, dynamic>> pathRows,
+    required List<Map<String, dynamic>> rawChallenges,
+    Map<String, dynamic>? rawBossStage,
+  }) {
+    final result = <LearningStageViewModel>[];
+    final learningRows = pathRows
+        .where((row) => row['node_type'] == 'learning')
+        .toList(growable: false)
+      ..sort(
+          (a, b) => _asInt(a['node_order']).compareTo(_asInt(b['node_order'])));
+
+    for (final row in learningRows) {
+      final gameCode = '${row['game_code'] ?? ''}';
+      final levelId = '${row['level_id'] ?? ''}';
+      final nodeOrder = _asInt(row['node_order'], 1);
+      final challengeCount = _asInt(row['challenge_count']);
+      final currentIndex =
+          _asInt(row['current_index']).clamp(0, challengeCount).toInt();
+      final state = _serverState(row);
+      final matchingChallenges = rawChallenges.where((challenge) {
+        return '${challenge['_level_id'] ?? ''}' == levelId &&
+            _supportsGame(gameCode, '${challenge['type'] ?? ''}');
+      }).toList(growable: false)
+        ..sort((a, b) => _asInt(a['id']).compareTo(_asInt(b['id'])));
+
+      // The count comes from the server path. In normal operation the selected
+      // challenge rows match it exactly. Placeholder IDs only preserve the
+      // server count if a content row is temporarily unreadable; they are never
+      // used as curriculum content.
+      final items = List<LearningStageItemViewModel>.generate(
+        challengeCount,
+        (index) {
+          final challenge = index < matchingChallenges.length
+              ? matchingChallenges[index]
+              : const <String, dynamic>{};
+          final completed = state == AdventureNodeState.completed ||
+              state == AdventureNodeState.perfect ||
+              (state == AdventureNodeState.inProgress && index < currentIndex);
+          final id =
+              '${challenge['id'] ?? '${row['game_id']}:$levelId:$index'}';
+          return LearningStageItemViewModel(
+            id: 'item_$id',
+            sourceId: id,
+            type: '${challenge['type'] ?? gameCode}',
+            order: index + 1,
+            prompt: '${challenge['prompt'] ?? ''}',
+            content: challenge,
+            state: completed
+                ? AdventureNodeState.completed
+                : state == AdventureNodeState.locked
+                    ? AdventureNodeState.locked
+                    : AdventureNodeState.available,
+          );
+        },
+        growable: false,
+      );
+      final sessionIds = matchingChallenges
+          .map((challenge) => _asInt(challenge['session_id']))
+          .where((id) => id > 0)
+          .toSet()
+          .toList(growable: false);
+      final bestScore = _asInt(row['best_score']).clamp(0, 100).toInt();
+      final requiredNodeId = row['required_node_id'] as String?;
+
+      result.add(
+        LearningStageViewModel(
+          id: 'stage_${row['game_id']}_$levelId',
+          unitId: unitId,
+          sourceLevelIds: levelId.isEmpty ? const [] : [levelId],
+          sourceSessionIds: sessionIds,
+          sourceGameId: _asInt(row['game_id']),
+          sourceGameCode: gameCode,
+          title: LearningPresentationMapper.missionTitle(
+            row['game_name'],
+            gameCode,
+            nodeOrder,
+          ),
+          subtitle: LearningPresentationMapper.missionSubtitle(
+            row['game_description'],
+            gameCode,
+          ),
+          activityType: _activityTypeFor(gameCode),
+          learningObjective: LearningPresentationMapper.missionSubtitle(
+            row['game_description'],
+            gameCode,
+          ),
+          items: items,
+          completedItems: items.where((item) => item.isCompleted).length,
+          state: state,
+          mastery: bestScore / 100,
+          stars: _asInt(row['stars']).clamp(0, 3).toInt(),
+          estimatedMinutes: math.max(3, (challengeCount / 2).ceil()),
+          rewardPreview: '+20 XP',
+          prerequisiteIds: requiredNodeId == null ? const [] : [requiredNodeId],
+          lockReason: row['lock_reason'] as String?,
+          requiredStageId: requiredNodeId,
+          requiredMastery: (row['required_mastery'] as num?)?.toDouble(),
+        ),
+      );
+    }
+
+    final bossRow =
+        pathRows.where((row) => row['node_type'] == 'boss').firstOrNull;
+    if (bossRow != null && rawBossStage != null) {
+      final base = _createBossStage(
+        unitId: unitId,
+        unitTitle: '${bossRow['unit_title'] ?? ''}',
+        stageOrder: _asInt(bossRow['node_order'], result.length + 1),
+        sectionNumber: _asInt(bossRow['section_number'], 1),
+        unitNumber: _asInt(bossRow['unit_number'], 1),
+        rawBossStage: rawBossStage,
+        bossProgress: <String, dynamic>{
+          'completed': bossRow['is_completed'] == true,
+          'stars': bossRow['stars'],
+          'best_score': bossRow['best_score'],
+        },
+        previousStageIds: result.map((stage) => stage.id).toList(),
+      );
+      result.add(
+        base.copyWith(
+          state: _serverState(bossRow),
+          lockReason: bossRow['lock_reason'] as String?,
+          requiredStageId: bossRow['required_node_id'] as String?,
+          requiredMastery: (bossRow['required_mastery'] as num?)?.toDouble(),
+        ),
+      );
+    }
+
+    return result;
+  }
+
+  AdventureNodeState _serverState(Map<String, dynamic> row) {
+    if (row['is_completed'] == true) {
+      return _asInt(row['stars']) >= 3
+          ? AdventureNodeState.perfect
+          : AdventureNodeState.completed;
+    }
+    if (row['in_progress'] == true) return AdventureNodeState.inProgress;
+    if (row['is_unlocked'] != true) return AdventureNodeState.locked;
+    if (_asInt(row['attempts']) > 0) return AdventureNodeState.failed;
+    return AdventureNodeState.available;
+  }
+
+  LearningStageActivityType _activityTypeFor(String gameCode) =>
+      switch (gameCode) {
+        'learn_words' ||
+        'select_answer' ||
+        'match_pairs' ||
+        'word_connect' =>
+          LearningStageActivityType.vocabulary,
+        'listen_select' => LearningStageActivityType.listening,
+        'speaking' => LearningStageActivityType.speaking,
+        'dialogue' => LearningStageActivityType.dialogue,
+        'gap_fill' ||
+        'tap_complete' ||
+        'sentence_order' ||
+        'translate' =>
+          LearningStageActivityType.sentence,
+        _ => LearningStageActivityType.quiz,
+      };
+
+  bool _supportsGame(String gameCode, String challengeType) =>
+      switch (gameCode) {
+        'learn_words' =>
+          const {'select', 'assist', 'match'}.contains(challengeType),
+        'select_answer' => const {'select', 'assist'}.contains(challengeType),
+        'word_connect' || 'match_pairs' => challengeType == 'match',
+        'listen_select' => challengeType == 'listenTap',
+        'translate' => challengeType == 'translate',
+        'gap_fill' => challengeType == 'gapFill',
+        'tap_complete' => challengeType == 'tapComplete',
+        'dialogue' => challengeType == 'dialogue',
+        'sentence_order' => challengeType == 'orderTapComplete',
+        'speaking' => challengeType == 'speaking',
+        _ => false,
+      };
+
+  int _asInt(Object? value, [int fallback = 0]) {
+    if (value is num) return value.toInt();
+    return int.tryParse('$value') ?? fallback;
+  }
 
   /// Groups curriculum and progress data for a given Unit into dynamic learning stages.
   List<LearningStageViewModel> groupStagesForUnit({
@@ -213,7 +402,8 @@ class LearningStageGroupingService {
             : (rawScore != null
                 ? (rawScore > 1.0 ? rawScore / 100.0 : rawScore)
                 : (isWordLearned ? 0.8 : 0.0));
-        final mastery = rawMastery ?? (isMastered ? 1.0 : (isWordLearned ? 0.6 : 0.0));
+        final mastery =
+            rawMastery ?? (isMastered ? 1.0 : (isWordLearned ? 0.6 : 0.0));
 
         final itemState = isMastered || isWordLearned
             ? AdventureNodeState.completed
@@ -247,19 +437,22 @@ class LearningStageGroupingService {
 
       // Check game level progress fallback if word progress is empty
       final duoProg = gameProgress['learn_words'];
-      if (completedCount == 0 && duoProg != null && duoProg['is_completed'] == true) {
+      if (completedCount == 0 &&
+          duoProg != null &&
+          duoProg['is_completed'] == true) {
         completedCount = items.length;
         totalScore = items.length * 1.0;
       }
 
       final isAllDone = completedCount >= items.length && items.isNotEmpty;
       final avgScore = items.isEmpty ? 0.0 : totalScore / items.length;
-      final stars = isAllDone
-          ? (avgScore >= 0.85 ? 3 : (avgScore >= 0.7 ? 2 : 1))
-          : 0;
+      final stars =
+          isAllDone ? (avgScore >= 0.85 ? 3 : (avgScore >= 0.7 ? 2 : 1)) : 0;
 
       final stageState = isAllDone
-          ? (stars == 3 ? AdventureNodeState.perfect : AdventureNodeState.completed)
+          ? (stars == 3
+              ? AdventureNodeState.perfect
+              : AdventureNodeState.completed)
           : (completedCount > 0
               ? AdventureNodeState.inProgress
               : AdventureNodeState.available);
@@ -275,7 +468,8 @@ class LearningStageGroupingService {
           title: title,
           subtitle: 'Ghi nhớ ${items.length} từ vựng then chốt',
           activityType: LearningStageActivityType.vocabulary,
-          learningObjective: 'Nhận biết và nhớ nghĩa từ vựng trong bài $unitTitle',
+          learningObjective:
+              'Nhận biết và nhớ nghĩa từ vựng trong bài $unitTitle',
           items: items,
           completedItems: completedCount,
           state: stageState,
@@ -337,8 +531,9 @@ class LearningStageGroupingService {
         final prog = hanziProgress[charId];
         final practiceCount =
             prog != null ? (prog['practice_count'] as num?)?.toInt() ?? 0 : 0;
-        final bestScore =
-            prog != null ? (prog['best_score'] as num?)?.toDouble() ?? 0.0 : 0.0;
+        final bestScore = prog != null
+            ? (prog['best_score'] as num?)?.toDouble() ?? 0.0
+            : 0.0;
 
         final isCharDone = practiceCount > 0 || bestScore >= 0.7;
         final itemState = isCharDone
@@ -373,12 +568,13 @@ class LearningStageGroupingService {
 
       final isAllDone = completedCount >= items.length && items.isNotEmpty;
       final avgScore = items.isEmpty ? 0.0 : totalScore / items.length;
-      final stars = isAllDone
-          ? (avgScore >= 0.85 ? 3 : (avgScore >= 0.7 ? 2 : 1))
-          : 0;
+      final stars =
+          isAllDone ? (avgScore >= 0.85 ? 3 : (avgScore >= 0.7 ? 2 : 1)) : 0;
 
       final stageState = isAllDone
-          ? (stars == 3 ? AdventureNodeState.perfect : AdventureNodeState.completed)
+          ? (stars == 3
+              ? AdventureNodeState.perfect
+              : AdventureNodeState.completed)
           : (completedCount > 0
               ? AdventureNodeState.inProgress
               : AdventureNodeState.available);
@@ -452,8 +648,9 @@ class LearningStageGroupingService {
 
       final duoProg = gameProgress['listen_select'];
       final isGamePassed = duoProg != null && duoProg['is_completed'] == true;
-      final currentIndex =
-          duoProg != null ? (duoProg['current_index'] as num?)?.toInt() ?? 0 : 0;
+      final currentIndex = duoProg != null
+          ? (duoProg['current_index'] as num?)?.toInt() ?? 0
+          : 0;
 
       for (int i = 0; i < chalGroup.length; i++) {
         final c = chalGroup[i];
@@ -557,8 +754,9 @@ class LearningStageGroupingService {
 
       final duoProg = gameProgress['translate'] ?? gameProgress['gap_fill'];
       final isGamePassed = duoProg != null && duoProg['is_completed'] == true;
-      final currentIndex =
-          duoProg != null ? (duoProg['current_index'] as num?)?.toInt() ?? 0 : 0;
+      final currentIndex = duoProg != null
+          ? (duoProg['current_index'] as num?)?.toInt() ?? 0
+          : 0;
 
       for (int i = 0; i < chalGroup.length; i++) {
         final c = chalGroup[i];
@@ -653,8 +851,9 @@ class LearningStageGroupingService {
       final sentenceVi = '${ex['sentence_vi'] ?? ''}';
 
       final prog = speakingProgress[exId];
-      final accuracy =
-          prog != null ? (prog['accuracy_score'] as num?)?.toDouble() ?? 0.0 : 0.0;
+      final accuracy = prog != null
+          ? (prog['accuracy_score'] as num?)?.toDouble() ?? 0.0
+          : 0.0;
 
       final isPassed = accuracy >= 0.7;
       final itemState = isPassed
@@ -690,12 +889,13 @@ class LearningStageGroupingService {
 
     final isAllDone = completedCount >= items.length && items.isNotEmpty;
     final avgScore = items.isEmpty ? 0.0 : totalScore / items.length;
-    final stars = isAllDone
-        ? (avgScore >= 0.85 ? 3 : (avgScore >= 0.7 ? 2 : 1))
-        : 0;
+    final stars =
+        isAllDone ? (avgScore >= 0.85 ? 3 : (avgScore >= 0.7 ? 2 : 1)) : 0;
 
     final stageState = isAllDone
-        ? (stars == 3 ? AdventureNodeState.perfect : AdventureNodeState.completed)
+        ? (stars == 3
+            ? AdventureNodeState.perfect
+            : AdventureNodeState.completed)
         : (completedCount > 0
             ? AdventureNodeState.inProgress
             : AdventureNodeState.available);
@@ -758,8 +958,9 @@ class LearningStageGroupingService {
 
     final isBossBeaten =
         bossProgress != null && bossProgress['completed'] == true;
-    final bossStars =
-        bossProgress != null ? (bossProgress['stars'] as num?)?.toInt() ?? 0 : 0;
+    final bossStars = bossProgress != null
+        ? (bossProgress['stars'] as num?)?.toInt() ?? 0
+        : 0;
 
     // Items for boss reflect the boss HP / question encounters
     final items = List.generate(
@@ -783,7 +984,8 @@ class LearningStageGroupingService {
       title: 'Ải $stageOrder: Cổng Boss $bossName',
       subtitle: 'Đối đầu $bossName ($questionCount thử thách quyết định)',
       activityType: LearningStageActivityType.boss,
-      learningObjective: 'Tổng hợp toàn bộ kiến thức bài học để chiến thắng Boss',
+      learningObjective:
+          'Tổng hợp toàn bộ kiến thức bài học để chiến thắng Boss',
       items: items,
       completedItems: isBossBeaten ? items.length : 0,
       state: isBossBeaten
@@ -818,9 +1020,8 @@ class LearningStageGroupingService {
 
       // Boss unlocking condition: all required stages before it must be completed
       if (stage.activityType == LearningStageActivityType.boss) {
-        final allRequiredBeforeDone = resolved
-            .where((s) => s.isRequired)
-            .every((s) => s.isCompleted);
+        final allRequiredBeforeDone =
+            resolved.where((s) => s.isRequired).every((s) => s.isCompleted);
 
         final bossState = stage.isCompleted
             ? (stage.stars == 3

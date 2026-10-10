@@ -9,6 +9,7 @@ import 'controller/unit_controller.dart';
 import '../../core/models/unit_model.dart';
 import '../../core/widgets/learning_scene_background.dart';
 import '../../core/widgets/learning_scaffold.dart';
+import '../../core/widgets/locked_mission_sheet.dart';
 
 class UnitScreen extends StatefulWidget {
   const UnitScreen({super.key});
@@ -42,8 +43,7 @@ class _UnitScreenState extends State<UnitScreen> {
 
   Widget _buildUnitMetrics(List<UnitModel> units, int i) {
     final unit = units[i];
-    final numPart = RegExp(r'\d+').firstMatch(unit.id)?.group(0);
-    final unitNum = numPart != null ? int.tryParse(numPart) ?? (i + 1) : (i + 1);
+    final unitNumber = i + 1;
 
     return FutureBuilder<Map<String, int>>(
       key: ValueKey(unit.id),
@@ -53,15 +53,47 @@ class _UnitScreenState extends State<UnitScreen> {
         number: i + 1,
         words: snapshot.data?['words'] ?? 0,
         learned: snapshot.data?['learned'] ?? 0,
-        onTap: () => Get.to(
-          () => const UnitOverviewScreen(),
-          binding: UnitOverviewBinding(
-            unitId: unit.id,
-            unitTitle: unit.title,
-            sectionNumber: 1,
-            unitNumber: unitNum,
+        onTap: () => _openJourneyUnit(unitNumber),
+      ),
+    );
+  }
+
+  Future<void> _openJourneyUnit(int unitNumber) async {
+    final unit = await controller.journeyUnitFor(unitNumber);
+    if (!mounted) return;
+    if (unit == null) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Chưa thể mở bài học'),
+          content: const Text(
+            'Bài từ vựng này chưa được liên kết với một ải trong hành trình.',
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('ĐÓNG'),
+            ),
+          ],
         ),
+      );
+      return;
+    }
+    if (!unit.isUnlocked) {
+      showLockedMissionSheet(
+        context,
+        title: 'Bài học chưa mở',
+        message: unit.lockReason ?? 'Hoàn thành bài học trước để mở khóa.',
+      );
+      return;
+    }
+    await Get.to(
+      () => const UnitOverviewScreen(),
+      binding: UnitOverviewBinding(
+        unitId: unit.id,
+        unitTitle: unit.title,
+        sectionNumber: unit.sectionNumber,
+        unitNumber: unit.unitNumber,
       ),
     );
   }

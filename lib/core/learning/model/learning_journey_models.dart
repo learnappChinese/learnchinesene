@@ -21,6 +21,8 @@ class LearningSectionViewModel {
     required this.unitCount,
     required this.completedUnitCount,
     required this.isUnlocked,
+    this.lockReason,
+    this.requiredSectionNumber,
     this.units = const [],
   });
 
@@ -31,6 +33,8 @@ class LearningSectionViewModel {
   final int unitCount;
   final int completedUnitCount;
   final bool isUnlocked;
+  final String? lockReason;
+  final int? requiredSectionNumber;
   final List<LearningUnitViewModel> units;
 
   double get progress =>
@@ -46,6 +50,8 @@ class LearningSectionViewModel {
     int? unitCount,
     int? completedUnitCount,
     bool? isUnlocked,
+    String? lockReason,
+    int? requiredSectionNumber,
     List<LearningUnitViewModel>? units,
   }) {
     return LearningSectionViewModel(
@@ -56,6 +62,9 @@ class LearningSectionViewModel {
       unitCount: unitCount ?? this.unitCount,
       completedUnitCount: completedUnitCount ?? this.completedUnitCount,
       isUnlocked: isUnlocked ?? this.isUnlocked,
+      lockReason: lockReason ?? this.lockReason,
+      requiredSectionNumber:
+          requiredSectionNumber ?? this.requiredSectionNumber,
       units: units ?? this.units,
     );
   }
@@ -82,6 +91,7 @@ class LearningUnitViewModel {
     this.bossName,
     this.estimatedMinutes = 15,
     this.lockReason,
+    this.requiredUnitId,
   });
 
   final String id;
@@ -102,6 +112,7 @@ class LearningUnitViewModel {
   final String? bossName;
   final int estimatedMinutes;
   final String? lockReason;
+  final String? requiredUnitId;
 
   double get progress => missionCount == 0
       ? 0.0
@@ -131,6 +142,7 @@ class LearningUnitViewModel {
     String? bossName,
     int? estimatedMinutes,
     String? lockReason,
+    String? requiredUnitId,
   }) {
     return LearningUnitViewModel(
       id: id ?? this.id,
@@ -152,6 +164,7 @@ class LearningUnitViewModel {
       bossName: bossName ?? this.bossName,
       estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
       lockReason: lockReason ?? this.lockReason,
+      requiredUnitId: requiredUnitId ?? this.requiredUnitId,
     );
   }
 }

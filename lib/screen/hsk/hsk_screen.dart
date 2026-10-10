@@ -60,7 +60,11 @@ class _HskScreenState extends State<HskScreen> {
           if (isUnlocked) {
             Get.to(
               () => const UnitScreen(),
-              arguments: {'hskLevelId': level.id, 'hskTitle': level.title},
+              arguments: {
+                'hskLevelId': level.id,
+                'hskTitle': level.title,
+                'hskOrder': level.order,
+              },
             );
           } else {
             UpgradeDialogHelper.showUpgradeDialog(

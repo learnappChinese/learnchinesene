@@ -30,6 +30,7 @@ import '../unit_overview/binding/unit_overview_binding.dart';
 import '../unit_overview/page/unit_overview_screen.dart';
 import '../game_hub/game_hub_screen.dart';
 import '../review/review_screen.dart';
+import '../sections/learning_sections_screen.dart';
 import '../../core/widgets/learning_scaffold.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -136,13 +137,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openCurrentJourney() {
     final journey = controller.journey.value;
+    if (journey == null || journey.unitId == null) {
+      Get.to(() => const LearningSectionsScreen());
+      return;
+    }
     Get.to(
       () => const UnitOverviewScreen(),
       binding: UnitOverviewBinding(
-        unitId: journey?.unitId ?? journey?.levelId ?? 'sec_1_unit_1',
-        unitTitle: journey?.chapterTitle ?? 'Gọi tên món ăn và đồ uống',
-        sectionNumber: journey?.worldNumber ?? 1,
-        unitNumber: journey?.chapterNumber ?? 1,
+        unitId: journey.unitId!,
+        unitTitle: journey.chapterTitle,
+        sectionNumber: journey.worldNumber,
+        unitNumber: journey.chapterNumber,
       ),
     )?.then((_) => controller.refreshStats());
   }
