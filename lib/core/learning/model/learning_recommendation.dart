@@ -17,6 +17,12 @@ class LearningRecommendation {
     required this.targetId,
     required this.estimatedMinutes,
     required this.rewardPreview,
+    this.actionType,
+    this.destination,
+    this.unitId,
+    this.stageId,
+    this.reasonCode,
+    this.dataVersion = 'v1',
   });
 
   final LearningRecommendationType type;
@@ -27,4 +33,13 @@ class LearningRecommendation {
   final String targetId;
   final int estimatedMinutes;
   final String rewardPreview;
+
+  final String? actionType;
+  final String? destination;
+  final String? unitId;
+  final int? stageId;
+  final String? reasonCode;
+  final String dataVersion;
+
+  String get label => cta;
 }

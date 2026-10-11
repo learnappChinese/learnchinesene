@@ -32,6 +32,7 @@ import '../game_hub/game_hub_screen.dart';
 import '../review/review_screen.dart';
 import '../sections/learning_sections_screen.dart';
 import '../../core/widgets/learning_scaffold.dart';
+import '../../core/learning/model/recommended_next_action.dart';
 import '../../core/learning/service/learning_progress_sync_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -94,15 +95,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return HomeDashboard(
         journey: controller.journey.value,
         isLoading: controller.isJourneyLoading.value,
+        errorMessage: controller.journeyError.value,
         streak: controller.streak.value > 0
             ? controller.streak.value
             : (stats['streak']?.toInt() ?? 0),
         lessons: stats['learned']?.toInt() ?? 0,
-        xp: controller.todayXp.value > 0
-            ? controller.todayXp.value
-            : (controller.lifetimeXp.value > 0
-                ? controller.lifetimeXp.value
-                : (stats['totalExp']?.toInt() ?? 0)),
+        xp: controller.todayXp.value,
         onRefresh: controller.refreshStats,
         onRetry: controller.refreshStats,
         onStartLearning: _openCurrentJourney,
@@ -168,6 +166,50 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _openCurrentJourney() {
     final journey = controller.journey.value;
+    final nextAction = journey?.nextAction;
+
+    if (nextAction != null) {
+      switch (nextAction.type) {
+        case RecommendedActionType.review:
+          Get.to(() => const ReviewScreen());
+          return;
+        case RecommendedActionType.explore:
+          Get.to(() => const LearningSectionsScreen());
+          return;
+        case RecommendedActionType.nextUnit:
+          if (nextAction.unitId != null && nextAction.unitId!.isNotEmpty) {
+            Get.to(
+              () => const UnitOverviewScreen(),
+              binding: UnitOverviewBinding(
+                unitId: nextAction.unitId!,
+                unitTitle: nextAction.title,
+                sectionNumber: nextAction.sectionNumber ?? 1,
+                unitNumber: nextAction.unitNumber ?? 1,
+              ),
+            );
+            return;
+          }
+          break;
+        case RecommendedActionType.resume:
+        case RecommendedActionType.fightBoss:
+        case RecommendedActionType.startMission:
+        case RecommendedActionType.practiceWeakness:
+          if (journey?.unitId != null && journey!.unitId!.isNotEmpty) {
+            Get.to(
+              () => const UnitOverviewScreen(),
+              binding: UnitOverviewBinding(
+                unitId: journey.unitId!,
+                unitTitle: journey.chapterTitle,
+                sectionNumber: journey.worldNumber,
+                unitNumber: journey.chapterNumber,
+              ),
+            );
+            return;
+          }
+          break;
+      }
+    }
+
     if (journey == null || journey.unitId == null) {
       Get.to(() => const LearningSectionsScreen());
       return;
