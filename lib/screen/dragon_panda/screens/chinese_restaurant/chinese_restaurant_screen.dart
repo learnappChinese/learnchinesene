@@ -2,7 +2,11 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:get/get.dart';
 import '../../../../core/database/db_helper.dart';
+import '../../../../core/learning/model/learning_activity_submission.dart';
+import '../../../../core/learning/service/learning_reward_service.dart';
+import '../../../home/controller/home_controller.dart';
 import 'widget/chinese_restaurant_options.dart';
 import '../../widgets/game_screen_header.dart';
 import '../../theme/app_colors.dart';
@@ -59,6 +63,10 @@ class _ChineseRestaurantScreenState extends State<ChineseRestaurantScreen> {
   int _combo = 0;
   String? _selectedHanzi;
   bool _answered = false;
+  int _correctCount = 0;
+  int _wrongCount = 0;
+  int _maxCombo = 0;
+  int? _earnedXp;
 
   final List<_FoodItem> _menuItems = const [
     _FoodItem(
@@ -281,6 +289,10 @@ class _ChineseRestaurantScreenState extends State<ChineseRestaurantScreen> {
         _combo = 0;
         _selectedHanzi = null;
         _answered = false;
+        _correctCount = 0;
+        _wrongCount = 0;
+        _maxCombo = 0;
+        _earnedXp = null;
       });
 
       if (_orders.isNotEmpty) {
@@ -300,9 +312,12 @@ class _ChineseRestaurantScreenState extends State<ChineseRestaurantScreen> {
       _answered = true;
       if (isRight) {
         _combo++;
+        _correctCount++;
+        if (_combo > _maxCombo) _maxCombo = _combo;
         _score += 100 + (_combo * 15);
       } else {
         _combo = 0;
+        _wrongCount++;
       }
     });
 
@@ -323,7 +338,37 @@ class _ChineseRestaurantScreenState extends State<ChineseRestaurantScreen> {
     });
   }
 
-  void _showVictoryDialog() {
+  Future<void> _showVictoryDialog() async {
+    final totalAnswers = _correctCount + _wrongCount;
+    final accuracyPct = totalAnswers > 0
+        ? ((_correctCount / totalAnswers) * 100).clamp(0.0, 100.0)
+        : 0.0;
+    final attemptId = 'cr_${DateTime.now().millisecondsSinceEpoch}';
+
+    try {
+      final result = await LearningRewardService().completeActivity(
+        LearningActivitySubmission(
+          activityType: 'sentence',
+          sourceType: 'chinese_restaurant',
+          sourceId: 'chinese_restaurant_practice',
+          attemptId: attemptId,
+          score: accuracyPct,
+          correctCount: _correctCount,
+          wrongCount: _wrongCount,
+          bestCombo: _maxCombo,
+          metadata: <String, dynamic>{'total_score': _score},
+        ),
+      );
+      if (mounted) {
+        setState(() => _earnedXp = result.xpEarned);
+      }
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().refreshStats();
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -365,6 +410,25 @@ class _ChineseRestaurantScreenState extends State<ChineseRestaurantScreen> {
                 ),
               ),
             ),
+            if (_earnedXp != null && _earnedXp! > 0) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber),
+                ),
+                child: Text(
+                  '+$_earnedXp XP đã được ghi nhận!',
+                  style: const TextStyle(
+                    color: Color(0xFFB45309),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
         actionsAlignment: MainAxisAlignment.spaceEvenly,

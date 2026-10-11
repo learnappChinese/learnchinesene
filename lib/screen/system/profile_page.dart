@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'widget/profile_achievements.dart';
 import 'package:get/get.dart';
-
+import '../../core/database/db_helper.dart';
+import '../home/controller/home_controller.dart';
 import '../vocabulary/data/models/user_stats_model.dart';
-import '../vocabulary/domain/usecases/get_user_stats.dart';
+import 'widget/profile_achievements.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -12,75 +12,55 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage>
-    with WidgetsBindingObserver, RouteAware {
-  late GetUserStatsUseCase _getUserStats;
+class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
   late Future<UserStats> _userStatsFuture;
-  late RouteObserver<ModalRoute<dynamic>> _routeObserver;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _routeObserver = Get.find<RouteObserver<ModalRoute<dynamic>>>();
-    _getUserStats = Get.find<GetUserStatsUseCase>();
     _refreshStats();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // ⭐ Register trang này với RouteObserver
-    _routeObserver.subscribe(this, ModalRoute.of(context)!);
-  }
-
-  @override
-  void didPush() {
-    print('👁️ [PROFILE] Trang được push');
-  }
-
-  @override
-  void didPopNext() {
-    print('👁️ [PROFILE] Quay lại từ trang khác → Refresh streak');
-    _refreshStats();
-  }
-
-  @override
-  void didPop() {
-    print('👁️ [PROFILE] Trang bị pop');
   }
 
   @override
   void dispose() {
-    _routeObserver.unsubscribe(this); // ⭐ Unsubscribe khi dispose
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  // ⭐ Khi trang được resume (user quay lại từ practice)
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      print('👁️ [PROFILE] App resumed → Refresh streak');
       _refreshStats();
     }
   }
 
-  // 🔄 Hàm refresh dữ liệu từ database
+  Future<UserStats> _loadStats() async {
+    final dbStats = await DbHelper.instance.getStats();
+    int exp = dbStats['totalExp']?.toInt() ?? 0;
+    int streak = dbStats['streak']?.toInt() ?? 0;
+    final mastered = dbStats['mastered']?.toInt() ?? 0;
+    final favorites = dbStats['favorites']?.toInt() ?? 0;
+
+    if (Get.isRegistered<HomeController>()) {
+      final home = Get.find<HomeController>();
+      if (home.lifetimeXp.value > 0) exp = home.lifetimeXp.value;
+      if (home.streak.value > 0) streak = home.streak.value;
+    }
+
+    return UserStats(
+      id: 1,
+      totalExp: exp,
+      currentStreak: streak,
+      lastStudyDate: DateTime.now(),
+      totalWordsMastered: mastered,
+      totalFavorites: favorites,
+    );
+  }
+
   void _refreshStats() {
-    print('🔄 [PROFILE] _refreshStats() được gọi');
     setState(() {
-      _userStatsFuture = _getUserStats().then((stats) {
-        print('📊 [PROFILE] Dữ liệu từ database:');
-        print('   💰 totalExp: ${stats.totalExp}');
-        print('   🔥 currentStreak: ${stats.currentStreak}');
-        print('   📖 totalWordsMastered: ${stats.totalWordsMastered}');
-        print('   📅 lastStudyDate: ${stats.lastStudyDate}');
-        return stats;
-      }).catchError((e) {
-        print('❌ [PROFILE] Lỗi load dữ liệu: $e');
-        throw e; // ⭐ Throw error để FutureBuilder xử lý
-      });
+      _userStatsFuture = _loadStats();
     });
   }
 

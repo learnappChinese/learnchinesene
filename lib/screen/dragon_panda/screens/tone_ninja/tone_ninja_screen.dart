@@ -2,8 +2,12 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:get/get.dart';
 import '../../../../core/database/db_helper.dart';
+import '../../../../core/learning/model/learning_activity_submission.dart';
+import '../../../../core/learning/service/learning_reward_service.dart';
 import '../../../../core/models/speaking_practice_item.dart';
+import '../../../home/controller/home_controller.dart';
 import 'widget/tone_ninja_options.dart';
 import '../../widgets/game_screen_header.dart';
 import '../../theme/app_colors.dart';
@@ -42,6 +46,10 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
   int _lives = 3;
   int? _selectedToneIndex;
   bool _answered = false;
+  int _correctCount = 0;
+  int _wrongCount = 0;
+  int _maxCombo = 0;
+  int? _earnedXp;
 
   final List<Map<String, dynamic>> _fallbackWords = [
     {'hanzi': '妈', 'pinyin': 'mā', 'tone': 1, 'base': 'ma'},
@@ -198,12 +206,46 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
         _lives = 3;
         _selectedToneIndex = null;
         _answered = false;
+        _correctCount = 0;
+        _wrongCount = 0;
+        _maxCombo = 0;
+        _earnedXp = null;
       });
 
       if (_questions.isNotEmpty) {
         _speak(_questions[0].hanzi);
       }
     }
+  }
+
+  Future<void> _recordMiniGameReward() async {
+    final totalAnswers = _correctCount + _wrongCount;
+    if (totalAnswers == 0) return;
+
+    final accuracyPct = ((_correctCount / totalAnswers) * 100).clamp(0.0, 100.0);
+    final attemptId = 'tn_${DateTime.now().millisecondsSinceEpoch}';
+
+    try {
+      final result = await LearningRewardService().completeActivity(
+        LearningActivitySubmission(
+          activityType: 'listening',
+          sourceType: 'tone_ninja',
+          sourceId: 'tone_ninja_practice',
+          attemptId: attemptId,
+          score: accuracyPct,
+          correctCount: _correctCount,
+          wrongCount: _wrongCount,
+          bestCombo: _maxCombo,
+          metadata: <String, dynamic>{'total_score': _score},
+        ),
+      );
+      if (mounted) {
+        setState(() => _earnedXp = result.xpEarned);
+      }
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().refreshStats();
+      }
+    } catch (_) {}
   }
 
   void _handleSelectTone(int toneIndex) {
@@ -217,9 +259,12 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
       _answered = true;
       if (isRight) {
         _combo++;
+        _correctCount++;
+        if (_combo > _maxCombo) _maxCombo = _combo;
         _score += 100 + (_combo * 15);
       } else {
         _combo = 0;
+        _wrongCount++;
         _lives = (_lives - 1).clamp(0, 3);
       }
     });
@@ -246,7 +291,10 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
     });
   }
 
-  void _showGameOverDialog() {
+  Future<void> _showGameOverDialog() async {
+    await _recordMiniGameReward();
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -280,6 +328,25 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
                 color: AppColors.primaryGold,
               ),
             ),
+            if (_earnedXp != null && _earnedXp! > 0) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amberAccent),
+                ),
+                child: Text(
+                  '+$_earnedXp XP đã được ghi nhận!',
+                  style: const TextStyle(
+                    color: Colors.amberAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
         actionsAlignment: MainAxisAlignment.spaceEvenly,
@@ -316,7 +383,10 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
     );
   }
 
-  void _showVictoryDialog() {
+  Future<void> _showVictoryDialog() async {
+    await _recordMiniGameReward();
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -358,6 +428,25 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
                 ),
               ),
             ),
+            if (_earnedXp != null && _earnedXp! > 0) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amberAccent),
+                ),
+                child: Text(
+                  '+$_earnedXp XP đã được ghi nhận!',
+                  style: const TextStyle(
+                    color: Colors.amberAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
         actionsAlignment: MainAxisAlignment.spaceEvenly,

@@ -22,6 +22,9 @@ class LearningResult {
   final int attemptNumber;
   final bool unlockedNext;
   final String? nextNodeId;
+  final bool bossReady;
+  final bool unitCompleted;
+  final String? nextUnitId;
   final String reason;
   final bool idempotent;
   final Map<String, dynamic> metadata;
@@ -50,6 +53,9 @@ class LearningResult {
     this.attemptNumber = 1,
     this.unlockedNext = false,
     this.nextNodeId,
+    this.bossReady = false,
+    this.unitCompleted = false,
+    this.nextUnitId,
     this.reason = '',
     this.idempotent = false,
     this.metadata = const {},
@@ -60,8 +66,12 @@ class LearningResult {
   bool get isFirstClear => firstClear;
   bool get isPerfect => perfect;
   String? get failReason => failed && reason.isNotEmpty ? reason : null;
+  String? get nextStageId => nextNodeId;
 
   factory LearningResult.fromJson(Map<String, dynamic> json) {
+    final meta = json['metadata'] is Map
+        ? Map<String, dynamic>.from(json['metadata'])
+        : const <String, dynamic>{};
     return LearningResult(
       activityType: '${json['activity_type'] ?? ''}',
       sourceId: '${json['source_id'] ?? ''}',
@@ -87,12 +97,14 @@ class LearningResult {
       perfect: json['perfect'] == true || json['is_perfect'] == true,
       attemptNumber: (json['attempt_number'] as num?)?.toInt() ?? 1,
       unlockedNext: json['unlocked_next'] == true,
-      nextNodeId: json['next_node_id'] as String?,
+      nextNodeId: (json['next_node_id'] ?? json['next_stage_id']) as String?,
+      bossReady: json['boss_ready'] == true || meta['boss_ready'] == true,
+      unitCompleted:
+          json['unit_completed'] == true || meta['unit_completed'] == true,
+      nextUnitId: (json['next_unit_id'] ?? meta['next_unit_id']) as String?,
       reason: '${json['reason'] ?? json['fail_reason'] ?? ''}',
       idempotent: json['idempotent'] == true,
-      metadata: json['metadata'] is Map
-          ? Map<String, dynamic>.from(json['metadata'])
-          : const {},
+      metadata: meta,
     );
   }
 
@@ -120,6 +132,10 @@ class LearningResult {
         'attempt_number': attemptNumber,
         'unlocked_next': unlockedNext,
         'next_node_id': nextNodeId,
+        'boss_ready': bossReady,
+        'unit_completed': unitCompleted,
+        'next_unit_id': nextUnitId,
+        'next_stage_id': nextStageId,
         'reason': reason,
         'idempotent': idempotent,
         'metadata': metadata,

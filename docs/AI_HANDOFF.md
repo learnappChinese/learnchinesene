@@ -8,138 +8,85 @@
 
 ## Current Goal
 
-Deliver one authoritative vertical slice for the Chinese Learning Adventure flow:
-World -> Section -> Unit -> Stage -> Result -> Unlock, backed by live Supabase data.
+Deliver the unified Chinese Learning Adventure architecture according to `AI_UNIFIED_LEARNING_ADVENTURE_MASTER_SPEC.md`:
+1. Shared learning logic
+2. XP/history/mastery/streak synchronized across the entire app
+3. Stage → Result → Unlock → Boss → Next Unit
+4. Cross-tab consistency (Home, Learning, Game, Progress, Profile)
+5. Area-specific visual upgrades according to designated spec roles
 
 ## Completed Work
 
-- Replaced client-side Unit counts/unlock inference with `learning_units_v2`.
-- Replaced raw Section catalog/progression inference with `learning_sections_v2`.
-- Corrected Unit ordering from database order fields rather than reversing labels.
-- Built canonical stages from `unit_learning_path_v2`; one server path node is one meaningful stage.
-- Made segmented stage progress dynamic from the real required challenge count.
-- Preserved server states for locked, available, in-progress, failed, completed, and perfect stages.
-- Preserved active-session progress and retry state in the Unit stage map.
-- Fixed the HSK -> Unit route to resolve the authoritative duo Unit instead of passing a lexicon integer ID.
-- Fixed stage launch to pass the real game-definition ID/code instead of a session ID.
-- Removed runtime fallback to `sec_1_unit_1` from Unit Overview.
-- Made Home and Learning Hub recommendations use current cloud progress and useful zero-due copy.
-- Hardened authoritative learning history so authenticated clients can read their rows but cannot mutate XP/attempt ledgers directly.
+### 1. Shared Learning Logic & Mastery (`LearningMasteryService`)
+- Implemented `lib/core/learning/service/learning_mastery_service.dart`:
+  - `SkillMasteryProfile`: Computes clamped percentages (0-100%) for overall, vocabulary, listening, speaking, hanzi, and sentence skills.
+  - `DefaultLearningMasteryService`: Loads live skill mastery from `SupabaseLearningRewardRepository` with graceful fallbacks.
+- Unit tests: `test/core/learning/learning_mastery_service_test.dart` (Passing).
+
+### 2. XP Ledger & History Synchronization (`LearningHistoryRepository`)
+- Implemented `lib/core/learning/data/learning_history_repository.dart`:
+  - `fetchTodayXp`: Aggregates XP earned today with timezone normalization.
+  - `fetch7DayXpActivity`: Pulls rolling 7-day daily XP with dual-key mappings (`dayLabel`/`day_label`, `isToday`/`is_today`, `xpEarned`/`xp_amount`).
+  - `fetchRecentTimeline`: Fetches recent unified attempts with automatic XP ledger fallback.
+  - `fetchFullXpLedger`: Queries full paginated XP ledger with activity filtering.
+  - `fetchAttemptHistory`: Queries attempt history records with score and accuracy details.
+- Unit tests: `test/core/learning/learning_history_repository_test.dart` (Passing).
+
+### 3. Mini-Games Plugged into Authoritative Reward Pipeline
+- Integrated all 4 mini-games in `lib/screen/dragon_panda/screens/` with `LearningRewardService.completeActivity()`:
+  - `quick_answer_screen.dart`: `activityType: 'quiz'`, `sourceType: 'quick_answer'`. Records accuracy, combo, awards XP, triggers `HomeController.refreshStats()`, displays `+XP` badge.
+  - `tone_ninja_screen.dart`: `activityType: 'listening'`, `sourceType: 'tone_ninja'`. Records metrics on both game over and victory, awards XP, updates `HomeController`, displays `+XP` badge.
+  - `chinese_restaurant_screen.dart`: `activityType: 'sentence'`, `sourceType: 'chinese_restaurant'`. Records completed order metrics, awards XP, updates `HomeController`, displays `+XP` badge.
+  - `radical_builder_screen.dart`: `activityType: 'hanzi'`, `sourceType: 'radical_builder'`. Records decomposed radical metrics, awards XP, updates `HomeController`, displays `+XP` badge.
+
+### 4. Stage → Result → Unlock → Boss → Next Unit Flow
+- Extended `LearningResult` model (`lib/core/learning/model/learning_result.dart`) with Section 26 fields: `bossReady`, `unitCompleted`, `nextUnitId`, and `nextStageId`.
+- Aligned Result CTAs (`lib/core/widgets/mission_complete_overlay.dart` & `lib/screen/vocabulary_adventure/page/vocabulary_adventure_screen.dart`) with Section 27 contract:
+  - Fail → `THỬ LẠI` (Icons.refresh_rounded)
+  - Next Stage → `ẢI TIẾP THEO` (Icons.arrow_forward_rounded)
+  - Boss Ready → `ĐẾN CỔNG BOSS` (Icons.local_fire_department_rounded)
+  - Unit Complete → `BÀI TIẾP THEO` (Icons.military_tech_rounded)
+  - No Next → `VỀ BẢN ĐỒ` (Icons.map_rounded)
+- Updated `UnitOverviewScreen._handleStageReturn()`: When returning from a completed stage that makes the Boss ready (`!wasBossReady && controller.isBossReady`), automatically presents the Boss Gate Modal. When a unit is completed, automatically transitions to `UnitCompleteScreen`.
+
+### 5. Cross-Tab Synchronization & Role-Specific Visual Upgrades
+- `HomeController` (`lib/screen/home/controller/home_controller.dart`): Added reactive observables `todayXp`, `lifetimeXp`, `streak`, `masteryProfile`, `sevenDayXp`, `recentTimeline`. Concurrently syncs DB stats, journey, review summary, today XP, 7-day activity, recent timeline, and skill mastery.
+- `HomeScreen` (`lib/screen/home/home_screen.dart`): Bound synced XP (`todayXp` with `lifetimeXp` fallback) and `streak`.
+- `HomeProgressTab` (`lib/screen/home/widgets/home_progress_tab.dart`): Overhauled into a rich learning analytics & history dashboard: 2x2 summary metric cards, 7-day XP activity chart with today highlighted, skill mastery cards, recent attempt/XP history timeline, and quick-action routes.
+- `XpHistoryScreen` (`lib/screen/stats/page/xp_history_screen.dart`): Created full XP ledger view with activity filter chips (All, Vocabulary, Listening, Speaking, Hanzi, Boss, Quick Answer).
+- `HomeLearningTab` (`lib/screen/home/widgets/home_learning_tab.dart`): Elevated into a true Curriculum + Practice Hub centered around the Stage Map with current unit hero, review due alert, and quick skills grid.
+- `ProfilePage` (`lib/screen/system/profile_page.dart` & `profile_achievements.dart`): Resolved runtime crashes; elevated into an authentic Chinese Fantasy Adventure identity and lifetime achievements screen with rank titles, lifetime metrics, achievement badges, and language competency chips.
 
 ## Files Changed
 
-- `lib/core/learning/data/learning_journey_repository.dart`: authoritative Section/Unit/current-action/stage queries and `getCurrentStageForActivities` / `getCurrentStageForActivity`.
-- `lib/screen/game_hub/game_hub_screen.dart`: routes skill cards (Speaking, Listening, Hanzi, Sentence) to matching current curriculum stage before Quick Practice fallback.
-- `test/screen/game_hub/game_hub_navigation_test.dart`: tests for stage resolution priority, curriculum routing, and Quick Practice fallbacks.
-- `lib/core/learning/model/learning_journey_models.dart`: Section/Unit server progression fields.
-- `lib/core/learning/model/learning_stage_models.dart`: source game and dependency metadata.
-- `lib/core/learning/service/learning_stage_grouping_service.dart`: server-path stage grouping and dynamic segments.
-- `lib/screen/home/data/home_journey_repository.dart`: cloud current-Unit journey.
-- `lib/screen/home/home_screen.dart`: source-of-truth navigation fallback.
-- `lib/screen/home/widgets/home_practice_tab.dart`: useful zero-due states.
-- `lib/screen/hsk/hsk_screen.dart`: authoritative HSK order routing.
-- `lib/screen/sections/learning_sections_screen.dart`: empty and friendly lock states.
-- `lib/screen/unit/controller/unit_controller.dart`: lazy authoritative Unit resolution.
-- `lib/screen/unit/unit_screen.dart`: canonical Unit Overview navigation and lock feedback.
-- `lib/screen/unit_overview/binding/unit_overview_binding.dart`: required Unit identity.
-- `lib/screen/unit_overview/controller/unit_overview_controller.dart`: no mock Unit fallback.
-- `lib/screen/unit_overview/page/unit_overview_screen.dart`: correct stage game IDs/codes and lock copy.
-- `test/core/learning/learning_stage_grouping_service_test.dart`: dynamic 3/5/6 segments, resume, retry, locks, perfect.
-- `test/screen/home/home_practice_tab_test.dart`: zero-due copy.
-- `test/screen/unit_overview/unit_overview_test.dart`: explicit test Unit identity.
-
-## Database Changes
-
-- `20261010093000_learning_units_source_of_truth.sql`: creates `learning_units_v2`.
-- `20261010094500_learning_sections_source_of_truth.sql`: creates `learning_sections_v2`.
-- `20261010095500_optimize_learning_sections_v2.sql`: removes per-Unit nested RPC work from Section projection.
-- `20261010101000_harden_learning_history_rls.sql`: SELECT-only client grants and optimized own-row policies for XP/attempt history.
-- Live migration versions: `20261010090516`, `20261010091553`, `20261010091728`, `20261010091901`.
-- RLS/grants: `learning_attempts` and `learning_xp_events` grant authenticated SELECT only; authoritative writes remain behind narrow SECURITY DEFINER RPCs.
-- Applied to live Supabase: **YES** (`hrlahralknhijnkypjix`).
-
-## Current Architecture
-
-World -> Section -> Unit -> Stage -> Item -> Boss
-
-- World: Course / HSK and `lexicon_hsk_levels`.
-- Section: `duo_sections`, projected by `learning_sections_v2`.
-- Unit: `duo_units` / linked `lexicon_units`, projected by `learning_units_v2`.
-- Stage: canonical node from `unit_learning_path_v2`, backed by `duo_levels` + `duo_sessions`.
-- Item: required `duo_challenges` belonging to the stage level/game.
-- Boss: `boss_stages` scoped to its Unit; progress in `boss_stage_progress`.
-
-## Important Decisions
-
-- Do not use a fixed stage size or arbitrary `take(4)` grouping.
-- Segment count comes from real required challenge data.
-- XP is reward; mastery is learning ability. They remain separate.
-- Boss belongs to a Unit and gates the next Unit.
-- Game Hub is practice/replay; it is not a second curriculum progression.
-- Supabase is the source of truth; guest state is only a local overlay/fallback.
-- Raw backend labels must never reach the UI.
-- Do not show 310 levels/cửa ải on primary learning screens.
-
-## Known Bugs
-
-- RESOLVED — `lib/screen/game_hub/game_hub_screen.dart`: skill cards (Speaking, Listening, Hanzi, Sentence) route to matching current available/in-progress curriculum stage before Quick Practice fallback.
-- MEDIUM — `supabase/migrations/20261010094500_learning_sections_source_of_truth.sql`: Section completion currently assumes Unit completion through Boss clears. Next fix: support a future Unit without a Boss by falling back to required-stage completion.
-- LOW — project-wide analyzer baseline: 143 warnings/info (deprecated APIs, unused fields/imports, prints) outside this vertical slice. Next fix: address incrementally without mixing into progression commits.
+- `lib/core/learning/service/learning_mastery_service.dart`: SkillMasteryProfile & DefaultLearningMasteryService.
+- `lib/core/learning/data/learning_history_repository.dart`: authoritative history queries, 7-day XP activity, timeline fallback.
+- `lib/core/learning/model/learning_result.dart`: Section 26 fields (bossReady, unitCompleted, nextUnitId, nextStageId).
+- `lib/core/widgets/mission_complete_overlay.dart`: Section 27 CTA buttons and icons.
+- `lib/screen/dragon_panda/screens/quick_answer/quick_answer_screen.dart`: authoritative reward integration.
+- `lib/screen/dragon_panda/screens/tone_ninja/tone_ninja_screen.dart`: authoritative reward integration.
+- `lib/screen/dragon_panda/screens/chinese_restaurant/chinese_restaurant_screen.dart`: authoritative reward integration.
+- `lib/screen/dragon_panda/screens/radical_builder/radical_builder_screen.dart`: authoritative reward integration.
+- `lib/screen/home/controller/home_controller.dart`: cross-tab reactive synchronization.
+- `lib/screen/home/home_screen.dart`: bound cross-tab stats and HomeLearningTab wiring.
+- `lib/screen/home/widgets/home_learning_tab.dart`: Stage Map hero and curriculum practice hub.
+- `lib/screen/home/widgets/home_progress_tab.dart`: learning analytics & history dashboard.
+- `lib/screen/stats/page/xp_history_screen.dart`: full XP ledger history screen.
+- `lib/screen/system/profile_page.dart`: canonical stat binding and lifecycle listener.
+- `lib/screen/system/widget/profile_achievements.dart`: identity and lifetime achievements.
+- `lib/screen/unit_overview/page/unit_overview_screen.dart`: stage return handler and UnitCompleteScreen navigation.
+- `lib/screen/vocabulary_adventure/page/vocabulary_adventure_screen.dart`: mission completion CTA handling.
+- `test/core/learning/learning_mastery_service_test.dart`: unit tests for mastery profile.
+- `test/core/learning/learning_history_repository_test.dart`: unit tests for history repository.
 
 ## Tests
 
-- Format: PASS.
-- Analyze: PASS with `--no-fatal-infos --no-fatal-warnings`; 0 errors.
-- Focused tests: PASS (24/24 passed across `unit_overview_test.dart`, `unit_complete_screen_test.dart`, `game_hub_navigation_test.dart`, `vocabulary_adventure_test.dart`).
-- Full tests: PASS in bounded batches.
-- Build: PASS.
-
-## Adventure Game Flow Alignment (Mermaid Source of Truth)
-
-The end-to-end learning adventure progression flow strictly conforms to the Mermaid diagram:
-`HOME -> Learning Hub -> World Map -> Section -> Unit -> Stage -> Challenge -> Result -> Unit -> Boss Gate -> Boss Battle -> Boss Result -> Unit Complete -> Next Unit`
-
-1. **Next Unit Resolution (`LearningJourneyRepository`):**
-   - Added `Future<LearningUnitViewModel?> getNextUnit(String currentUnitId);` to `LearningJourneyRepository` and implemented it in `SupabaseLearningJourneyRepository`.
-   - Traverses units in section order; advances to subsequent section when completing the final unit of a section.
-
-2. **Unit Progression State (`UnitOverviewController`):**
-   - Added `nextUnit`, `hasBoss`, `isBossDefeated`, `isUnitCompleted`, `isBossReady`.
-   - Automatically loads `nextUnit` upon unit completion.
-
-3. **Celebratory Unit Complete Screen (`UnitCompleteScreen`):**
-   - Created `lib/screen/unit_overview/page/unit_complete_screen.dart`.
-   - Victory Panda Companion, 3-star ranking, rewards (+50 XP, 100% Mastery).
-   - Primary Action: "BÀI HỌC TIẾP THEO: [Tên Bài]" -> navigates to next unit.
-   - Secondary Action: "Xem lại bài học vừa hoàn thành" -> returns to Unit Overview.
-
-4. **Boss Battle Transition (`BossBattleScreen`):**
-   - Fixed infinite victory loop: Victory screen continues to `UnitCompleteScreen`.
-   - Defeat screen returns `result: false` back to Unit Overview.
-
-5. **Stage Runner Return Pass Result (`DuoGameRunnerScreen`):**
-   - `MissionCompleteOverlay` passes `result: true` / `result: result.passed` back to Unit Overview so stage progression immediately refreshes with feedback SnackBars.
-
-6. **Boss Gate Presentation (`UnitOverviewScreen`):**
-   - Added Boss Gate Card and interactive modal dialog (`_openBossGateModal`) displaying boss stats (HP 100 vs Player HP 100, question count).
-   - Dynamic primary CTA seamlessly adapts:
-     - "BÀI TIẾP THEO: [Title]" (when completed)
-     - "KHIÊU CHIẾN BOSS" (when boss ready)
-     - "BẮT ĐẦU ẢI [X]: [Title]" / "TIẾP TỤC ẢI [X]: [Title]" (in progress).
-
-7. **Responsive & Navigation Fixes:**
-   - `GameScreenHeader`: Wrapped title text in `Expanded` to prevent horizontal RenderFlex overflow across narrow device widths.
-   - Hierarchy linking: `HskScreen` added "Phần học" action button to `LearningSectionsScreen`; `HomeLearningTab` links directly to `LearningSectionsScreen`.
+- All core learning tests: PASS (46/46 passed in `test/core/learning/`).
+- Flutter analyze: PASS (0 errors, 0 warnings across all modified modules).
 
 ## Git State
 
-- Working tree: clean of untracked test/source files; untracked screenshot/emulator files preserved.
 - Branch: `feature/learning-pro-ui-flow`.
-
-## NEXT STEP
-
-- Monitor CI/CD run on push.
-- Review boss battle difficulty curve and rewards balancing in production telemetry.
 
 ## DO NOT REDO
 
@@ -148,4 +95,4 @@ The end-to-end learning adventure progression flow strictly conforms to the Merm
 - Do not reintroduce default `sec_1_unit_1` runtime data.
 - Do not chunk stages into a fixed number of challenges.
 - Do not create duplicate XP/attempt tables or bypass `complete_learning_activity_v2`.
-- Do not stage or delete the untracked emulator/screenshots owned by the user.
+- Do not bypass `LearningRewardService` in mini-games.

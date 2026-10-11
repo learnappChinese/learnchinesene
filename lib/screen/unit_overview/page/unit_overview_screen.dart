@@ -23,6 +23,7 @@ import '../../speaking/speaking_screen.dart';
 import '../../hsk/hsk_screen.dart';
 import '../binding/unit_overview_binding.dart';
 import '../controller/unit_overview_controller.dart';
+import 'unit_complete_screen.dart';
 
 class UnitOverviewScreen extends StatefulWidget {
   const UnitOverviewScreen({super.key});
@@ -573,15 +574,18 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
     final wasBossReady = controller.isBossReady;
     controller.loadUnitOverview().then((_) {
       if (result == true && mounted) {
-        if (controller.isUnitCompleted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('🎉 CHÚC MỪNG! BẠN ĐÃ HOÀN THÀNH BÀI HỌC! ⭐⭐⭐'),
-              backgroundColor: GameVisualTokens.jade,
-              duration: Duration(seconds: 3),
+        final chapter = controller.chapter.value;
+        if (controller.isUnitCompleted && chapter != null) {
+          Get.to(
+            () => UnitCompleteScreen(
+              unitId: chapter.unitId,
+              unitTitle: chapter.title,
+              sectionNumber: chapter.regionNumber,
+              unitNumber: chapter.chapterNumber,
+              bossName: chapter.boss?.bossName,
             ),
           );
-        } else if (!wasBossReady && controller.isBossReady) {
+        } else if (!wasBossReady && controller.isBossReady && chapter != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('🔥 CỔNG BOSS ĐÃ MỞ! Sẵn sàng khiêu chiến Boss!'),
@@ -589,6 +593,9 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
               duration: Duration(seconds: 3),
             ),
           );
+          Future.delayed(const Duration(milliseconds: 350), () {
+            if (mounted) _openBossGateModal(chapter);
+          });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

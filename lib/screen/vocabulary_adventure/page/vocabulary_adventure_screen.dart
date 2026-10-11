@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/learning/model/learning_result.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/widgets/game_progress_hud.dart';
 import '../../../core/widgets/learning_scene_background.dart';
@@ -56,6 +57,7 @@ class VocabularyAdventureScreen extends GetView<VocabularyAdventureController> {
         accuracy: controller.accuracy,
         bestCombo: controller.bestCombo.value,
         masteredWords: controller.masteredWords.value,
+        result: controller.learningResult.value,
         onNext: () => Get.back(result: true),
         onBack: () => Get.back(result: true),
       );
@@ -158,6 +160,7 @@ class _VocabularyMissionComplete extends StatelessWidget {
     required this.accuracy,
     required this.bestCombo,
     required this.masteredWords,
+    this.result,
     required this.onNext,
     required this.onBack,
   });
@@ -167,102 +170,143 @@ class _VocabularyMissionComplete extends StatelessWidget {
   final int accuracy;
   final int bestCombo;
   final int masteredWords;
+  final LearningResult? result;
   final VoidCallback onNext;
   final VoidCallback onBack;
 
+  String get _ctaLabel {
+    final res = result;
+    if (res == null) return 'ẢI TIẾP THEO';
+    if (!res.passed) return 'THỬ LẠI';
+    if (res.unitCompleted) return 'BÀI TIẾP THEO';
+    if (res.bossReady) return 'ĐẾN CỔNG BOSS';
+    if (res.unlockedNext) return 'ẢI TIẾP THEO';
+    return 'VỀ BẢN ĐỒ';
+  }
+
+  IconData get _ctaIcon {
+    final res = result;
+    if (res == null) return Icons.arrow_forward_rounded;
+    if (!res.passed) return Icons.refresh_rounded;
+    if (res.unitCompleted) return Icons.military_tech_rounded;
+    if (res.bossReady) return Icons.local_fire_department_rounded;
+    if (res.unlockedNext) return Icons.arrow_forward_rounded;
+    return Icons.map_rounded;
+  }
+
   @override
-  Widget build(BuildContext context) => Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(18),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: GameVisualTokens.night,
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: GameVisualTokens.imperialGold,
-                  width: 2,
+  Widget build(BuildContext context) {
+    final isPassed = result?.passed ?? true;
+    final isBossGate = result?.bossReady ?? false;
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(18),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: GameVisualTokens.night,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: isBossGate
+                    ? GameVisualTokens.crimson
+                    : GameVisualTokens.imperialGold,
+                width: 2,
+              ),
+              boxShadow: GameVisualTokens.gameShadow,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isPassed ? 'HOÀN THÀNH NHIỆM VỤ' : 'CHƯA ĐẠT',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: GameVisualTokens.goldLight,
+                    fontSize: 23,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                  ),
                 ),
-                boxShadow: GameVisualTokens.gameShadow,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'MISSION COMPLETE',
-                    textAlign: TextAlign.center,
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    3,
+                    (index) => Icon(
+                      index < stars
+                          ? Icons.star_rounded
+                          : Icons.star_border_rounded,
+                      color: GameVisualTokens.imperialGold,
+                      size: 40,
+                    ),
+                  ),
+                ),
+                PandaCompanion(
+                  mood: isPassed ? PandaMood.victory : PandaMood.encourage,
+                  size: 118,
+                  speechText: isPassed
+                      ? (isBossGate
+                          ? 'Cổng Boss đã mở! Hãy chuẩn bị chiến đấu!'
+                          : 'Bạn đã biến từ mới thành kỹ năng rồi!')
+                      : 'Đừng nản lòng, hãy cùng gấu trúc thử lại nhé!',
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _RewardMetric(label: 'XP', value: '+$xp'),
+                    _RewardMetric(label: 'CHÍNH XÁC', value: '$accuracy%'),
+                    _RewardMetric(label: 'COMBO', value: 'x$bestCombo'),
+                    _RewardMetric(
+                      label: 'TỪ MASTERED',
+                      value: '$masteredWords',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: onNext,
+                    icon: Icon(_ctaIcon),
+                    label: Text(_ctaLabel),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: isBossGate
+                          ? GameVisualTokens.crimson
+                          : (isPassed
+                              ? GameVisualTokens.jade
+                              : const Color(0xFFF97316)),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(52),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                TextButton(
+                  onPressed: onBack,
+                  child: const Text(
+                    'VỀ BẢN ĐỒ',
                     style: TextStyle(
-                      color: GameVisualTokens.goldLight,
-                      fontSize: 23,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.2,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      3,
-                      (index) => Icon(
-                        index < stars
-                            ? Icons.star_rounded
-                            : Icons.star_border_rounded,
-                        color: GameVisualTokens.imperialGold,
-                        size: 40,
-                      ),
-                    ),
-                  ),
-                  const PandaCompanion(
-                    mood: PandaMood.victory,
-                    size: 118,
-                    speechText: 'Bạn đã biến từ mới thành kỹ năng rồi!',
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      _RewardMetric(label: 'XP', value: '+$xp'),
-                      _RewardMetric(label: 'CHÍNH XÁC', value: '$accuracy%'),
-                      _RewardMetric(label: 'COMBO', value: 'x$bestCombo'),
-                      _RewardMetric(
-                        label: 'TỪ MASTERED',
-                        value: '$masteredWords',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: onNext,
-                      icon: const Icon(Icons.arrow_forward_rounded),
-                      label: const Text('NEXT MISSION'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: GameVisualTokens.jade,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(52),
-                        textStyle: const TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: onBack,
-                    child: const Text(
-                      'BACK TO MAP',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _RewardMetric extends StatelessWidget {

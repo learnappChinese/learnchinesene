@@ -7,6 +7,10 @@ import '../../../../core/models/speaking_practice_item.dart';
 import '../../widgets/game_screen_header.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/answer_button.dart';
+import 'package:get/get.dart';
+import '../../../../core/learning/service/learning_reward_service.dart';
+import '../../../../core/learning/model/learning_activity_submission.dart';
+import '../../../home/controller/home_controller.dart';
 
 class QuickAnswerScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -45,6 +49,10 @@ class _QuickAnswerScreenState extends State<QuickAnswerScreen> {
   Timer? _timer;
   int? _selectedAnswerIndex;
   bool _answered = false;
+  int _correctCount = 0;
+  int _wrongCount = 0;
+  int _maxCombo = 0;
+  int _earnedXp = 0;
 
   final List<Map<String, String>> _fallbackVocab = [
     {'hanzi': '电脑', 'pinyin': 'diàn nǎo', 'meaning': 'máy tính'},
@@ -160,6 +168,10 @@ class _QuickAnswerScreenState extends State<QuickAnswerScreen> {
         _currentIndex = 0;
         _score = 0;
         _combo = 0;
+        _correctCount = 0;
+        _wrongCount = 0;
+        _maxCombo = 0;
+        _earnedXp = 0;
       });
 
       if (_questions.isNotEmpty) {
@@ -198,6 +210,7 @@ class _QuickAnswerScreenState extends State<QuickAnswerScreen> {
     setState(() {
       _answered = true;
       _combo = 0;
+      _wrongCount++;
     });
 
     Timer(const Duration(milliseconds: 1000), () {
@@ -218,9 +231,12 @@ class _QuickAnswerScreenState extends State<QuickAnswerScreen> {
       _answered = true;
       if (isRight) {
         _combo++;
+        _correctCount++;
+        if (_combo > _maxCombo) _maxCombo = _combo;
         _score += 100 + (_timeLeft * 10) + (_combo * 20);
       } else {
         _combo = 0;
+        _wrongCount++;
       }
     });
 
@@ -243,8 +259,39 @@ class _QuickAnswerScreenState extends State<QuickAnswerScreen> {
     }
   }
 
-  void _showVictoryDialog() {
+  Future<void> _showVictoryDialog() async {
     _timer?.cancel();
+
+    final totalAnswers = _correctCount + _wrongCount;
+    final accuracyPct = totalAnswers > 0
+        ? ((_correctCount / totalAnswers) * 100).clamp(0.0, 100.0)
+        : 0.0;
+    final attemptId = 'qa_${DateTime.now().millisecondsSinceEpoch}';
+
+    try {
+      final result = await LearningRewardService().completeActivity(
+        LearningActivitySubmission(
+          activityType: 'quiz',
+          sourceType: 'quick_answer',
+          sourceId: 'quick_answer_practice',
+          attemptId: attemptId,
+          score: accuracyPct,
+          correctCount: _correctCount,
+          wrongCount: _wrongCount,
+          bestCombo: _maxCombo,
+          metadata: <String, dynamic>{'total_score': _score},
+        ),
+      );
+      if (mounted) {
+        setState(() => _earnedXp = result.xpEarned);
+      }
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().refreshStats();
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -294,6 +341,26 @@ class _QuickAnswerScreenState extends State<QuickAnswerScreen> {
                 ],
               ),
             ),
+            if (_earnedXp > 0) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFF59E0B)),
+                ),
+                child: Text(
+                  '🎉 Nhận được +$_earnedXp XP!',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFFB45309),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
         actionsAlignment: MainAxisAlignment.spaceEvenly,

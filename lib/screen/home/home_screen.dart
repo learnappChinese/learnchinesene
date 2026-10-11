@@ -78,11 +78,15 @@ class _HomeScreenState extends State<HomeScreen> {
       return HomeDashboard(
         journey: controller.journey.value,
         isLoading: controller.isJourneyLoading.value,
-        errorMessage: controller.journeyError.value,
-        streak: stats['streak']?.toInt() ?? 0,
+        streak: controller.streak.value > 0
+            ? controller.streak.value
+            : (stats['streak']?.toInt() ?? 0),
         lessons: stats['learned']?.toInt() ?? 0,
-        xp: stats['totalExp']?.toInt() ??
-            (((stats['correct'] ?? 0) * 10).toInt() + 156),
+        xp: controller.todayXp.value > 0
+            ? controller.todayXp.value
+            : (controller.lifetimeXp.value > 0
+                ? controller.lifetimeXp.value
+                : (stats['totalExp']?.toInt() ?? 0)),
         onRefresh: controller.refreshStats,
         onRetry: controller.refreshStats,
         onStartLearning: _openCurrentJourney,
@@ -106,7 +110,17 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Widget _buildLearningTab() => HomeLearningTab(
+  Widget _buildLearningTab() => Obx(() => HomeLearningTab(
+        journey: controller.journey.value,
+        reviewSummary: controller.reviewSummary.value,
+        onLearningPath: _openCurrentJourney,
+        onReview: () => Get.to(() => const ReviewScreen()),
+        onHanzi: () => Get.to(() => const HanziWritingHomeScreen()),
+        onSpeaking: () => Get.to(
+          () => const SpeakingScreen(),
+          arguments: const {'standalone': true},
+        ),
+        onFlashcards: () => Get.to(() => const FlashcardsScreen()),
         onPractice: () => Get.to(
           () => _buildPracticePage(),
         ),
@@ -134,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
           () => Get.to(() => const ConversationsScreen()),
         ),
-      );
+      ));
 
   void _openCurrentJourney() {
     final journey = controller.journey.value;

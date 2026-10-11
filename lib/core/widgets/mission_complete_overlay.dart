@@ -156,10 +156,13 @@ class MissionCompleteOverlay extends StatelessWidget {
 
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      passed ? GameVisualTokens.green : const Color(0xFFF97316),
+                  backgroundColor: passed
+                      ? (result.bossReady
+                          ? GameVisualTokens.crimson
+                          : GameVisualTokens.jade)
+                      : const Color(0xFFF97316),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
@@ -167,12 +170,9 @@ class MissionCompleteOverlay extends StatelessWidget {
                   elevation: 6,
                 ),
                 onPressed: onNextMission,
-                child: Text(
-                  passed
-                      ? (result.unlockedNext
-                          ? 'NHIỆM VỤ TIẾP THEO'
-                          : 'VỀ CHAPTER')
-                      : 'THỬ LẠI',
+                icon: Icon(_ctaIcon(result), color: Colors.white),
+                label: Text(
+                  _ctaText(result),
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w900,
@@ -198,6 +198,22 @@ class MissionCompleteOverlay extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _ctaText(LearningResult result) {
+    if (!result.passed) return 'THỬ LẠI';
+    if (result.unitCompleted) return 'BÀI TIẾP THEO';
+    if (result.bossReady) return 'ĐẾN CỔNG BOSS';
+    if (result.unlockedNext) return 'ẢI TIẾP THEO';
+    return 'VỀ BẢN ĐỒ';
+  }
+
+  IconData _ctaIcon(LearningResult result) {
+    if (!result.passed) return Icons.refresh_rounded;
+    if (result.unitCompleted) return Icons.military_tech_rounded;
+    if (result.bossReady) return Icons.local_fire_department_rounded;
+    if (result.unlockedNext) return Icons.arrow_forward_rounded;
+    return Icons.map_rounded;
   }
 
   Widget _metricItem(String label, String value, Color valueColor) {
