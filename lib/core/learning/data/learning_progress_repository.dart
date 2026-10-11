@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../learning_rules_config.dart';
 import '../model/learning_activity_submission.dart';
 import '../model/learning_result.dart';
+import '../model/learning_skill_taxonomy.dart';
 import '../model/unit_mastery.dart';
 import '../service/learning_rules_service.dart';
 
@@ -367,7 +369,9 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
   @override
   Future<UnitMastery> fetchUnitMastery(String unitId) async {
     final client = _activeClient;
-    if (client == null || _userId == null) return const UnitMastery();
+    if (client == null || _userId == null) {
+      return _fetchLocalUnitMastery(unitId);
+    }
     final response = await client.rpc(
       'unit_mastery_v2',
       params: <String, dynamic>{'p_unit_id': unitId},
@@ -375,6 +379,102 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
     return response is Map
         ? UnitMastery.fromMap(Map<String, dynamic>.from(response))
         : const UnitMastery();
+  }
+
+  Future<UnitMastery> _fetchLocalUnitMastery(String unitId) async {
+    final prefs = await _getPrefs;
+    final attempts = _readJsonList(prefs, _localAttemptsKey);
+    final unitAttempts = attempts.where((row) {
+      final matchesUnit = row['unit_id'] == unitId;
+      final status = '${row['status'] ?? ''}';
+      return matchesUnit && (status == 'passed' || status == 'failed');
+    }).toList();
+
+    if (unitAttempts.isEmpty) return const UnitMastery();
+
+    final bestBySource = <String, double>{};
+    final sourceSkill = <String, String>{};
+
+    for (final row in unitAttempts) {
+      final sourceType = '${row['source_type'] ?? ''}';
+      final sourceId = '${row['source_id'] ?? ''}';
+      final sourceKey = '$sourceType:$sourceId';
+
+      final activityType = '${row['activity_type'] ?? ''}';
+      final metadata = row['metadata'] is Map
+          ? Map<String, dynamic>.from(row['metadata'] as Map)
+          : const <String, dynamic>{};
+      final gameCode = metadata['game_code'] as String?;
+      final skill = LearningSkillTaxonomy.skillBucketFor(
+        activityType: activityType,
+        gameCode: gameCode,
+      );
+
+      final double mastery;
+      if (activityType == 'speaking' || activityType == 'hanzi') {
+        mastery =
+            (((row['score'] as num?)?.toDouble() ?? 0) / 100).clamp(0.0, 1.0);
+      } else {
+        mastery = ((row['accuracy'] as num?)?.toDouble() ?? 0).clamp(0.0, 1.0);
+      }
+
+      final existing = bestBySource[sourceKey] ?? 0.0;
+      if (mastery > existing || !bestBySource.containsKey(sourceKey)) {
+        bestBySource[sourceKey] = mastery;
+        sourceSkill[sourceKey] = skill;
+      }
+    }
+
+    final skillScores = <String, List<double>>{
+      'vocabulary': <double>[],
+      'listening': <double>[],
+      'speaking': <double>[],
+      'hanzi': <double>[],
+    };
+
+    for (final entry in bestBySource.entries) {
+      final skill = sourceSkill[entry.key];
+      if (skill != null && skillScores.containsKey(skill)) {
+        skillScores[skill]!.add(entry.value);
+      }
+    }
+
+    double? avg(String skill) {
+      final scores = skillScores[skill]!;
+      if (scores.isEmpty) return null;
+      return scores.reduce((a, b) => a + b) / scores.length;
+    }
+
+    final vocab = avg('vocabulary');
+    final listen = avg('listening');
+    final speak = avg('speaking');
+    final hanzi = avg('hanzi');
+
+    final overall = LearningRulesConfig.calculateUnitMastery(
+      vocabularyMastery: vocab,
+      listeningMastery: listen,
+      speakingMastery: speak,
+      hanziMastery: hanzi,
+    );
+
+    final allPassed = unitAttempts.any((row) => row['status'] == 'passed');
+    final bossAvailable = overall >= LearningRulesConfig.unitMasteryThreshold;
+
+    return UnitMastery(
+      vocabulary: vocab,
+      listening: listen,
+      speaking: speak,
+      hanzi: hanzi,
+      overall: overall,
+      allRequiredMissionsPassed: allPassed,
+      masteryThreshold: LearningRulesConfig.unitMasteryThreshold,
+      bossRequired: true,
+      bossAvailable: bossAvailable,
+      bossWon: false,
+      state: overall >= LearningRulesConfig.unitMasteryThreshold
+          ? UnitCompletionState.bossPending
+          : UnitCompletionState.inProgress,
+    );
   }
 
   @override
@@ -430,17 +530,32 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
     SharedPreferences prefs,
     String key,
   ) {
-    final raw = prefs.getStringList(key) ?? const <String>[];
-    return raw
-        .map((value) {
-          try {
-            return Map<String, dynamic>.from(jsonDecode(value) as Map);
-          } catch (_) {
-            return <String, dynamic>{};
-          }
-        })
-        .where((row) => row.isNotEmpty)
-        .toList();
+    final listRaw = prefs.getStringList(key);
+    if (listRaw != null) {
+      return listRaw
+          .map((value) {
+            try {
+              return Map<String, dynamic>.from(jsonDecode(value) as Map);
+            } catch (_) {
+              return <String, dynamic>{};
+            }
+          })
+          .where((row) => row.isNotEmpty)
+          .toList();
+    }
+    final singleRaw = prefs.getString(key);
+    if (singleRaw != null) {
+      try {
+        final decoded = jsonDecode(singleRaw);
+        if (decoded is List) {
+          return decoded
+              .whereType<Map>()
+              .map((row) => Map<String, dynamic>.from(row))
+              .toList();
+        }
+      } catch (_) {}
+    }
+    return <Map<String, dynamic>>[];
   }
 
   Future<void> _writeJsonList(

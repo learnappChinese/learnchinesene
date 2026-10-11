@@ -6,19 +6,20 @@ import 'package:flash_learn_chinese/core/learning/service/learning_reward_servic
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('characterizes every supported Duo game code before PR02 remapping',
+  test(
+      'verifies every supported Duo game code maps to canonical activityType in PR02',
       () async {
     const currentContract = <String, String>{
       'learn_words': 'vocabulary',
-      'select_answer': 'game_mission',
-      'match_pairs': 'game_mission',
-      'word_connect': 'game_mission',
+      'select_answer': 'vocabulary',
+      'match_pairs': 'vocabulary',
+      'word_connect': 'vocabulary',
       'listen_select': 'listening',
-      'translate': 'game_mission',
-      'gap_fill': 'game_mission',
-      'tap_complete': 'game_mission',
+      'translate': 'vocabulary',
+      'gap_fill': 'vocabulary',
+      'tap_complete': 'vocabulary',
       'dialogue': 'dialogue',
-      'sentence_order': 'game_mission',
+      'sentence_order': 'vocabulary',
       'speaking': 'speaking',
     };
     final repository = _CapturingRepository();

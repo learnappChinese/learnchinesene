@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../data/learning_progress_repository.dart';
 import '../model/learning_activity_submission.dart';
 import '../model/learning_result.dart';
+import '../model/learning_skill_taxonomy.dart';
 import 'learning_progress_sync_service.dart';
 
 /// Coordinates raw learning submissions.
@@ -400,13 +401,8 @@ class LearningRewardService {
     );
   }
 
-  static String _duoActivityType(String gameCode) => switch (gameCode) {
-        'speaking' => 'speaking',
-        'dialogue' => 'dialogue',
-        'listen_select' => 'listening',
-        'learn_words' => 'vocabulary',
-        _ => 'game_mission',
-      };
+  static String _duoActivityType(String gameCode) =>
+      LearningSkillTaxonomy.activityTypeForGameCode(gameCode);
 
   static double _accuracyPercent(int correct, int wrong) {
     final total = correct + wrong;
