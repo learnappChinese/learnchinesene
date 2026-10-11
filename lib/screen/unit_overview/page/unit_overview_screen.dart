@@ -16,6 +16,10 @@ import '../../duolingo/duo_game_visuals.dart';
 import '../../duolingo/page/duo_game_runner_screen.dart';
 import '../../vocabulary_adventure/binding/vocabulary_adventure_binding.dart';
 import '../../vocabulary_adventure/page/vocabulary_adventure_screen.dart';
+import '../../../core/learning/model/learning_stage_models.dart';
+import '../../../core/widgets/segmented_progress_node.dart';
+import '../../hanzi_writing/screens/hanzi_writing_home_screen.dart';
+import '../../speaking/speaking_screen.dart';
 import '../controller/unit_overview_controller.dart';
 
 class UnitOverviewScreen extends StatefulWidget {
@@ -191,8 +195,9 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   }
 
   Widget _buildMetricsRow(ChapterAdventure chapter) {
-    final completed = chapter.completedMissions;
-    final total = chapter.missions.length;
+    final hasStages = controller.stages.isNotEmpty;
+    final completed = hasStages ? controller.completedStageCount : chapter.completedMissions;
+    final total = hasStages ? controller.totalStageCount : chapter.missions.length;
     final masteryPct = (chapter.overallMastery * 100).round();
     final bossStatus = chapter.bossUnlocked
         ? 'Sẵn sàng'
@@ -202,9 +207,9 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
       children: [
         Expanded(
           child: _MetricCard(
-            label: 'Nhiệm vụ',
+            label: hasStages ? 'Ải bài học' : 'Nhiệm vụ',
             value: '$completed / $total',
-            icon: Icons.task_alt_rounded,
+            icon: hasStages ? Icons.flag_circle_rounded : Icons.task_alt_rounded,
             color: GameVisualTokens.jade,
           ),
         ),
@@ -232,9 +237,13 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
 
   Widget _buildPrimaryCta(ChapterAdventure chapter) {
     final isBossReady = chapter.bossUnlocked && chapter.boss != null;
+    final hasStages = controller.stages.isNotEmpty;
+    final isStarted = hasStages
+        ? controller.completedStageCount > 0
+        : chapter.completedMissions > 0;
     final label = isBossReady
         ? 'KHIÊU CHIẾN BOSS'
-        : (chapter.completedMissions == 0 ? 'BẮT ĐẦU BÀI HỌC' : 'TIẾP TỤC BÀI HỌC');
+        : (!isStarted ? 'BẮT ĐẦU BÀI HỌC' : 'TIẾP TỤC BÀI HỌC');
 
     return SizedBox(
       width: double.infinity,
@@ -243,6 +252,13 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
         onPressed: () {
           if (isBossReady) {
             _openBoss(chapter);
+          } else if (hasStages) {
+            final next = controller.nextPlayableStage;
+            if (next != null) {
+              _openStage(chapter, next);
+            } else {
+              _openAdventureMap();
+            }
           } else {
             final next = controller.nextPlayableMission;
             if (next != null) {
@@ -286,18 +302,20 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   }
 
   Widget _buildMissionList(ChapterAdventure chapter) {
+    final hasStages = controller.stages.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
-                'LỘ TRÌNH KỸ NĂNG',
+                hasStages ? 'DANH SÁCH ẢI (STAGES)' : 'LỘ TRÌNH KỸ NĂNG',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w900,
                   color: GameVisualTokens.templeWood,
@@ -317,16 +335,28 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        ...chapter.missions.asMap().entries.map((entry) {
-          final idx = entry.key;
-          final mission = entry.value;
-          return _MissionListTile(
-            index: idx + 1,
-            mission: mission,
-            onTap: () => _openMission(chapter, mission),
-          );
-        }),
-        if (chapter.boss != null) ...[
+        if (hasStages) ...[
+          ...controller.stages.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final stage = entry.value;
+            return _StageListTile(
+              index: idx + 1,
+              stage: stage,
+              onTap: () => _openStage(chapter, stage),
+            );
+          }),
+        ] else ...[
+          ...chapter.missions.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final mission = entry.value;
+            return _MissionListTile(
+              index: idx + 1,
+              mission: mission,
+              onTap: () => _openMission(chapter, mission),
+            );
+          }),
+        ],
+        if (chapter.boss != null && (!hasStages || !controller.stages.any((s) => s.activityType == LearningStageActivityType.boss))) ...[
           const SizedBox(height: 12),
           _BossListTile(
             boss: chapter.boss!,
@@ -336,6 +366,78 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
         ],
       ],
     );
+  }
+
+  void _openStage(ChapterAdventure chapter, LearningStageViewModel stage) {
+    if (stage.isLocked) {
+      showLockedMissionSheet(
+        context,
+        title: 'Ải chưa mở khóa',
+        message: 'Hoàn thành các ải trước để mở khóa ải này.',
+      );
+      return;
+    }
+
+    switch (stage.activityType) {
+      case LearningStageActivityType.vocabulary:
+        final firstSession = stage.sourceSessionIds.isNotEmpty ? stage.sourceSessionIds.first : 1;
+        Get.to(
+          () => const VocabularyAdventureScreen(),
+          binding: VocabularyAdventureBinding(
+            levelId: chapter.levelId,
+            gameId: firstSession,
+            gameName: stage.title,
+          ),
+        )?.then((_) => controller.loadUnitOverview());
+        break;
+
+      case LearningStageActivityType.hanzi:
+        Get.to(
+          () => const HanziWritingHomeScreen(),
+        )?.then((_) => controller.loadUnitOverview());
+        break;
+
+      case LearningStageActivityType.speaking:
+        final numPart = RegExp(r'\d+').firstMatch(stage.unitId)?.group(0);
+        final unitNum = numPart != null ? int.tryParse(numPart) : null;
+        Get.to(
+          () => SpeakingScreen(unitId: unitNum),
+        )?.then((_) => controller.loadUnitOverview());
+        break;
+
+      case LearningStageActivityType.listening:
+      case LearningStageActivityType.sentence:
+      case LearningStageActivityType.dialogue:
+      case LearningStageActivityType.quiz:
+        final firstSession = stage.sourceSessionIds.isNotEmpty ? stage.sourceSessionIds.first : 1;
+        final gameCode = stage.activityType == LearningStageActivityType.listening
+            ? 'listen_tap'
+            : (stage.activityType == LearningStageActivityType.dialogue
+                ? 'dialogue'
+                : (stage.activityType == LearningStageActivityType.quiz ? 'quiz' : 'translate'));
+        Get.to(
+          () => DuoGameRunnerScreen(
+            gameId: firstSession,
+            gameCode: gameCode,
+            levelId: chapter.levelId,
+            gameName: stage.title,
+            chapterNumber: chapter.chapterNumber,
+            missionNumber: controller.stages.indexOf(stage) + 1,
+            missionCount: controller.stages.length,
+          ),
+        )?.then((_) => controller.loadUnitOverview());
+        break;
+
+      case LearningStageActivityType.boss:
+        if (stage.bossStage != null) {
+          Get.to(
+            () => BossBattleScreen(stage: stage.bossStage!),
+          )?.then((_) => controller.loadUnitOverview());
+        } else if (chapter.boss != null) {
+          _openBoss(chapter);
+        }
+        break;
+    }
   }
 
   void _openMission(ChapterAdventure chapter, ChapterMission mission) {
@@ -667,5 +769,191 @@ class _BossListTile extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _StageListTile extends StatelessWidget {
+  const _StageListTile({
+    required this.index,
+    required this.stage,
+    required this.onTap,
+  });
+
+  final int index;
+  final LearningStageViewModel stage;
+  final VoidCallback onTap;
+
+  IconData _iconForActivityType(LearningStageActivityType type) {
+    switch (type) {
+      case LearningStageActivityType.vocabulary:
+        return Icons.menu_book_rounded;
+      case LearningStageActivityType.hanzi:
+        return Icons.edit_note_rounded;
+      case LearningStageActivityType.listening:
+        return Icons.headphones_rounded;
+      case LearningStageActivityType.sentence:
+        return Icons.translate_rounded;
+      case LearningStageActivityType.speaking:
+        return Icons.mic_rounded;
+      case LearningStageActivityType.dialogue:
+        return Icons.chat_bubble_rounded;
+      case LearningStageActivityType.quiz:
+        return Icons.quiz_rounded;
+      case LearningStageActivityType.boss:
+        return Icons.local_fire_department_rounded;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLocked = stage.isLocked;
+    final isCompleted = stage.isCompleted;
+    final inProgress = stage.state == AdventureNodeState.inProgress;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isCompleted
+              ? GameVisualTokens.jade.withValues(alpha: 0.5)
+              : inProgress
+                  ? GameVisualTokens.imperialGold
+                  : const Color(0xFFE2E8F0),
+          width: inProgress ? 1.8 : 1.0,
+        ),
+      ),
+      child: Material(
+        color: isLocked ? const Color(0xFFF8FAFC) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                SegmentedProgressNode(
+                  totalSegments: stage.totalItems,
+                  completedSegments: stage.completedItems,
+                  state: stage.state,
+                  progress: stage.progress,
+                  stars: stage.stars,
+                  icon: _iconForActivityType(stage.activityType),
+                  size: 60,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isLocked
+                                  ? Colors.grey.shade200
+                                  : GameVisualTokens.jade.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'ẢI $index',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: isLocked ? Colors.grey.shade600 : GameVisualTokens.jade,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              stage.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: isLocked ? Colors.grey.shade600 : GameVisualTokens.templeWood,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        stage.subtitle.isNotEmpty ? stage.subtitle : stage.learningObjective,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          Text(
+                            '${stage.completedItems}/${stage.totalItems} nội dung',
+                            style: const TextStyle(fontSize: 11, color: LearningColors.muted),
+                          ),
+                          Text(
+                            '•  ~${stage.estimatedMinutes} phút',
+                            style: const TextStyle(fontSize: 11, color: LearningColors.muted),
+                          ),
+                          if (stage.stars > 0)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: List.generate(
+                                3,
+                                (i) => Icon(
+                                  i < stage.stars ? Icons.star_rounded : Icons.star_border_rounded,
+                                  size: 13,
+                                  color: GameVisualTokens.imperialGold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _buildTrailingAction(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrailingAction() {
+    if (stage.isLocked) {
+      return const Icon(Icons.lock_rounded, size: 20, color: Colors.grey);
+    }
+    if (stage.isCompleted) {
+      return const Icon(Icons.check_circle_rounded, size: 22, color: GameVisualTokens.jade);
+    }
+    if (stage.state == AdventureNodeState.inProgress) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: GameVisualTokens.imperialGold.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'Đang học',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: GameVisualTokens.gold,
+          ),
+        ),
+      );
+    }
+    return const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: GameVisualTokens.jade);
   }
 }

@@ -9,12 +9,19 @@ import 'package:flash_learn_chinese/screen/chapter_adventure/model/chapter_adven
 import 'package:flash_learn_chinese/screen/unit_overview/controller/unit_overview_controller.dart';
 import 'package:flash_learn_chinese/screen/unit_overview/page/unit_overview_screen.dart';
 
+import 'package:flash_learn_chinese/core/learning/model/learning_stage_models.dart';
+
 class MockLearningJourneyRepository implements LearningJourneyRepository {
-  MockLearningJourneyRepository({required this.stubChapter});
-  final ChapterAdventure stubChapter;
+  MockLearningJourneyRepository({this.stubChapter, this.stubStages = const []});
+  final ChapterAdventure? stubChapter;
+  final List<LearningStageViewModel> stubStages;
 
   @override
   Future<ChapterAdventure?> getUnitJourney(String unitId) async => stubChapter;
+
+  @override
+  Future<List<LearningStageViewModel>> getUnitStages(String unitId) async =>
+      stubStages;
 
   @override
   Future<List<LearningSectionViewModel>> getSections() async => const [];

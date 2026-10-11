@@ -7,10 +7,14 @@ import '../../../screen/review/data/review_repository.dart';
 import '../model/learning_journey_models.dart';
 import '../model/unit_mastery.dart';
 
+import '../model/learning_stage_models.dart';
+import '../service/learning_stage_grouping_service.dart';
+
 abstract interface class LearningJourneyRepository {
   Future<List<LearningSectionViewModel>> getSections();
   Future<List<LearningUnitViewModel>> getUnits(String sectionId);
   Future<ChapterAdventure?> getUnitJourney(String unitId);
+  Future<List<LearningStageViewModel>> getUnitStages(String unitId);
   Future<LearningUnitViewModel?> getCurrentProgress();
   Future<LearningNextAction?> getNextAction();
 }
@@ -20,14 +24,18 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
     SupabaseClient? client,
     ChapterAdventureRepository? chapterAdventureRepository,
     ReviewRepository? reviewRepository,
+    LearningStageGroupingService? stageGroupingService,
   })  : _client = client ?? Supabase.instance.client,
         _chapterRepo =
             chapterAdventureRepository ?? SupabaseChapterAdventureRepository(),
-        _reviewRepo = reviewRepository ?? SupabaseReviewRepository();
+        _reviewRepo = reviewRepository ?? SupabaseReviewRepository(),
+        _stageGroupingService =
+            stageGroupingService ?? const LearningStageGroupingService();
 
   final SupabaseClient _client;
   final ChapterAdventureRepository _chapterRepo;
   final ReviewRepository _reviewRepo;
+  final LearningStageGroupingService _stageGroupingService;
 
   String? get _userId => _client.auth.currentUser?.id;
 
@@ -228,6 +236,212 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
   @override
   Future<ChapterAdventure?> getUnitJourney(String unitId) async {
     return _chapterRepo.loadChapter(unitId);
+  }
+
+  @override
+  Future<List<LearningStageViewModel>> getUnitStages(String unitId) async {
+    try {
+      // 1. Fetch duo_unit
+      final unitRows = List<Map<String, dynamic>>.from(
+        await _client
+            .from('duo_units')
+            .select('id, section_id, unit_number, title')
+            .eq('id', unitId)
+            .limit(1),
+      );
+      if (unitRows.isEmpty) return const [];
+      final unitRow = unitRows.first;
+      final unitNumber = (unitRow['unit_number'] as num?)?.toInt() ?? 1;
+      final unitTitle = LearningPresentationMapper.unitTitle(
+        unitRow['title'],
+        unitNumber,
+      );
+      final sectionId = '${unitRow['section_id'] ?? ''}';
+      final secNum = int.tryParse(sectionId.split('-').last) ?? 1;
+
+      // 2. Fetch lexicon_unit
+      final lexiconUnitRows = List<Map<String, dynamic>>.from(
+        await _client
+            .from('lexicon_units')
+            .select('id, unit_number, title')
+            .eq('unit_number', unitNumber)
+            .limit(1),
+      );
+      final lexiconUnitId = lexiconUnitRows.isNotEmpty
+          ? (lexiconUnitRows.first['id'] as num?)?.toInt()
+          : null;
+
+      // 3. Fetch words & characters
+      List<Map<String, dynamic>> rawWords = const [];
+      List<Map<String, dynamic>> rawCharacters = const [];
+      List<Map<String, dynamic>> rawExamples = const [];
+
+      if (lexiconUnitId != null) {
+        final wordUnitRows = List<Map<String, dynamic>>.from(
+          await _client
+              .from('lexicon_word_units')
+              .select('word_id')
+              .eq('unit_id', lexiconUnitId),
+        );
+        final wordIds = wordUnitRows
+            .map((r) => (r['word_id'] as num?)?.toInt())
+            .whereType<int>()
+            .toList();
+
+        if (wordIds.isNotEmpty) {
+          rawWords = List<Map<String, dynamic>>.from(
+            await _client
+                .from('lexicon_words')
+                .select(
+                  'id, word, pinyin, meaning_vi, meaning_en, tts_url, main_character_id',
+                )
+                .inFilter('id', wordIds),
+          );
+
+          final charIds = rawWords
+              .map((w) => (w['main_character_id'] as num?)?.toInt())
+              .whereType<int>()
+              .toSet()
+              .toList();
+
+          if (charIds.isNotEmpty) {
+            rawCharacters = List<Map<String, dynamic>>.from(
+              await _client
+                  .from('lexicon_characters')
+                  .select(
+                    'id, character, stroke_count, stroke_paths, radical_id',
+                  )
+                  .inFilter('id', charIds),
+            );
+          }
+        }
+
+        rawExamples = List<Map<String, dynamic>>.from(
+          await _client
+              .from('lexicon_examples')
+              .select('id, word_id, sentence_cn, sentence_pinyin, sentence_vi')
+              .eq('unit_id', lexiconUnitId)
+              .limit(15),
+        );
+      }
+
+      // 4. Fetch duo challenges
+      final levelRows = List<Map<String, dynamic>>.from(
+        await _client
+            .from('duo_levels')
+            .select('id')
+            .eq('unit_id', unitId),
+      );
+      final levelIds = levelRows.map((l) => '${l['id']}').toList();
+
+      List<Map<String, dynamic>> rawChallenges = const [];
+      if (levelIds.isNotEmpty) {
+        final sessionRows = List<Map<String, dynamic>>.from(
+          await _client
+              .from('duo_sessions')
+              .select('id, level_id')
+              .inFilter('level_id', levelIds),
+        );
+        final sessionIds = sessionRows
+            .map((s) => (s['id'] as num?)?.toInt())
+            .whereType<int>()
+            .toList();
+
+        if (sessionIds.isNotEmpty) {
+          rawChallenges = List<Map<String, dynamic>>.from(
+            await _client
+                .from('duo_challenges')
+                .select(
+                  'id, session_id, type, prompt, tts, slow_tts, choices_text, solutions, tokens_text',
+                )
+                .inFilter('session_id', sessionIds),
+          );
+        }
+      }
+
+      // 5. Fetch boss stage
+      final bossRows = List<Map<String, dynamic>>.from(
+        await _client
+            .from('boss_stages')
+            .select(
+              'id, unit_id, stage_order, title, question_count, difficulty, boss_name, boss_hp, player_hp, theme_code',
+            )
+            .eq('unit_id', unitId)
+            .limit(1),
+      );
+      final rawBossStage = bossRows.isNotEmpty ? bossRows.first : null;
+
+      // 6. Fetch user progress if signed in
+      Map<int, Map<String, dynamic>> wordProgress = {};
+      Map<int, Map<String, dynamic>> hanziProgress = {};
+      Map<int, Map<String, dynamic>> speakingProgress = {};
+      Map<String, Map<String, dynamic>> gameProgress = {};
+      Map<String, dynamic>? bossProg;
+
+      if (_userId != null) {
+        try {
+          if (rawWords.isNotEmpty) {
+            final wIds = rawWords.map((w) => w['id'] as int).toList();
+            final wpList = List<Map<String, dynamic>>.from(
+              await _client
+                  .from('lexicon_user_progress')
+                  .select('word_id, correct_count, mastered')
+                  .eq('user_id', _userId!)
+                  .inFilter('word_id', wIds),
+            );
+            wordProgress = {
+              for (final row in wpList) (row['word_id'] as num).toInt(): row
+            };
+          }
+
+          if (rawCharacters.isNotEmpty) {
+            final cIds = rawCharacters.map((c) => c['id'] as int).toList();
+            final hpList = List<Map<String, dynamic>>.from(
+              await _client
+                  .from('lexicon_hanzi_progress')
+                  .select('character_id, practice_count, best_score')
+                  .eq('user_id', _userId!)
+                  .inFilter('character_id', cIds),
+            );
+            hanziProgress = {
+              for (final row in hpList) (row['character_id'] as num).toInt(): row
+            };
+          }
+
+          if (rawBossStage != null) {
+            final bossId = (rawBossStage['id'] as num).toInt();
+            final bpList = List<Map<String, dynamic>>.from(
+              await _client
+                  .from('boss_stage_progress')
+                  .select('stage_id, completed, stars, best_score')
+                  .eq('user_id', _userId!)
+                  .eq('stage_id', bossId)
+                  .limit(1),
+            );
+            if (bpList.isNotEmpty) bossProg = bpList.first;
+          }
+        } catch (_) {}
+      }
+
+      return _stageGroupingService.groupStagesForUnit(
+        unitId: unitId,
+        unitTitle: unitTitle,
+        sectionNumber: secNum,
+        unitNumber: unitNumber,
+        rawWords: rawWords,
+        rawCharacters: rawCharacters,
+        rawChallenges: rawChallenges,
+        rawExamples: rawExamples,
+        rawBossStage: rawBossStage,
+        wordProgress: wordProgress,
+        hanziProgress: hanziProgress,
+        speakingProgress: speakingProgress,
+        gameProgress: gameProgress,
+        bossProgress: bossProg,
+      );
+    } catch (_) {
+      return const [];
+    }
   }
 
   @override
