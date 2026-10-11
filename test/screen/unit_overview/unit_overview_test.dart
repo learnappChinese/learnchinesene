@@ -110,7 +110,7 @@ void main() {
         UnitOverviewController(
           journeyRepository:
               MockLearningJourneyRepository(stubChapter: stubChapter),
-        ),
+        )..unitId = stubChapter.unitId,
       );
 
       await tester.pumpWidget(

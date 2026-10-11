@@ -64,4 +64,35 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('zero-due actions remain useful instead of showing empty copy',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HomePracticeTab(
+            journey: journey,
+            reviewSummary: const ReviewSummary(
+              totalDue: 0,
+              wordsDue: 0,
+              listeningDue: 0,
+              speakingDue: 0,
+              hanziDue: 0,
+            ),
+            onSpeaking: () {},
+            onWriting: () {},
+            onFlashcards: () {},
+            onLearningPath: () {},
+            onQuiz: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Bạn đang theo kịp'), findsOneWidget);
+    expect(find.text('Luyện nhanh 3 phút'), findsOneWidget);
+    expect(find.text('Khám phá chữ mới'), findsOneWidget);
+    expect(find.text('Ôn từ bài hiện tại'), findsOneWidget);
+    expect(find.text('Không có mục đến hạn'), findsNothing);
+  });
 }

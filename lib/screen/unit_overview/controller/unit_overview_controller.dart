@@ -16,7 +16,7 @@ class UnitOverviewController extends GetxController {
   final chapter = Rxn<ChapterAdventure>();
   final stages = <LearningStageViewModel>[].obs;
 
-  String unitId = 'sec_1_unit_1';
+  String unitId = '';
   String unitTitle = '';
   int sectionNumber = 1;
   int unitNumber = 1;
@@ -37,6 +37,11 @@ class UnitOverviewController extends GetxController {
   Future<void> loadUnitOverview() async {
     isLoading.value = true;
     errorMessage.value = null;
+    if (unitId.trim().isEmpty) {
+      errorMessage.value = 'Không xác định được bài học cần mở.';
+      isLoading.value = false;
+      return;
+    }
     try {
       final results = await Future.wait([
         _journeyRepo.getUnitJourney(unitId),
@@ -59,16 +64,24 @@ class UnitOverviewController extends GetxController {
           sectionNumber = journey.regionNumber;
           unitNumber = journey.chapterNumber;
         } else if (loadedStages.isNotEmpty) {
-          final boss = loadedStages.where((s) => s.bossStage != null).firstOrNull?.bossStage;
-          final allReqDone = loadedStages.where((s) => s.isRequired).every((s) => s.isCompleted);
-          final avgMastery = loadedStages.map((s) => s.mastery).reduce((a, b) => a + b) / loadedStages.length;
+          final boss = loadedStages
+              .where((s) => s.bossStage != null)
+              .firstOrNull
+              ?.bossStage;
+          final allReqDone = loadedStages
+              .where((s) => s.isRequired)
+              .every((s) => s.isCompleted);
+          final avgMastery =
+              loadedStages.map((s) => s.mastery).reduce((a, b) => a + b) /
+                  loadedStages.length;
           chapter.value = ChapterAdventure(
             levelId: unitId,
             unitId: unitId,
             regionNumber: sectionNumber,
             chapterNumber: unitNumber,
-            title: unitTitle.isNotEmpty ? unitTitle : 'Gọi tên món ăn và đồ uống',
-            objective: loadedStages.firstOrNull?.learningObjective ?? 'Nắm vững kiến thức bài học.',
+            title: unitTitle.isNotEmpty ? unitTitle : 'Bài học tiếng Trung',
+            objective: loadedStages.firstOrNull?.learningObjective ??
+                'Nắm vững kiến thức trong bài học.',
             missions: const [],
             overallMastery: avgMastery,
             bossUnlocked: allReqDone && boss != null,

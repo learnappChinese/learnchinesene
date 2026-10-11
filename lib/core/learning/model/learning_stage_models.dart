@@ -100,6 +100,8 @@ class LearningStageViewModel {
     required this.unitId,
     this.sourceLevelIds = const [],
     this.sourceSessionIds = const [],
+    this.sourceGameId,
+    this.sourceGameCode,
     required this.title,
     required this.subtitle,
     required this.activityType,
@@ -112,6 +114,9 @@ class LearningStageViewModel {
     this.estimatedMinutes = 5,
     this.rewardPreview = '+20 XP • ⭐',
     this.prerequisiteIds = const [],
+    this.lockReason,
+    this.requiredStageId,
+    this.requiredMastery,
     this.isRequired = true,
     this.bossStage,
   });
@@ -127,6 +132,12 @@ class LearningStageViewModel {
 
   /// Linked duo_sessions IDs
   final List<int> sourceSessionIds;
+
+  /// duo_game_definitions.id used by the unified runner/progress pipeline.
+  final int? sourceGameId;
+
+  /// duo_game_definitions.game_code used to resolve the exact gameplay.
+  final String? sourceGameCode;
 
   /// Display title (e.g. 'Ải 1: Từ vựng ẩm thực')
   final String title;
@@ -164,6 +175,15 @@ class LearningStageViewModel {
 
   /// Prerequisite stage IDs required to unlock this stage
   final List<String> prerequisiteIds;
+
+  /// Server-provided reason. Presentation code maps it to friendly copy.
+  final String? lockReason;
+
+  /// Server-provided dependency node, if the lock is dependency based.
+  final String? requiredStageId;
+
+  /// Server-provided mastery threshold, if the lock is mastery based.
+  final double? requiredMastery;
 
   /// Whether clearing this stage is required to reach the Unit Boss
   final bool isRequired;
@@ -203,7 +223,9 @@ class LearningStageViewModel {
   /// Stage progress fraction (0.0 to 1.0) based on required items
   double get progress {
     if (requiredItemsCount == 0) {
-      return totalItems == 0 ? 0.0 : (completedItems / totalItems).clamp(0.0, 1.0);
+      return totalItems == 0
+          ? 0.0
+          : (completedItems / totalItems).clamp(0.0, 1.0);
     }
     return (completedRequiredCount / requiredItemsCount).clamp(0.0, 1.0);
   }
@@ -227,6 +249,8 @@ class LearningStageViewModel {
     String? unitId,
     List<String>? sourceLevelIds,
     List<int>? sourceSessionIds,
+    int? sourceGameId,
+    String? sourceGameCode,
     String? title,
     String? subtitle,
     LearningStageActivityType? activityType,
@@ -239,6 +263,9 @@ class LearningStageViewModel {
     int? estimatedMinutes,
     String? rewardPreview,
     List<String>? prerequisiteIds,
+    String? lockReason,
+    String? requiredStageId,
+    double? requiredMastery,
     bool? isRequired,
     BossBattleStage? bossStage,
   }) {
@@ -247,6 +274,8 @@ class LearningStageViewModel {
       unitId: unitId ?? this.unitId,
       sourceLevelIds: sourceLevelIds ?? this.sourceLevelIds,
       sourceSessionIds: sourceSessionIds ?? this.sourceSessionIds,
+      sourceGameId: sourceGameId ?? this.sourceGameId,
+      sourceGameCode: sourceGameCode ?? this.sourceGameCode,
       title: title ?? this.title,
       subtitle: subtitle ?? this.subtitle,
       activityType: activityType ?? this.activityType,
@@ -259,6 +288,9 @@ class LearningStageViewModel {
       estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
       rewardPreview: rewardPreview ?? this.rewardPreview,
       prerequisiteIds: prerequisiteIds ?? this.prerequisiteIds,
+      lockReason: lockReason ?? this.lockReason,
+      requiredStageId: requiredStageId ?? this.requiredStageId,
+      requiredMastery: requiredMastery ?? this.requiredMastery,
       isRequired: isRequired ?? this.isRequired,
       bossStage: bossStage ?? this.bossStage,
     );

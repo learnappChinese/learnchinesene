@@ -70,6 +70,7 @@ class HomePracticeTab extends StatelessWidget {
                         subtitle: _dueText(
                           reviewSummary?.totalDue,
                           'mục cần ôn hôm nay',
+                          'Bạn đang theo kịp',
                         ),
                         color: LearningColors.red,
                         onTap: onReview ?? onQuiz,
@@ -81,6 +82,7 @@ class HomePracticeTab extends StatelessWidget {
                         subtitle: _dueText(
                           reviewSummary?.speakingDue,
                           'câu cần cải thiện',
+                          'Luyện nhanh 3 phút',
                         ),
                         color: LearningColors.orange,
                         onTap: onSpeaking,
@@ -92,6 +94,7 @@ class HomePracticeTab extends StatelessWidget {
                         subtitle: _dueText(
                           reviewSummary?.hanziDue,
                           'chữ cần luyện',
+                          'Khám phá chữ mới',
                         ),
                         color: LearningColors.jade,
                         onTap: onWriting,
@@ -103,6 +106,7 @@ class HomePracticeTab extends StatelessWidget {
                         subtitle: _dueText(
                           reviewSummary?.wordsDue,
                           'từ đến hạn',
+                          'Ôn từ bài hiện tại',
                         ),
                         color: LearningColors.gold,
                         onTap: onFlashcards,
@@ -123,10 +127,10 @@ class HomePracticeTab extends StatelessWidget {
         ),
       );
 
-  String _dueText(int? count, String label) => count == null
+  String _dueText(int? count, String label, String emptyLabel) => count == null
       ? 'Đang đồng bộ tiến độ'
       : count == 0
-          ? 'Không có mục đến hạn'
+          ? emptyLabel
           : '$count $label';
 }
 
@@ -169,9 +173,7 @@ class _LearningHero extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data == null
-                      ? 'HÀNH TRÌNH MỚI'
-                      : 'BÀI ${data.chapterNumber}',
+                  data == null ? 'HÀNH TRÌNH MỚI' : 'BÀI ${data.chapterNumber}',
                   style: const TextStyle(
                     color: LearningColors.goldSoft,
                     fontSize: 12,
@@ -222,7 +224,8 @@ class _LearningHero extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                data.recommendation?.rewardPreview ?? '+${data.nextRewardXp} XP',
+                data.recommendation?.rewardPreview ??
+                    '+${data.nextRewardXp} XP',
                 style: const TextStyle(
                   color: LearningColors.goldSoft,
                   fontWeight: FontWeight.w900,

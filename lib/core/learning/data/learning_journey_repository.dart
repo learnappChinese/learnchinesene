@@ -42,192 +42,99 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
   @override
   Future<List<LearningSectionViewModel>> getSections() async {
     try {
-      final sectionRows = List<Map<String, dynamic>>.from(
-        await _client
-            .from('duo_sections')
-            .select('id, section_number, title')
-            .order('section_number', ascending: true),
+      final rows = List<Map<String, dynamic>>.from(
+        await _client.rpc('learning_sections_v2'),
       );
-
-      if (sectionRows.isEmpty) {
-        return _fallbackSections();
-      }
-
-      // Query units count and completed units count
-      final unitRows = List<Map<String, dynamic>>.from(
-        await _client
-            .from('duo_units')
-            .select('id, section_id, unit_number, title')
-            .order('unit_number', ascending: true),
-      );
-
-      // Completed units map (from boss_stage_progress if logged in)
-      final completedUnitIds = <String>{};
-      if (_userId != null) {
-        try {
-          final completedBosses = List<Map<String, dynamic>>.from(
-            await _client
-                .from('boss_stage_progress')
-                .select('stage_id')
-                .eq('user_id', _userId!)
-                .eq('completed', true),
-          );
-          final completedStageIds = completedBosses
-              .map((row) => (row['stage_id'] as num?)?.toInt())
-              .whereType<int>()
-              .toSet();
-
-          if (completedStageIds.isNotEmpty) {
-            final stages = List<Map<String, dynamic>>.from(
-              await _client
-                  .from('boss_stages')
-                  .select('id, unit_id')
-                  .inFilter('id', completedStageIds.toList()),
-            );
-            for (final stage in stages) {
-              final uid = stage['unit_id'] as String?;
-              if (uid != null) completedUnitIds.add(uid);
-            }
-          }
-        } catch (_) {}
-      }
-
-      final sections = <LearningSectionViewModel>[];
-      bool previousSectionCompleted = true;
-
-      for (final sec in sectionRows) {
-        final secId = sec['id'] as String;
-        final secNum = (sec['section_number'] as num?)?.toInt() ?? 1;
-        final rawTitle = sec['title'] as String?;
-        final cleanTitle = LearningPresentationMapper.sectionName(secNum, rawTitle);
-
-        final secUnits = unitRows.where((u) => u['section_id'] == secId).toList();
-        final unitCount = secUnits.length;
-        final completedCount = secUnits
-            .where((u) => completedUnitIds.contains(u['id'] as String))
-            .length;
-
-        final isUnlocked = secNum == 1 || previousSectionCompleted || completedCount > 0;
-        if (completedCount < unitCount) {
-          previousSectionCompleted = false;
-        }
-
-        sections.add(
-          LearningSectionViewModel(
-            id: secId,
-            sectionNumber: secNum,
-            title: LearningPresentationMapper.sectionHeading(secNum),
-            subtitle: cleanTitle,
-            unitCount: unitCount,
-            completedUnitCount: completedCount,
-            isUnlocked: isUnlocked,
+      return rows.map((row) {
+        final number = (row['section_number'] as num?)?.toInt() ?? 1;
+        return LearningSectionViewModel(
+          id: '${row['section_id'] ?? ''}',
+          sectionNumber: number,
+          title: LearningPresentationMapper.sectionHeading(number),
+          subtitle: LearningPresentationMapper.sectionName(
+            number,
+            row['section_title'],
           ),
+          unitCount: (row['unit_count'] as num?)?.toInt() ?? 0,
+          completedUnitCount:
+              (row['completed_unit_count'] as num?)?.toInt() ?? 0,
+          isUnlocked: row['is_unlocked'] == true,
+          lockReason: row['lock_reason'] as String?,
+          requiredSectionNumber:
+              (row['required_section_number'] as num?)?.toInt(),
         );
-      }
-
-      return sections;
+      }).toList(growable: false);
     } catch (_) {
-      return _fallbackSections();
+      return const [];
     }
   }
 
   @override
   Future<List<LearningUnitViewModel>> getUnits(String sectionId) async {
     try {
-      final unitRows = List<Map<String, dynamic>>.from(
-        await _client
-            .from('duo_units')
-            .select('id, section_id, unit_number, title')
-            .eq('section_id', sectionId)
-            .order('unit_number', ascending: true),
+      final rows = List<Map<String, dynamic>>.from(
+        await _client.rpc(
+          'learning_units_v2',
+          params: <String, dynamic>{'p_section_id': sectionId},
+        ),
       );
 
-      if (unitRows.isEmpty) return const [];
-
-      final secNum = int.tryParse(sectionId.split('-').last) ?? 1;
-
-      // Query boss stages for this section's units
-      final unitIds = unitRows.map((u) => u['id'] as String).toList();
-      final bossRows = List<Map<String, dynamic>>.from(
-        await _client
-            .from('boss_stages')
-            .select('id, unit_id, boss_name')
-            .inFilter('unit_id', unitIds),
-      );
-      final bossMap = {for (final b in bossRows) b['unit_id'] as String: b};
-
-      // Query user progress if logged in
-      final bossCompletedIds = <String>{};
-      if (_userId != null) {
-        try {
-          final completed = List<Map<String, dynamic>>.from(
-            await _client
-                .from('boss_stage_progress')
-                .select('stage_id')
-                .eq('user_id', _userId!)
-                .eq('completed', true),
-          );
-          final stageIds = completed
-              .map((r) => (r['stage_id'] as num?)?.toInt())
-              .whereType<int>()
-              .toSet();
-
-          for (final b in bossRows) {
-            final stageId = (b['id'] as num?)?.toInt();
-            if (stageId != null && stageIds.contains(stageId)) {
-              bossCompletedIds.add(b['unit_id'] as String);
-            }
-          }
-        } catch (_) {}
-      }
-
-      final result = <LearningUnitViewModel>[];
-      bool previousUnitPassed = true;
-
-      for (int i = 0; i < unitRows.length; i++) {
-        final row = unitRows[i];
-        final unitId = row['id'] as String;
-        final unitNum = (row['unit_number'] as num?)?.toInt() ?? (i + 1);
-        final title = LearningPresentationMapper.unitTitle(row['title'], unitNum);
-        final boss = bossMap[unitId];
-        final bossWon = bossCompletedIds.contains(unitId);
-
-        // Lock logic cấp Unit: Unit 1 luôn mở. Unit tiếp theo mở khi Unit trước hoàn thành.
-        final isUnlocked = i == 0 || previousUnitPassed || bossWon;
-
-        UnitCompletionState state = UnitCompletionState.inProgress;
-        if (bossWon) {
-          state = UnitCompletionState.completed;
-          previousUnitPassed = true;
-        } else {
-          previousUnitPassed = false;
-        }
-
-        result.add(
-          LearningUnitViewModel(
-            id: unitId,
-            sectionId: sectionId,
-            sectionNumber: secNum,
-            unitNumber: unitNum,
-            title: 'Bài $unitNum: $title',
-            subtitle: 'Hành trình bài học toàn diện',
-            teachingObjective: title,
-            missionCount: 6,
-            completedMissionCount: bossWon ? 6 : 0,
-            mastery: bossWon ? 1.0 : 0.0,
-            state: state,
-            isUnlocked: isUnlocked,
-            bossAvailable: isUnlocked && !bossWon,
-            bossWon: bossWon,
-            bossStageId: (boss?['id'] as num?)?.toInt(),
-            bossName: boss?['boss_name'] as String?,
-            estimatedMinutes: 15,
-            lockReason: isUnlocked ? null : 'Hoàn thành bài học trước để mở khóa.',
-          ),
+      return rows.map((row) {
+        final unitNumber = (row['unit_number'] as num?)?.toInt() ?? 1;
+        final title = LearningPresentationMapper.unitTitle(
+          row['unit_title'],
+          unitNumber,
         );
-      }
+        final requiredUnitId = row['required_unit_id'] as String?;
+        final requiredUnitNumber = requiredUnitId == null
+            ? null
+            : rows
+                .where((candidate) => candidate['unit_id'] == requiredUnitId)
+                .map((candidate) => (candidate['unit_number'] as num?)?.toInt())
+                .whereType<int>()
+                .firstOrNull;
+        final isUnlocked = row['is_unlocked'] == true;
+        final unitState = '${row['unit_state'] ?? ''}';
 
-      return result;
+        return LearningUnitViewModel(
+          id: '${row['unit_id'] ?? ''}',
+          sectionId: '${row['section_id'] ?? sectionId}',
+          sectionNumber: (row['section_number'] as num?)?.toInt() ?? 1,
+          unitNumber: unitNumber,
+          title: LearningPresentationMapper.unitFullTitle(title, unitNumber),
+          subtitle: switch (unitState) {
+            'completed' => 'Đã đánh bại Boss của bài học',
+            'in_progress' => 'Tiếp tục hành trình đang dở',
+            'failed' => 'Sẵn sàng thử lại, tiến độ vẫn được giữ',
+            'locked' when requiredUnitNumber != null =>
+              'Hoàn thành Bài $requiredUnitNumber để mở',
+            'locked' => 'Chưa đủ điều kiện mở bài học',
+            _ => 'Sẵn sàng bắt đầu hành trình',
+          },
+          teachingObjective: '${row['teaching_objective'] ?? title}',
+          missionCount: (row['stage_count'] as num?)?.toInt() ?? 0,
+          completedMissionCount:
+              (row['completed_stage_count'] as num?)?.toInt() ?? 0,
+          mastery: (row['overall_mastery'] as num?)?.toDouble() ?? 0.0,
+          state: unitState == 'completed'
+              ? UnitCompletionState.completed
+              : UnitCompletionState.inProgress,
+          isUnlocked: isUnlocked,
+          bossAvailable: row['boss_available'] == true,
+          bossWon: row['boss_won'] == true,
+          bossStageId: (row['boss_stage_id'] as num?)?.toInt(),
+          bossName: row['boss_name'] as String?,
+          estimatedMinutes: (((row['stage_count'] as num?)?.toInt() ?? 1) * 5)
+              .clamp(3, 35)
+              .toInt(),
+          lockReason: isUnlocked
+              ? null
+              : (requiredUnitNumber == null
+                  ? 'Bài học này chưa được mở.'
+                  : 'Đánh bại Boss Bài $requiredUnitNumber để mở khóa.'),
+          requiredUnitId: requiredUnitId,
+        );
+      }).toList(growable: false);
     } catch (_) {
       return const [];
     }
@@ -248,7 +155,7 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       );
       if (levelRows.isNotEmpty) {
         final levelId = levelRows.first['id'] as String;
-        return _chapterRepo.loadChapter(levelId);
+        return await _chapterRepo.loadChapter(levelId);
       }
     } catch (_) {}
     return null;
@@ -257,96 +164,20 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
   @override
   Future<List<LearningStageViewModel>> getUnitStages(String unitId) async {
     try {
-      // 1. Fetch duo_unit
-      final unitRows = List<Map<String, dynamic>>.from(
-        await _client
-            .from('duo_units')
-            .select('id, section_id, unit_number, title')
-            .eq('id', unitId)
-            .limit(1),
+      final pathRows = List<Map<String, dynamic>>.from(
+        await _client.rpc(
+          'unit_learning_path_v2',
+          params: <String, dynamic>{'p_unit_id': unitId},
+        ),
       );
-      if (unitRows.isEmpty) return const [];
-      final unitRow = unitRows.first;
-      final unitNumber = (unitRow['unit_number'] as num?)?.toInt() ?? 1;
-      final unitTitle = LearningPresentationMapper.unitTitle(
-        unitRow['title'],
-        unitNumber,
-      );
-      final sectionId = '${unitRow['section_id'] ?? ''}';
-      final secNum = int.tryParse(sectionId.split('-').last) ?? 1;
+      if (pathRows.isEmpty) return const [];
 
-      // 2. Fetch lexicon_unit
-      final lexiconUnitRows = List<Map<String, dynamic>>.from(
-        await _client
-            .from('lexicon_units')
-            .select('id, unit_number, title')
-            .eq('unit_number', unitNumber)
-            .limit(1),
-      );
-      final lexiconUnitId = lexiconUnitRows.isNotEmpty
-          ? (lexiconUnitRows.first['id'] as num?)?.toInt()
-          : null;
-
-      // 3. Fetch words & characters
-      List<Map<String, dynamic>> rawWords = const [];
-      List<Map<String, dynamic>> rawCharacters = const [];
-      List<Map<String, dynamic>> rawExamples = const [];
-
-      if (lexiconUnitId != null) {
-        final wordUnitRows = List<Map<String, dynamic>>.from(
-          await _client
-              .from('lexicon_word_units')
-              .select('word_id')
-              .eq('unit_id', lexiconUnitId),
-        );
-        final wordIds = wordUnitRows
-            .map((r) => (r['word_id'] as num?)?.toInt())
-            .whereType<int>()
-            .toList();
-
-        if (wordIds.isNotEmpty) {
-          rawWords = List<Map<String, dynamic>>.from(
-            await _client
-                .from('lexicon_words')
-                .select(
-                  'id, word, pinyin, meaning_vi, meaning_en, tts_url, main_character_id',
-                )
-                .inFilter('id', wordIds),
-          );
-
-          final charIds = rawWords
-              .map((w) => (w['main_character_id'] as num?)?.toInt())
-              .whereType<int>()
-              .toSet()
-              .toList();
-
-          if (charIds.isNotEmpty) {
-            rawCharacters = List<Map<String, dynamic>>.from(
-              await _client
-                  .from('lexicon_characters')
-                  .select(
-                    'id, character, stroke_count, stroke_paths, radical_id',
-                  )
-                  .inFilter('id', charIds),
-            );
-          }
-        }
-
-        rawExamples = List<Map<String, dynamic>>.from(
-          await _client
-              .from('lexicon_examples')
-              .select('id, word_id, sentence_cn, sentence_pinyin, sentence_vi')
-              .eq('unit_id', lexiconUnitId)
-              .limit(15),
-        );
-      }
-
-      // 4. Fetch duo challenges
       final levelRows = List<Map<String, dynamic>>.from(
         await _client
             .from('duo_levels')
-            .select('id')
-            .eq('unit_id', unitId),
+            .select('id, level_index')
+            .eq('unit_id', unitId)
+            .order('level_index', ascending: true),
       );
       final levelIds = levelRows.map((l) => '${l['id']}').toList();
 
@@ -362,20 +193,32 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
             .map((s) => (s['id'] as num?)?.toInt())
             .whereType<int>()
             .toList();
+        final levelBySession = <int, String>{
+          for (final session in sessionRows)
+            if ((session['id'] as num?) != null)
+              (session['id'] as num).toInt(): '${session['level_id'] ?? ''}',
+        };
 
         if (sessionIds.isNotEmpty) {
-          rawChallenges = List<Map<String, dynamic>>.from(
+          final challengeRows = List<Map<String, dynamic>>.from(
             await _client
                 .from('duo_challenges')
                 .select(
                   'id, session_id, type, prompt, tts, slow_tts, choices_text, solutions, tokens_text',
                 )
-                .inFilter('session_id', sessionIds),
+                .inFilter('session_id', sessionIds)
+                .order('id', ascending: true),
           );
+          rawChallenges = challengeRows
+              .map((challenge) => <String, dynamic>{
+                    ...challenge,
+                    '_level_id': levelBySession[
+                        (challenge['session_id'] as num?)?.toInt()],
+                  })
+              .toList(growable: false);
         }
       }
 
-      // 5. Fetch boss stage
       final bossRows = List<Map<String, dynamic>>.from(
         await _client
             .from('boss_stages')
@@ -387,73 +230,11 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       );
       final rawBossStage = bossRows.isNotEmpty ? bossRows.first : null;
 
-      // 6. Fetch user progress if signed in
-      Map<int, Map<String, dynamic>> wordProgress = {};
-      Map<int, Map<String, dynamic>> hanziProgress = {};
-      Map<int, Map<String, dynamic>> speakingProgress = {};
-      Map<String, Map<String, dynamic>> gameProgress = {};
-      Map<String, dynamic>? bossProg;
-
-      if (_userId != null) {
-        try {
-          if (rawWords.isNotEmpty) {
-            final wIds = rawWords.map((w) => w['id'] as int).toList();
-            final wpList = List<Map<String, dynamic>>.from(
-              await _client
-                  .from('lexicon_user_progress')
-                  .select('word_id, correct_count, mastered')
-                  .eq('user_id', _userId!)
-                  .inFilter('word_id', wIds),
-            );
-            wordProgress = {
-              for (final row in wpList) (row['word_id'] as num).toInt(): row
-            };
-          }
-
-          if (rawCharacters.isNotEmpty) {
-            final cIds = rawCharacters.map((c) => c['id'] as int).toList();
-            final hpList = List<Map<String, dynamic>>.from(
-              await _client
-                  .from('lexicon_hanzi_progress')
-                  .select('character_id, practice_count, best_score')
-                  .eq('user_id', _userId!)
-                  .inFilter('character_id', cIds),
-            );
-            hanziProgress = {
-              for (final row in hpList) (row['character_id'] as num).toInt(): row
-            };
-          }
-
-          if (rawBossStage != null) {
-            final bossId = (rawBossStage['id'] as num).toInt();
-            final bpList = List<Map<String, dynamic>>.from(
-              await _client
-                  .from('boss_stage_progress')
-                  .select('stage_id, completed, stars, best_score')
-                  .eq('user_id', _userId!)
-                  .eq('stage_id', bossId)
-                  .limit(1),
-            );
-            if (bpList.isNotEmpty) bossProg = bpList.first;
-          }
-        } catch (_) {}
-      }
-
-      return _stageGroupingService.groupStagesForUnit(
+      return _stageGroupingService.groupServerPath(
         unitId: unitId,
-        unitTitle: unitTitle,
-        sectionNumber: secNum,
-        unitNumber: unitNumber,
-        rawWords: rawWords,
-        rawCharacters: rawCharacters,
+        pathRows: pathRows,
         rawChallenges: rawChallenges,
-        rawExamples: rawExamples,
         rawBossStage: rawBossStage,
-        wordProgress: wordProgress,
-        hanziProgress: hanziProgress,
-        speakingProgress: speakingProgress,
-        gameProgress: gameProgress,
-        bossProgress: bossProg,
       );
     } catch (_) {
       return const [];
@@ -467,6 +248,7 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       if (response is Map) {
         final map = Map<String, dynamic>.from(response);
         final unitId = '${map['unit_id'] ?? ''}';
+        if (unitId.isEmpty) return null;
         final secNum = (map['section_number'] as num?)?.toInt() ?? 1;
         final unitNum = (map['unit_number'] as num?)?.toInt() ?? 1;
         final title = LearningPresentationMapper.unitTitle(
@@ -474,178 +256,200 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
           unitNum,
         );
 
+        final path = List<Map<String, dynamic>>.from(
+          await _client.rpc(
+            'unit_learning_path_v2',
+            params: <String, dynamic>{'p_unit_id': unitId},
+          ),
+        );
+        final learningNodes = path
+            .where((node) => node['node_type'] == 'learning')
+            .toList(growable: false);
+        final bossNode =
+            path.where((node) => node['node_type'] == 'boss').firstOrNull;
+        final unitRows = List<Map<String, dynamic>>.from(
+          await _client
+              .from('duo_units')
+              .select('section_id')
+              .eq('id', unitId)
+              .limit(1),
+        );
+
         final masteryMap = map['mastery'] is Map
             ? Map<String, dynamic>.from(map['mastery'] as Map)
             : <String, dynamic>{};
-        final mastery = (masteryMap['overall_mastery'] as num?)?.toDouble() ?? 0.0;
+        final mastery =
+            (masteryMap['overall_mastery'] as num?)?.toDouble() ?? 0.0;
+        final bossWon = bossNode?['is_completed'] == true;
+        final bossAvailable = bossNode?['is_unlocked'] == true;
 
         return LearningUnitViewModel(
           id: unitId,
-          sectionId: 'sec_$secNum',
+          sectionId:
+              unitRows.isEmpty ? '' : '${unitRows.first['section_id'] ?? ''}',
           sectionNumber: secNum,
           unitNumber: unitNum,
-          title: 'Bài $unitNum: $title',
+          title: LearningPresentationMapper.unitFullTitle(title, unitNum),
           subtitle: 'Đang theo học',
           teachingObjective: title,
-          missionCount: 6,
-          completedMissionCount: (mastery * 6).round(),
+          missionCount: learningNodes.length,
+          completedMissionCount: learningNodes
+              .where((node) => node['is_completed'] == true)
+              .length,
           mastery: mastery,
-          state: UnitCompletionState.inProgress,
+          state: bossWon
+              ? UnitCompletionState.completed
+              : bossAvailable
+                  ? UnitCompletionState.bossPending
+                  : UnitCompletionState.inProgress,
           isUnlocked: true,
-          bossAvailable: map['boss_available'] == true,
-          bossWon: false,
-          estimatedMinutes: 15,
+          bossAvailable: bossAvailable,
+          bossWon: bossWon,
+          bossStageId: (bossNode?['boss_stage_id'] as num?)?.toInt(),
+          bossName: bossNode?['boss_name'] as String?,
+          estimatedMinutes: (learningNodes.length * 5).clamp(3, 35).toInt(),
         );
       }
     } catch (_) {}
-
-    // Fallback to Unit 1
-    return const LearningUnitViewModel(
-      id: 'sec_1_unit_1',
-      sectionId: '52b0a204e5bed4d512cc78ecaca69b4c-0',
-      sectionNumber: 1,
-      unitNumber: 1,
-      title: 'Bài 1: Gọi tên món ăn và đồ uống',
-      subtitle: 'Khởi đầu hành trình',
-      teachingObjective: 'Gọi tên món ăn và đồ uống cơ bản',
-      missionCount: 6,
-      completedMissionCount: 0,
-      mastery: 0.0,
-      state: UnitCompletionState.inProgress,
-      isUnlocked: true,
-      bossAvailable: false,
-      bossWon: false,
-      estimatedMinutes: 15,
-    );
+    return null;
   }
 
   @override
   Future<LearningNextAction?> getNextAction() async {
     try {
-      // 1. Kiểm tra active session đang dở
+      final currentUnit = await getCurrentProgress();
+
+      // 1. Resume luôn có ưu tiên cao nhất.
       if (_userId != null) {
         final activeRows = List<Map<String, dynamic>>.from(
           await _client
               .from('duo_active_sessions')
-              .select('game_id, level_id, current_index, score, status')
+              .select(
+                'game_id, level_id, current_index, score, correct_count, wrong_count, status',
+              )
               .eq('user_id', _userId!)
-              .eq('status', 'in_progress')
+              .eq('status', 'active')
+              .order('updated_at', ascending: false)
               .limit(1),
         );
 
-        if (activeRows.isNotEmpty) {
+        if (activeRows.isNotEmpty && currentUnit != null) {
           final active = activeRows.first;
           final levelId = '${active['level_id'] ?? ''}';
           final gameId = (active['game_id'] as num?)?.toInt();
           final currIdx = (active['current_index'] as num?)?.toInt() ?? 0;
+          final journey = await getUnitJourney(currentUnit.id);
+          final currentMission = journey?.missions
+              .where((mission) => mission.gameId == gameId)
+              .firstOrNull;
 
           return LearningNextAction(
             type: LearningActionType.activeSession,
-            unitId: 'sec_1_unit_1',
-            sectionNumber: 1,
-            unitNumber: 1,
-            sectionTitle: LearningPresentationMapper.sectionName(1),
-            unitTitle: 'Bài học hiện tại',
-            missionTitle: 'Lượt học đang tiếp diễn',
-            gameId: gameId,
-            levelId: levelId,
-            label: 'TIẾP TỤC ($currIdx câu đã làm)',
-            description: 'Tiếp tục câu hỏi đang làm dở, không mất tiến độ.',
-            currentIndex: currIdx,
-          );
-        }
-      }
-
-      // 2. Kiểm tra current unit và nhiệm vụ tiếp theo
-      final currentUnit = await getCurrentProgress();
-      if (currentUnit != null) {
-        final journey = await getUnitJourney(currentUnit.id);
-        if (journey != null && journey.missions.isNotEmpty) {
-          // Check if boss ready
-          if (journey.bossUnlocked && journey.boss != null && !currentUnit.bossWon) {
-            return LearningNextAction(
-              type: LearningActionType.fightBoss,
-              unitId: currentUnit.id,
-              sectionNumber: currentUnit.sectionNumber,
-              unitNumber: currentUnit.unitNumber,
-              sectionTitle: LearningPresentationMapper.sectionName(currentUnit.sectionNumber),
-              unitTitle: currentUnit.title,
-              missionTitle: 'Đấu Boss: ${journey.boss!.bossName}',
-              label: 'KHIÊU CHIẾN BOSS',
-              description: 'Đánh bại Boss để hoàn thành bài học và mở bài tiếp theo!',
-              xpReward: 50,
-            );
-          }
-
-          // Next mission in unit
-          final nextMission = journey.missions.firstWhere(
-            (m) => !m.isCompleted && m.state != AdventureNodeState.locked,
-            orElse: () => journey.missions.first,
-          );
-
-          return LearningNextAction(
-            type: LearningActionType.continueMission,
             unitId: currentUnit.id,
             sectionNumber: currentUnit.sectionNumber,
             unitNumber: currentUnit.unitNumber,
-            sectionTitle: LearningPresentationMapper.sectionName(currentUnit.sectionNumber),
+            sectionTitle: LearningPresentationMapper.sectionName(
+              currentUnit.sectionNumber,
+            ),
             unitTitle: currentUnit.title,
-            missionTitle: nextMission.title,
-            gameId: nextMission.gameId,
-            gameCode: nextMission.gameCode,
-            levelId: journey.levelId,
-            label: 'TIẾP TỤC BÀI',
-            description: nextMission.description,
-            xpReward: 20,
+            missionTitle: currentMission?.title ?? 'Nhiệm vụ đang tiếp diễn',
+            gameId: gameId,
+            gameCode: currentMission?.gameCode,
+            levelId: levelId,
+            label: 'TIẾP TỤC $currIdx/${currentMission?.currentTotal ?? 0}',
+            description: 'Tiếp tục câu hỏi đang làm dở, không mất tiến độ.',
+            currentIndex: currIdx,
+            currentTotal: currentMission?.currentTotal ?? 0,
           );
         }
       }
 
-      // 3. Kiểm tra Review overdue
+      // 2. Ôn quá hạn trước khi mở nội dung mới.
       final reviewSummary = await _reviewRepo.loadReviewSummary();
-      if (reviewSummary.totalDue > 0) {
+      if (reviewSummary.totalDue > 0 && currentUnit != null) {
         return LearningNextAction(
           type: LearningActionType.reviewOverdue,
-          unitId: 'review',
-          sectionNumber: 1,
-          unitNumber: 1,
-          sectionTitle: 'Ôn tập thông minh',
-          unitTitle: 'Củng cố kiến thức',
-          missionTitle: 'Có ${reviewSummary.totalDue} mục đến hạn ôn',
-          label: 'ÔN TẬP NGAY',
-          description: 'Hệ thống ngắt quãng (SRS) nhắc bạn ôn tập để ghi nhớ lâu dài.',
+          unitId: currentUnit.id,
+          sectionNumber: currentUnit.sectionNumber,
+          unitNumber: currentUnit.unitNumber,
+          sectionTitle: LearningPresentationMapper.sectionName(
+            currentUnit.sectionNumber,
+          ),
+          unitTitle: currentUnit.title,
+          missionTitle: '${reviewSummary.totalDue} mục cần ôn hôm nay',
+          label: 'ÔN NGAY',
+          description: 'Ưu tiên các mục quá hạn và từng trả lời sai.',
           xpReward: 25,
         );
       }
+
+      // 3. Tiếp tục đúng node server đã mở trong Unit hiện tại.
+      if (currentUnit != null) {
+        final journey = await getUnitJourney(currentUnit.id);
+        if (journey != null && journey.missions.isNotEmpty) {
+          final nextMission = journey.missions
+              .where((mission) =>
+                  !mission.isCompleted &&
+                  mission.state != AdventureNodeState.locked)
+              .firstOrNull;
+          if (nextMission != null) {
+            return LearningNextAction(
+              type: LearningActionType.continueMission,
+              unitId: currentUnit.id,
+              sectionNumber: currentUnit.sectionNumber,
+              unitNumber: currentUnit.unitNumber,
+              sectionTitle: LearningPresentationMapper.sectionName(
+                currentUnit.sectionNumber,
+              ),
+              unitTitle: currentUnit.title,
+              missionTitle: nextMission.title,
+              gameId: nextMission.gameId,
+              gameCode: nextMission.gameCode,
+              levelId: journey.levelId,
+              label: nextMission.state == AdventureNodeState.failed
+                  ? 'THỬ LẠI'
+                  : 'TIẾP TỤC BÀI',
+              description: nextMission.description,
+              xpReward: 20,
+              currentIndex: nextMission.currentIndex,
+              currentTotal: nextMission.currentTotal,
+            );
+          }
+        }
+
+        if (currentUnit.bossAvailable && !currentUnit.bossWon) {
+          return LearningNextAction(
+            type: LearningActionType.fightBoss,
+            unitId: currentUnit.id,
+            sectionNumber: currentUnit.sectionNumber,
+            unitNumber: currentUnit.unitNumber,
+            sectionTitle: LearningPresentationMapper.sectionName(
+              currentUnit.sectionNumber,
+            ),
+            unitTitle: currentUnit.title,
+            missionTitle: 'Boss ${currentUnit.bossName ?? 'cuối bài'}',
+            label: 'CHIẾN ĐẤU',
+            description: 'Đánh bại Boss để mở bài học tiếp theo.',
+            xpReward: 50,
+          );
+        }
+
+        return LearningNextAction(
+          type: LearningActionType.startUnit,
+          unitId: currentUnit.id,
+          sectionNumber: currentUnit.sectionNumber,
+          unitNumber: currentUnit.unitNumber,
+          sectionTitle: LearningPresentationMapper.sectionName(
+            currentUnit.sectionNumber,
+          ),
+          unitTitle: currentUnit.title,
+          missionTitle: 'Khám phá bài học',
+          label: 'BẮT ĐẦU',
+          description: currentUnit.teachingObjective,
+          xpReward: 20,
+        );
+      }
     } catch (_) {}
-
-    return const LearningNextAction(
-      type: LearningActionType.startUnit,
-      unitId: 'sec_1_unit_1',
-      sectionNumber: 1,
-      unitNumber: 1,
-      sectionTitle: 'Giao tiếp cơ bản',
-      unitTitle: 'Bài 1: Gọi tên món ăn và đồ uống',
-      missionTitle: 'Khám phá từ mới',
-      label: 'BẮT ĐẦU HỌC',
-      description: 'Làm quen với các từ vựng và câu đầu tiên.',
-      xpReward: 20,
-    );
-  }
-
-  List<LearningSectionViewModel> _fallbackSections() {
-    return List.generate(8, (i) {
-      final secNum = i + 1;
-      final unitCounts = [10, 30, 30, 60, 51, 49, 40, 40];
-      return LearningSectionViewModel(
-        id: 'sec_$secNum',
-        sectionNumber: secNum,
-        title: LearningPresentationMapper.sectionHeading(secNum),
-        subtitle: LearningPresentationMapper.sectionName(secNum),
-        unitCount: unitCounts[i],
-        completedUnitCount: secNum == 1 ? 0 : 0,
-        isUnlocked: secNum == 1,
-      );
-    });
+    return null;
   }
 }

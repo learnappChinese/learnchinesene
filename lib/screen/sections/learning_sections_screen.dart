@@ -88,8 +88,38 @@ class _LearningSectionsScreenState extends State<LearningSectionsScreen> {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: _loadSections,
-                style: FilledButton.styleFrom(backgroundColor: GameVisualTokens.jade),
+                style: FilledButton.styleFrom(
+                    backgroundColor: GameVisualTokens.jade),
                 child: const Text('Thử lại'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_sections.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🐼', style: TextStyle(fontSize: 54)),
+              const SizedBox(height: 12),
+              const Text(
+                'Chưa có thế giới học tập',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Hãy thử đồng bộ lại curriculum từ Supabase.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _loadSections,
+                child: const Text('THỬ LẠI'),
               ),
             ],
           ),
@@ -120,7 +150,9 @@ class _LearningSectionsScreenState extends State<LearningSectionsScreen> {
                   showLockedMissionSheet(
                     context,
                     title: 'Phần học chưa mở',
-                    message: 'Hoàn thành các bài học ở phần trước để mở khóa chủ đề này.',
+                    message: section.requiredSectionNumber == null
+                        ? 'Hoàn thành hành trình trước để mở khóa chủ đề này.'
+                        : 'Đánh bại Boss cuối Phần ${section.requiredSectionNumber} để mở khóa.',
                   );
                   return;
                 }
@@ -187,12 +219,17 @@ class _SectionCard extends StatelessWidget {
                         ? Colors.grey.shade200
                         : isCompleted
                             ? GameVisualTokens.jade.withValues(alpha: 0.15)
-                            : GameVisualTokens.imperialGold.withValues(alpha: 0.15),
+                            : GameVisualTokens.imperialGold
+                                .withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    isLocked ? '🔒' : isCompleted ? '🏆' : '🏮',
+                    isLocked
+                        ? '🔒'
+                        : isCompleted
+                            ? '🏆'
+                            : '🏮',
                     style: const TextStyle(fontSize: 24),
                   ),
                 ),
@@ -216,7 +253,9 @@ class _SectionCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
-                          color: isLocked ? Colors.grey.shade600 : GameVisualTokens.templeWood,
+                          color: isLocked
+                              ? Colors.grey.shade600
+                              : GameVisualTokens.templeWood,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -232,7 +271,9 @@ class _SectionCard extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  isLocked ? Icons.lock_rounded : Icons.arrow_forward_ios_rounded,
+                  isLocked
+                      ? Icons.lock_rounded
+                      : Icons.arrow_forward_ios_rounded,
                   color: isLocked ? Colors.grey : GameVisualTokens.jade,
                   size: 18,
                 ),

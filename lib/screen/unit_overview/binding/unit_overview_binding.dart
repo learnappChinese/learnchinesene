@@ -3,7 +3,7 @@ import '../controller/unit_overview_controller.dart';
 
 class UnitOverviewBinding extends Bindings {
   UnitOverviewBinding({
-    this.unitId = 'sec_1_unit_1',
+    required this.unitId,
     this.unitTitle = '',
     this.sectionNumber = 1,
     this.unitNumber = 1,
