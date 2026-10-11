@@ -17,6 +17,17 @@ abstract interface class LearningJourneyRepository {
   Future<List<LearningStageViewModel>> getUnitStages(String unitId);
   Future<LearningUnitViewModel?> getCurrentProgress();
   Future<LearningNextAction?> getNextAction();
+  Future<LearningStageViewModel?> getCurrentStageForActivities(
+    Set<LearningStageActivityType> types, {
+    String? unitId,
+    bool allowCompleted = false,
+  });
+  Future<LearningStageViewModel?> getCurrentStageForActivity(
+    LearningStageActivityType type, {
+    String? unitId,
+    bool allowCompleted = false,
+  });
+  Future<LearningUnitViewModel?> getNextUnit(String currentUnitId);
 }
 
 class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
@@ -138,6 +149,33 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
     } catch (_) {
       return const [];
     }
+  }
+
+  @override
+  Future<LearningUnitViewModel?> getNextUnit(String currentUnitId) async {
+    try {
+      final sections = await getSections();
+      if (sections.isEmpty) return null;
+
+      for (int s = 0; s < sections.length; s++) {
+        final sec = sections[s];
+        final units = await getUnits(sec.id);
+        final idx = units.indexWhere((u) => u.id == currentUnitId);
+        if (idx != -1) {
+          if (idx + 1 < units.length) {
+            return units[idx + 1];
+          }
+          if (s + 1 < sections.length) {
+            final nextSecUnits = await getUnits(sections[s + 1].id);
+            if (nextSecUnits.isNotEmpty) {
+              return nextSecUnits.first;
+            }
+          }
+          return null;
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 
   @override
@@ -451,5 +489,63 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       }
     } catch (_) {}
     return null;
+  }
+
+  @override
+  Future<LearningStageViewModel?> getCurrentStageForActivity(
+    LearningStageActivityType type, {
+    String? unitId,
+    bool allowCompleted = false,
+  }) =>
+      getCurrentStageForActivities(
+        {type},
+        unitId: unitId,
+        allowCompleted: allowCompleted,
+      );
+
+  @override
+  Future<LearningStageViewModel?> getCurrentStageForActivities(
+    Set<LearningStageActivityType> types, {
+    String? unitId,
+    bool allowCompleted = false,
+  }) async {
+    try {
+      var targetUnitId = unitId;
+      if (targetUnitId == null || targetUnitId.isEmpty) {
+        final currentUnit = await getCurrentProgress();
+        targetUnitId = currentUnit?.id;
+      }
+      if (targetUnitId == null || targetUnitId.isEmpty) {
+        return null;
+      }
+
+      final stages = await getUnitStages(targetUnitId);
+      final matching = stages
+          .where((stage) => types.contains(stage.activityType))
+          .toList(growable: false);
+
+      if (matching.isEmpty) return null;
+
+      final inProgress = matching
+          .where((stage) => stage.state == AdventureNodeState.inProgress)
+          .firstOrNull;
+      if (inProgress != null) return inProgress;
+
+      final available = matching
+          .where((stage) =>
+              (stage.state == AdventureNodeState.available ||
+                  stage.state == AdventureNodeState.failed) &&
+              !stage.isLocked)
+          .firstOrNull;
+      if (available != null) return available;
+
+      if (allowCompleted) {
+        return matching.where((stage) => stage.isCompleted).firstOrNull;
+      }
+
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 }

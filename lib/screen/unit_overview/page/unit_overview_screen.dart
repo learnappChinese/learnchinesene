@@ -20,6 +20,8 @@ import '../../../core/learning/model/learning_stage_models.dart';
 import '../../../core/widgets/segmented_progress_node.dart';
 import '../../hanzi_writing/screens/hanzi_writing_home_screen.dart';
 import '../../speaking/speaking_screen.dart';
+import '../../hsk/hsk_screen.dart';
+import '../binding/unit_overview_binding.dart';
 import '../controller/unit_overview_controller.dart';
 
 class UnitOverviewScreen extends StatefulWidget {
@@ -111,6 +113,14 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
                   _buildHeader(context, chapter),
                   const SizedBox(height: 16),
                   _buildMetricsRow(chapter),
+                  if (controller.isUnitCompleted) ...[
+                    const SizedBox(height: 16),
+                    _buildUnitCompleteCard(chapter),
+                  ],
+                  if (controller.isBossReady && !controller.isUnitCompleted) ...[
+                    const SizedBox(height: 16),
+                    _buildBossGateCard(chapter),
+                  ],
                   const SizedBox(height: 20),
                   _buildPrimaryCta(chapter),
                   const SizedBox(height: 24),
@@ -242,42 +252,217 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
     );
   }
 
+  Widget _buildUnitCompleteCard(ChapterAdventure chapter) {
+    final next = controller.nextUnit.value;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF064E3B),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: GameVisualTokens.imperialGold, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: GameVisualTokens.jade.withValues(alpha: 0.3),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Text('🏆', style: TextStyle(fontSize: 36)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'BÀI HỌC ĐÃ HOÀN THÀNH',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: GameVisualTokens.goldLight,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  next != null
+                      ? 'Đã mở khóa Bài học tiếp theo: ${next.title}!'
+                      : 'Chúc mừng bạn đã hoàn thành trọn vẹn lộ trình!',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFD1FAE5),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBossGateCard(ChapterAdventure chapter) {
+    final bossName = chapter.boss?.bossName ?? 'Thủ Lĩnh Rồng';
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF450A0A), Color(0xFF7F1D1D)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: GameVisualTokens.crimson, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: GameVisualTokens.crimson.withValues(alpha: 0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: GameVisualTokens.crimson.withValues(alpha: 0.3),
+                  border:
+                      Border.all(color: GameVisualTokens.crimson, width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: const Text('🐲', style: TextStyle(fontSize: 22)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'CỔNG BOSS ĐÃ MỞ (BOSS GATE)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: GameVisualTokens.goldLight,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Boss: $bossName',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              FilledButton(
+                onPressed: () => _openBossGateModal(chapter),
+                style: FilledButton.styleFrom(
+                  backgroundColor: GameVisualTokens.crimson,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                ),
+                child: const Text(
+                  'KHIÊU CHIẾN',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Đủ điều kiện khiêu chiến! Đánh bại Boss để hoàn tất bài học và mở khóa nội dung tiếp theo.',
+            style:
+                TextStyle(fontSize: 12, color: Color(0xFFFECACA), height: 1.3),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPrimaryCta(ChapterAdventure chapter) {
-    final isBossReady = chapter.bossUnlocked && chapter.boss != null;
+    final isCompleted = controller.isUnitCompleted;
+    final isBossReady = controller.isBossReady;
     final hasStages = controller.stages.isNotEmpty;
     final isStarted = hasStages
         ? controller.completedStageCount > 0
         : chapter.completedMissions > 0;
-    final label = isBossReady
-        ? 'KHIÊU CHIẾN BOSS'
-        : (!isStarted ? 'BẮT ĐẦU BÀI HỌC' : 'TIẾP TỤC BÀI HỌC');
+
+    String label;
+    IconData icon;
+    Color color;
+    VoidCallback onPressed;
+
+    if (isCompleted) {
+      final next = controller.nextUnit.value;
+      if (next != null) {
+        label = 'BÀI TIẾP THEO: ${next.title}'.toUpperCase();
+        icon = Icons.arrow_forward_rounded;
+        color = GameVisualTokens.jade;
+        onPressed = _openNextUnit;
+      } else {
+        label = 'HOÀN THÀNH • VỀ BẢN ĐỒ THẾ GIỚI';
+        icon = Icons.explore_rounded;
+        color = GameVisualTokens.imperialGold;
+        onPressed = _openWorldMap;
+      }
+    } else if (isBossReady) {
+      label = 'KHIÊU CHIẾN BOSS';
+      icon = Icons.local_fire_department_rounded;
+      color = GameVisualTokens.crimson;
+      onPressed = () => _openBossGateModal(chapter);
+    } else if (hasStages) {
+      final next = controller.nextPlayableStage;
+      final num = controller.nextPlayableStageNumber;
+      if (!isStarted) {
+        label = next != null
+            ? 'BẮT ĐẦU ẢI $num: ${next.title}'.toUpperCase()
+            : 'BẮT ĐẦU BÀI HỌC';
+      } else {
+        label = next != null
+            ? 'TIẾP TỤC ẢI $num: ${next.title}'.toUpperCase()
+            : 'TIẾP TỤC BÀI HỌC';
+      }
+      icon = Icons.play_arrow_rounded;
+      color = GameVisualTokens.jade;
+      onPressed = () {
+        if (next != null) {
+          _openStage(chapter, next);
+        } else {
+          _openAdventureMap();
+        }
+      };
+    } else {
+      final next = controller.nextPlayableMission;
+      label = (!isStarted ? 'BẮT ĐẦU BÀI HỌC' : 'TIẾP TỤC BÀI HỌC');
+      icon = Icons.play_arrow_rounded;
+      color = GameVisualTokens.jade;
+      onPressed = () {
+        if (next != null) {
+          _openMission(chapter, next);
+        } else {
+          _openAdventureMap();
+        }
+      };
+    }
 
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: FilledButton(
-        onPressed: () {
-          if (isBossReady) {
-            _openBoss(chapter);
-          } else if (hasStages) {
-            final next = controller.nextPlayableStage;
-            if (next != null) {
-              _openStage(chapter, next);
-            } else {
-              _openAdventureMap();
-            }
-          } else {
-            final next = controller.nextPlayableMission;
-            if (next != null) {
-              _openMission(chapter, next);
-            } else {
-              _openAdventureMap();
-            }
-          }
-        },
+        onPressed: onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor:
-              isBossReady ? GameVisualTokens.crimson : GameVisualTokens.jade,
+          backgroundColor: color,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 4,
@@ -285,13 +470,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isBossReady
-                  ? Icons.local_fire_department_rounded
-                  : Icons.play_arrow_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
+            Icon(icon, color: Colors.white, size: 24),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
@@ -354,9 +533,13 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
           ...controller.stages.asMap().entries.map((entry) {
             final idx = entry.key;
             final stage = entry.value;
+            final isTarget = stage.id == controller.nextPlayableStage?.id &&
+                !stage.isCompleted &&
+                stage.isAvailable;
             return _StageListTile(
               index: idx + 1,
               stage: stage,
+              isNextPlayable: isTarget,
               onTap: () => _openStage(chapter, stage),
             );
           }),
@@ -379,11 +562,45 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
           _BossListTile(
             boss: chapter.boss!,
             isUnlocked: chapter.bossUnlocked,
-            onTap: () => _openBoss(chapter),
+            onTap: () => _openBossGateModal(chapter),
           ),
         ],
       ],
     );
+  }
+
+  void _handleStageReturn(dynamic result) {
+    final wasBossReady = controller.isBossReady;
+    controller.loadUnitOverview().then((_) {
+      if (result == true && mounted) {
+        if (controller.isUnitCompleted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🎉 CHÚC MỪNG! BẠN ĐÃ HOÀN THÀNH BÀI HỌC! ⭐⭐⭐'),
+              backgroundColor: GameVisualTokens.jade,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        } else if (!wasBossReady && controller.isBossReady) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🔥 CỔNG BOSS ĐÃ MỞ! Sẵn sàng khiêu chiến Boss!'),
+              backgroundColor: GameVisualTokens.crimson,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  '🎉 VƯỢT ẢI THÀNH CÔNG! Tiếp tục ải ${controller.nextPlayableStageNumber}.'),
+              backgroundColor: GameVisualTokens.jade,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    });
   }
 
   void _openStage(ChapterAdventure chapter, LearningStageViewModel stage) {
@@ -409,19 +626,19 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
             gameId: stage.sourceGameId ?? 0,
             gameName: stage.title,
           ),
-        )?.then((_) => controller.loadUnitOverview());
+        )?.then(_handleStageReturn);
         break;
 
       case LearningStageActivityType.hanzi:
         Get.to(
           () => const HanziWritingHomeScreen(),
-        )?.then((_) => controller.loadUnitOverview());
+        )?.then(_handleStageReturn);
         break;
 
       case LearningStageActivityType.speaking:
         Get.to(
           () => SpeakingScreen(unitId: chapter.chapterNumber),
-        )?.then((_) => controller.loadUnitOverview());
+        )?.then(_handleStageReturn);
         break;
 
       case LearningStageActivityType.listening:
@@ -438,16 +655,14 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
             missionNumber: controller.stages.indexOf(stage) + 1,
             missionCount: controller.stages.length,
           ),
-        )?.then((_) => controller.loadUnitOverview());
+        )?.then(_handleStageReturn);
         break;
 
       case LearningStageActivityType.boss:
         if (stage.bossStage != null) {
-          Get.to(
-            () => BossBattleScreen(stage: stage.bossStage!),
-          )?.then((_) => controller.loadUnitOverview());
+          _openBossWithStage(stage.bossStage!);
         } else if (chapter.boss != null) {
-          _openBoss(chapter);
+          _openBossGateModal(chapter);
         }
         break;
     }
@@ -492,7 +707,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
           gameId: mission.gameId,
           gameName: mission.title,
         ),
-      )?.then((_) => controller.loadUnitOverview());
+      )?.then(_handleStageReturn);
       return;
     }
 
@@ -506,7 +721,25 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
         missionNumber: chapter.missions.indexOf(mission) + 1,
         missionCount: chapter.missions.length,
       ),
-    )?.then((_) => controller.loadUnitOverview());
+    )?.then(_handleStageReturn);
+  }
+
+  void _openBossWithStage(dynamic bossStage) {
+    Get.to(
+      () => BossBattleScreen(stage: bossStage),
+    )?.then((result) {
+      controller.loadUnitOverview().then((_) {
+        if (result == true && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🏆 ĐÃ ĐÁNH BẠI BOSS! HOÀN THÀNH BÀI HỌC! ⭐⭐⭐'),
+              backgroundColor: GameVisualTokens.jade,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+    });
   }
 
   void _openBoss(ChapterAdventure chapter) {
@@ -518,10 +751,183 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
       );
       return;
     }
+    _openBossWithStage(chapter.boss!);
+  }
 
-    Get.to(
-      () => BossBattleScreen(stage: chapter.boss!),
-    )?.then((_) => controller.loadUnitOverview());
+  void _openBossGateModal(ChapterAdventure chapter) {
+    if (!chapter.bossUnlocked || chapter.boss == null) {
+      showLockedMissionSheet(
+        context,
+        title: 'Cổng Boss chưa mở',
+        message: 'Hãy hoàn thành các ải bài học để mở khóa Cổng Boss.',
+      );
+      return;
+    }
+
+    final boss = chapter.boss!;
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1035),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: GameVisualTokens.crimson, width: 2),
+        ),
+        title: Row(
+          children: const [
+            Text('🔥', style: TextStyle(fontSize: 24)),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'CỔNG KHIÊU CHIẾN BOSS',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: GameVisualTokens.goldLight,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: GameVisualTokens.crimson.withValues(alpha: 0.2),
+                  border: Border.all(color: GameVisualTokens.crimson, width: 2),
+                ),
+                alignment: Alignment.center,
+                child: const Text('🐲', style: TextStyle(fontSize: 40)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                boss.bossName,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Center(
+              child: Text(
+                'Thủ Lĩnh Canh Giữ Cổng Bài Học',
+                style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Máu người chơi (HP):',
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 13)),
+                      Text('${boss.playerHp} ❤️',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Máu Boss (HP):',
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 13)),
+                      Text('${boss.bossHp} 🛡️',
+                          style: const TextStyle(
+                              color: Color(0xFFFF8A80),
+                              fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Thử thách:',
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 13)),
+                      Text('${boss.questionCount} câu hỏi',
+                          style: const TextStyle(
+                              color: GameVisualTokens.goldLight,
+                              fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Đánh bại Boss để hoàn thành toàn bộ bài học và mở khóa bài tiếp theo!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF94A3B8),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text('CHUẨN BỊ THÊM',
+                style: TextStyle(color: Colors.white70)),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.of(dialogCtx).pop();
+              _openBoss(chapter);
+            },
+            icon: const Icon(Icons.local_fire_department_rounded, size: 18),
+            label: const Text('VÀO CHIẾN ĐẤU'),
+            style: FilledButton.styleFrom(
+              backgroundColor: GameVisualTokens.crimson,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openNextUnit() {
+    final next = controller.nextUnit.value;
+    if (next != null) {
+      Get.off(
+        () => const UnitOverviewScreen(),
+        binding: UnitOverviewBinding(
+          unitId: next.id,
+          unitTitle: next.title,
+          sectionNumber: next.sectionNumber,
+          unitNumber: next.unitNumber,
+        ),
+      );
+    } else {
+      _openWorldMap();
+    }
+  }
+
+  void _openWorldMap() {
+    Get.to(() => const HskScreen());
   }
 
   void _openAdventureMap() {
@@ -821,11 +1227,13 @@ class _StageListTile extends StatelessWidget {
     required this.index,
     required this.stage,
     required this.onTap,
+    this.isNextPlayable = false,
   });
 
   final int index;
   final LearningStageViewModel stage;
   final VoidCallback onTap;
+  final bool isNextPlayable;
 
   IconData _iconForActivityType(LearningStageActivityType type) {
     switch (type) {
@@ -859,13 +1267,23 @@ class _StageListTile extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isCompleted
-              ? GameVisualTokens.jade.withValues(alpha: 0.5)
-              : inProgress
-                  ? GameVisualTokens.imperialGold
-                  : const Color(0xFFE2E8F0),
-          width: inProgress ? 1.8 : 1.0,
+          color: isNextPlayable
+              ? GameVisualTokens.imperialGold
+              : isCompleted
+                  ? GameVisualTokens.jade.withValues(alpha: 0.5)
+                  : inProgress
+                      ? GameVisualTokens.imperialGold
+                      : const Color(0xFFE2E8F0),
+          width: isNextPlayable || inProgress ? 2.0 : 1.0,
         ),
+        boxShadow: [
+          if (isNextPlayable)
+            BoxShadow(
+              color: GameVisualTokens.imperialGold.withValues(alpha: 0.25),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+        ],
       ),
       child: Material(
         color: isLocked ? const Color(0xFFF8FAFC) : Colors.white,
@@ -901,8 +1319,10 @@ class _StageListTile extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: isLocked
                                   ? Colors.grey.shade200
-                                  : GameVisualTokens.jade
-                                      .withValues(alpha: 0.12),
+                                  : isNextPlayable
+                                      ? GameVisualTokens.imperialGold
+                                      : GameVisualTokens.jade
+                                          .withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -912,11 +1332,34 @@ class _StageListTile extends StatelessWidget {
                                 fontWeight: FontWeight.w900,
                                 color: isLocked
                                     ? Colors.grey.shade600
-                                    : GameVisualTokens.jade,
+                                    : isNextPlayable
+                                        ? const Color(0xFF451A03)
+                                        : GameVisualTokens.jade,
                                 letterSpacing: 0.5,
                               ),
                             ),
                           ),
+                          if (isNextPlayable) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: GameVisualTokens.imperialGold
+                                    .withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'MỤC TIÊU',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  color: GameVisualTokens.gold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
@@ -994,6 +1437,23 @@ class _StageListTile extends StatelessWidget {
     if (stage.isCompleted) {
       return const Icon(Icons.check_circle_rounded,
           size: 22, color: GameVisualTokens.jade);
+    }
+    if (isNextPlayable) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: GameVisualTokens.imperialGold,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Text(
+          'VÀO HỌC',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF451A03),
+          ),
+        ),
+      );
     }
     if (stage.state == AdventureNodeState.inProgress) {
       return Container(

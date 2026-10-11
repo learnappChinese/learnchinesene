@@ -185,8 +185,8 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
           child: MissionCompleteOverlay(
             result: result,
             onNextMission:
-                result.passed ? () => Get.back() : controller.retrySession,
-            onBackToMap: () => Get.back(),
+                result.passed ? () => Get.back(result: true) : controller.retrySession,
+            onBackToMap: () => Get.back(result: result.passed),
           ),
         );
       }

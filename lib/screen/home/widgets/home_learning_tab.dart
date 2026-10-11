@@ -11,9 +11,11 @@ class HomeLearningTab extends StatelessWidget {
     required this.onVocabulary,
     required this.onLessons,
     required this.onConversation,
+    this.onSections,
   });
 
   final VoidCallback onPractice, onVocabulary, onLessons, onConversation;
+  final VoidCallback? onSections;
 
   @override
   Widget build(BuildContext context) {
@@ -55,14 +57,26 @@ class HomeLearningTab extends StatelessWidget {
         ),
         SizedBox(height: 8.w),
         _LearningCard(
-          title: 'Kho từ vựng HSK',
-          subtitle: 'Xem từ theo cấp độ HSK và bài học',
+          title: 'Bản đồ thế giới & HSK',
+          subtitle: 'Khám phá thế giới, các vùng đất và bài học HSK',
           asset: 'assets/images/backgrounds/learning_vocabulary.png',
           color: const Color(0xFF25BA81),
           background: const Color(0xFFF0FCFB),
           height: 128.w,
           onTap: onVocabulary,
         ),
+        if (onSections != null) ...[
+          SizedBox(height: 8.w),
+          _LearningCard(
+            title: 'Hành trình các vùng (Sections)',
+            subtitle: 'Chinh phục từng ải và đối đầu Boss',
+            asset: 'assets/images/backgrounds/learning_practice.png',
+            color: const Color(0xFFC2410C),
+            background: const Color(0xFFFFF7ED),
+            height: 128.w,
+            onTap: onSections!,
+          ),
+        ],
         SizedBox(height: 8.w),
         _LearningCard(
           title: 'Bài học chuyên đề AI',

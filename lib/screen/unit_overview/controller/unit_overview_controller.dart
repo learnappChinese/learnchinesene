@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../../../core/learning/data/learning_journey_repository.dart';
+import '../../../core/learning/model/learning_journey_models.dart';
 import '../../chapter_adventure/model/chapter_adventure.dart';
 
 import '../../../core/learning/model/learning_stage_models.dart';
@@ -15,6 +16,7 @@ class UnitOverviewController extends GetxController {
   final errorMessage = RxnString();
   final chapter = Rxn<ChapterAdventure>();
   final stages = <LearningStageViewModel>[].obs;
+  final nextUnit = Rxn<LearningUnitViewModel>();
 
   String unitId = '';
   String unitTitle = '';
@@ -89,6 +91,14 @@ class UnitOverviewController extends GetxController {
           );
         }
       }
+
+      if (isUnitCompleted) {
+        try {
+          nextUnit.value = await _journeyRepo.getNextUnit(unitId);
+        } catch (_) {}
+      } else {
+        nextUnit.value = null;
+      }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối khi tải bài học: $e';
     } finally {
@@ -96,12 +106,56 @@ class UnitOverviewController extends GetxController {
     }
   }
 
+  bool get hasBoss =>
+      stages.any((s) =>
+          s.activityType == LearningStageActivityType.boss ||
+          s.bossStage != null) ||
+      chapter.value?.boss != null;
+
+  bool get isBossDefeated {
+    final bossStage = stages
+        .where((s) =>
+            s.activityType == LearningStageActivityType.boss ||
+            s.bossStage != null)
+        .firstOrNull;
+    if (bossStage != null) {
+      return bossStage.isCompleted;
+    }
+    return false;
+  }
+
+  bool get isUnitCompleted {
+    if (stages.isNotEmpty) {
+      if (hasBoss) {
+        return isBossDefeated;
+      }
+      return areRequiredStagesCompleted && completedStageCount > 0;
+    }
+    final c = chapter.value;
+    if (c == null) return false;
+    return c.missions.isNotEmpty && c.completedMissions >= c.missions.length;
+  }
+
   LearningStageViewModel? get nextPlayableStage {
     if (stages.isEmpty) return null;
-    return stages.firstWhere(
+    final nonBossStages = stages
+        .where((s) => s.activityType != LearningStageActivityType.boss)
+        .toList();
+    if (nonBossStages.isEmpty) return stages.first;
+    return nonBossStages.firstWhere(
       (s) => s.isAvailable && !s.isCompleted,
-      orElse: () => stages.first,
+      orElse: () => nonBossStages.firstWhere(
+        (s) => !s.isCompleted,
+        orElse: () => nonBossStages.first,
+      ),
     );
+  }
+
+  int get nextPlayableStageNumber {
+    final next = nextPlayableStage;
+    if (next == null) return 1;
+    final idx = stages.indexOf(next);
+    return idx >= 0 ? idx + 1 : 1;
   }
 
   int get completedStageCount => stages.where((s) => s.isCompleted).length;
@@ -120,6 +174,15 @@ class UnitOverviewController extends GetxController {
   }
 
   bool get isBossReady {
+    if (isUnitCompleted) return false;
+    final bossStage = stages
+        .where((s) =>
+            s.activityType == LearningStageActivityType.boss ||
+            s.bossStage != null)
+        .firstOrNull;
+    if (bossStage != null) {
+      return bossStage.isAvailable && !bossStage.isCompleted;
+    }
     final c = chapter.value;
     if (c == null) return false;
     return c.bossUnlocked && c.boss != null;

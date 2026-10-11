@@ -19,8 +19,7 @@ class ComboBadge extends StatelessWidget {
 
     return Semantics(
       label: 'Combo x$combo${milestone == null ? '' : ', $milestone'}',
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
+      child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: combo >= 5

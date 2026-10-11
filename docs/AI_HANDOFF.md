@@ -28,7 +28,9 @@ World -> Section -> Unit -> Stage -> Result -> Unlock, backed by live Supabase d
 
 ## Files Changed
 
-- `lib/core/learning/data/learning_journey_repository.dart`: authoritative Section/Unit/current-action/stage queries.
+- `lib/core/learning/data/learning_journey_repository.dart`: authoritative Section/Unit/current-action/stage queries and `getCurrentStageForActivities` / `getCurrentStageForActivity`.
+- `lib/screen/game_hub/game_hub_screen.dart`: routes skill cards (Speaking, Listening, Hanzi, Sentence) to matching current curriculum stage before Quick Practice fallback.
+- `test/screen/game_hub/game_hub_navigation_test.dart`: tests for stage resolution priority, curriculum routing, and Quick Practice fallbacks.
 - `lib/core/learning/model/learning_journey_models.dart`: Section/Unit server progression fields.
 - `lib/core/learning/model/learning_stage_models.dart`: source game and dependency metadata.
 - `lib/core/learning/service/learning_stage_grouping_service.dart`: server-path stage grouping and dynamic segments.
@@ -80,35 +82,64 @@ World -> Section -> Unit -> Stage -> Item -> Boss
 
 ## Known Bugs
 
-- MEDIUM — `lib/screen/game_hub/game_hub_screen.dart`: skill cards do not yet route to the current matching available curriculum stage in every case. Next fix: resolve by activity type before Quick Practice fallback.
+- RESOLVED — `lib/screen/game_hub/game_hub_screen.dart`: skill cards (Speaking, Listening, Hanzi, Sentence) route to matching current available/in-progress curriculum stage before Quick Practice fallback.
 - MEDIUM — `supabase/migrations/20261010094500_learning_sections_source_of_truth.sql`: Section completion currently assumes Unit completion through Boss clears. Next fix: support a future Unit without a Boss by falling back to required-stage completion.
 - LOW — project-wide analyzer baseline: 143 warnings/info (deprecated APIs, unused fields/imports, prints) outside this vertical slice. Next fix: address incrementally without mixing into progression commits.
 
 ## Tests
 
 - Format: PASS.
-- Analyze: PASS with `--no-fatal-infos --no-fatal-warnings`; 0 errors, 143 baseline warnings/info.
-- Focused tests: PASS, including dynamic segments, Unit Overview, responsive 320/360/390/440, Home, Review, Game Hub, Boss, progression rules.
-- Full tests: PASS in bounded batches. A single monolithic invocation is terminated by the host runner; every affected file/group passed independently.
-- Build: PASS; split release APKs produced for arm64-v8a, armeabi-v7a, and x86_64.
-- Cloud-only guard: PASS using the equivalent PowerShell checks because Python is unavailable on the Windows host.
-- CI: PASS — Flutter Hieu CI #70, run `38041949198`, validated checkpoint `4471db2` and uploaded split release APK artifacts.
+- Analyze: PASS with `--no-fatal-infos --no-fatal-warnings`; 0 errors.
+- Focused tests: PASS (24/24 passed across `unit_overview_test.dart`, `unit_complete_screen_test.dart`, `game_hub_navigation_test.dart`, `vocabulary_adventure_test.dart`).
+- Full tests: PASS in bounded batches.
+- Build: PASS.
+
+## Adventure Game Flow Alignment (Mermaid Source of Truth)
+
+The end-to-end learning adventure progression flow strictly conforms to the Mermaid diagram:
+`HOME -> Learning Hub -> World Map -> Section -> Unit -> Stage -> Challenge -> Result -> Unit -> Boss Gate -> Boss Battle -> Boss Result -> Unit Complete -> Next Unit`
+
+1. **Next Unit Resolution (`LearningJourneyRepository`):**
+   - Added `Future<LearningUnitViewModel?> getNextUnit(String currentUnitId);` to `LearningJourneyRepository` and implemented it in `SupabaseLearningJourneyRepository`.
+   - Traverses units in section order; advances to subsequent section when completing the final unit of a section.
+
+2. **Unit Progression State (`UnitOverviewController`):**
+   - Added `nextUnit`, `hasBoss`, `isBossDefeated`, `isUnitCompleted`, `isBossReady`.
+   - Automatically loads `nextUnit` upon unit completion.
+
+3. **Celebratory Unit Complete Screen (`UnitCompleteScreen`):**
+   - Created `lib/screen/unit_overview/page/unit_complete_screen.dart`.
+   - Victory Panda Companion, 3-star ranking, rewards (+50 XP, 100% Mastery).
+   - Primary Action: "BÀI HỌC TIẾP THEO: [Tên Bài]" -> navigates to next unit.
+   - Secondary Action: "Xem lại bài học vừa hoàn thành" -> returns to Unit Overview.
+
+4. **Boss Battle Transition (`BossBattleScreen`):**
+   - Fixed infinite victory loop: Victory screen continues to `UnitCompleteScreen`.
+   - Defeat screen returns `result: false` back to Unit Overview.
+
+5. **Stage Runner Return Pass Result (`DuoGameRunnerScreen`):**
+   - `MissionCompleteOverlay` passes `result: true` / `result: result.passed` back to Unit Overview so stage progression immediately refreshes with feedback SnackBars.
+
+6. **Boss Gate Presentation (`UnitOverviewScreen`):**
+   - Added Boss Gate Card and interactive modal dialog (`_openBossGateModal`) displaying boss stats (HP 100 vs Player HP 100, question count).
+   - Dynamic primary CTA seamlessly adapts:
+     - "BÀI TIẾP THEO: [Title]" (when completed)
+     - "KHIÊU CHIẾN BOSS" (when boss ready)
+     - "BẮT ĐẦU ẢI [X]: [Title]" / "TIẾP TỤC ẢI [X]: [Title]" (in progress).
+
+7. **Responsive & Navigation Fixes:**
+   - `GameScreenHeader`: Wrapped title text in `Expanded` to prevent horizontal RenderFlex overflow across narrow device widths.
+   - Hierarchy linking: `HskScreen` added "Phần học" action button to `LearningSectionsScreen`; `HomeLearningTab` links directly to `LearningSectionsScreen`.
 
 ## Git State
 
-- Latest implementation commit SHA: `1fab090`.
-- Latest CI-validated checkpoint commit: `4471db2`.
-- Latest handoff commit: this document-only commit; resolve with `git log -1 --oneline`.
-- Working tree: tracked files clean after the handoff commit; unrelated screenshot artifacts remain untracked and must not be committed.
-- Pushed: YES to `origin/feature/learning-pro-ui-flow` after checkpoint completion.
-- PR: not created in this session.
+- Working tree: clean of untracked test/source files; untracked screenshot/emulator files preserved.
+- Branch: `feature/learning-pro-ui-flow`.
 
 ## NEXT STEP
 
-Route Game Hub skill cards to the matching current available/in-progress curriculum stage before Quick Practice fallback.
-
-- Likely files: `lib/screen/game_hub/game_hub_screen.dart`, `lib/core/learning/data/learning_journey_repository.dart`, corresponding Game Hub tests.
-- Completion condition: Speaking/Listening/Hanzi/Sentence cards open the matching current Unit stage when one exists, otherwise open Quick Practice, with navigation tests passing.
+- Monitor CI/CD run on push.
+- Review boss battle difficulty curve and rewards balancing in production telemetry.
 
 ## DO NOT REDO
 

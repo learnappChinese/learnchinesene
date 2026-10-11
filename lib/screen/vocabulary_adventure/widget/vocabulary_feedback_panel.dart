@@ -36,6 +36,7 @@ class VocabularyFeedbackPanel extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
           child: Center(
+            heightFactor: 1.0,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 620),
               child: Row(
@@ -84,6 +85,7 @@ class VocabularyFeedbackPanel extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       backgroundColor: color,
                       foregroundColor: Colors.white,
+                      minimumSize: const Size(88, 44),
                     ),
                     child: isBusy
                         ? const SizedBox.square(

@@ -26,12 +26,20 @@ class GameScreenHeader extends StatelessWidget {
                     color: Colors.white, size: 20),
                 onPressed: onBack),
           ),
-          Text(title,
+          Expanded(
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  fontSize: titleSize,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  shadows: [Shadow(color: titleShadowColor, blurRadius: 6)])),
+                fontSize: titleSize,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                shadows: [Shadow(color: titleShadowColor, blurRadius: 6)],
+              ),
+            ),
+          ),
           Container(
             decoration: BoxDecoration(
                 color: const Color(0x59000000), shape: BoxShape.circle),

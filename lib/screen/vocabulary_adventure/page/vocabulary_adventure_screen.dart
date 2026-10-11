@@ -135,22 +135,18 @@ class VocabularyAdventureScreen extends GetView<VocabularyAdventureController> {
               ),
             ),
           ),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            child: controller.feedback.value == null
-                ? const SizedBox.shrink()
-                : VocabularyFeedbackPanel(
-                    key: ValueKey(
-                      '${event.id}-${controller.feedback.value}',
-                    ),
-                    feedback: controller.feedback.value!,
-                    event: event,
-                    combo: controller.combo.value,
-                    isBusy: controller.isFinishing.value,
-                    onContinue: controller.continueAfterFeedback,
-                    onRetry: controller.retryCurrent,
-                  ),
-          ),
+          if (controller.feedback.value case final feedback?)
+            VocabularyFeedbackPanel(
+              key: ValueKey(
+                '${event.id}-$feedback',
+              ),
+              feedback: feedback,
+              event: event,
+              combo: controller.combo.value,
+              isBusy: controller.isFinishing.value,
+              onContinue: controller.continueAfterFeedback,
+              onRetry: controller.retryCurrent,
+            ),
         ],
       );
 }

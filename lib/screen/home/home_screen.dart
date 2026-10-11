@@ -111,6 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
           () => _buildPracticePage(),
         ),
         onVocabulary: () => Get.to(() => const HskScreen()),
+        onSections: () => Get.to(() => const LearningSectionsScreen()),
         onLessons: () => _runIfFeatureUnlocked(
           'lessons',
           'Mở khóa Bài học AI',

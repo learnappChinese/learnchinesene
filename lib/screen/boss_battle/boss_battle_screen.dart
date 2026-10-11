@@ -12,8 +12,9 @@ import '../../core/learning/service/learning_reward_service.dart';
 import '../home/controller/home_controller.dart';
 import 'model/boss_battle_stage.dart';
 import '../dragon_panda/screens/boss_battle/widgets/boss_battle_gameplay_widgets.dart';
+import '../unit_overview/page/unit_complete_screen.dart';
 
-enum _ActorState { idle, attacking, hurt, victory, defeated }
+enum _ActorState { idle, attacking, hurt }
 
 class _FloatingDamage {
   final int id;
@@ -85,7 +86,6 @@ class _BossBattleScreenState extends State<BossBattleScreen>
   ui.Image? _bgImage;
   ui.Image? _pandaImage;
   ui.Image? _dragonImage;
-  bool _assetsLoaded = false;
 
   final FlutterTts _tts = FlutterTts();
   final LearningRewardService _rewardService = LearningRewardService();
@@ -143,12 +143,9 @@ class _BossBattleScreenState extends State<BossBattleScreen>
           _bgImage = results[0];
           _pandaImage = results[1];
           _dragonImage = results[2];
-          _assetsLoaded = true;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _assetsLoaded = true);
-    }
+    } catch (_) {}
   }
 
   Future<ui.Image> _loadUiImage(String assetPath) async {
@@ -476,10 +473,19 @@ class _BossBattleScreenState extends State<BossBattleScreen>
     Get.off(
       () => BossBattleVictoryScreen(
         onContinue: () {
-          Get.off(() => BossBattleScreen(stage: widget.stage));
+          Get.off(
+            () => UnitCompleteScreen(
+              unitId: widget.stage?.unitId ?? '',
+              unitTitle: widget.stage?.title ?? '',
+              sectionNumber: widget.stage?.sectionNumber ?? 1,
+              unitNumber: widget.stage?.unitNumber ?? 1,
+              bossName: widget.stage?.bossName,
+              xpEarned: 50,
+            ),
+          );
         },
         onBackToHub: () {
-          Get.back();
+          Get.back(result: true);
         },
       ),
     );
@@ -506,7 +512,7 @@ class _BossBattleScreenState extends State<BossBattleScreen>
           Get.off(() => BossBattleScreen(stage: widget.stage));
         },
         onBackToHub: () {
-          Get.back();
+          Get.back(result: false);
         },
       ),
     );

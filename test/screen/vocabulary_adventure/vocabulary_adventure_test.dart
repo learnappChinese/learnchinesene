@@ -8,6 +8,8 @@ import 'package:flash_learn_chinese/screen/vocabulary_adventure/controller/vocab
 import 'package:flash_learn_chinese/screen/vocabulary_adventure/data/vocabulary_adventure_repository.dart';
 import 'package:flash_learn_chinese/screen/vocabulary_adventure/model/vocabulary_adventure.dart';
 import 'package:flash_learn_chinese/screen/vocabulary_adventure/service/vocabulary_audio_service.dart';
+import 'package:flash_learn_chinese/core/widgets/game_answer_tile.dart';
+import 'package:flash_learn_chinese/screen/vocabulary_adventure/page/vocabulary_adventure_screen.dart';
 import 'package:flash_learn_chinese/screen/vocabulary_adventure/widget/vocabulary_feedback_panel.dart';
 import 'package:flash_learn_chinese/screen/vocabulary_adventure/widget/vocabulary_gameplay_card.dart';
 import 'package:flutter/material.dart';
@@ -180,6 +182,86 @@ void main() {
       expect(find.text('PERFECT!  +16 XP'), findsOneWidget);
     });
   }
+
+  testWidgets(
+      'VocabularyAdventureScreen displays feedback and continue button on answer selection without render exception',
+      (tester) async {
+    final repository = _FakeRepository(mission: _mission());
+    final controller = _controller(repository);
+    Get.put<VocabularyAdventureController>(controller);
+    await controller.loadMission();
+    controller.startMission();
+    // Skip the 2 discovery events to reach a question event
+    await controller.completeDiscovery();
+    await controller.completeDiscovery();
+
+    await tester.binding.setSurfaceSize(const Size(440, 956));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      const GetMaterialApp(
+        home: VocabularyAdventureScreen(),
+      ),
+    );
+    await tester.pump();
+
+    final currentEvent = controller.currentEvent!;
+    expect(currentEvent.isDiscovery, isFalse);
+
+    // Tap correct answer
+    await tester.tap(find.text(currentEvent.correctAnswer));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(VocabularyFeedbackPanel), findsOneWidget);
+    expect(find.text('TIẾP'), findsOneWidget);
+
+    // Tap 'TIẾP' to continue to next challenge
+    await tester.tap(find.text('TIẾP'));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(VocabularyFeedbackPanel), findsNothing);
+  });
+
+  testWidgets(
+      'GameAnswerTile changes states inside LayoutBuilder without relayout boundary assertion',
+      (tester) async {
+    final state = ValueNotifier<GameAnswerTileState>(GameAnswerTileState.idle);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              return ValueListenableBuilder<GameAnswerTileState>(
+                valueListenable: state,
+                builder: (context, currentState, _) {
+                  return GameAnswerTile(
+                    label: 'Đây là',
+                    state: currentState,
+                    onTap: () {},
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    for (final nextState in [
+      GameAnswerTileState.selected,
+      GameAnswerTileState.correct,
+      GameAnswerTileState.wrong,
+      GameAnswerTileState.disabled,
+      GameAnswerTileState.idle,
+    ]) {
+      state.value = nextState;
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    }
+  });
 }
 
 VocabularyAdventureController _controller(_FakeRepository repository) =>

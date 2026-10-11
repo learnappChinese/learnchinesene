@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../../core/responsive/responsive_layout.dart';
 import '../unit/unit_screen.dart';
+import '../sections/learning_sections_screen.dart';
 import 'controller/hsk_controller.dart';
 import '../../core/models/hsk_level.dart';
 import '../../core/widgets/learning_scene_background.dart';
@@ -37,6 +38,19 @@ class _HskScreenState extends State<HskScreen> {
           'Bản đồ thế giới',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: TextButton.icon(
+              onPressed: () => Get.to(() => const LearningSectionsScreen()),
+              icon: const Icon(Icons.route_rounded, size: 18),
+              label: const Text(
+                'Phần học',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
       ),
       body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
