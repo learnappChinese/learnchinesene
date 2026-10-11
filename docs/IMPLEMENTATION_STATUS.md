@@ -1,8 +1,8 @@
 # Implementation Status
 
 - Snapshot date: 2026-10-11
-- Base: `hieu` (PR 08 completed & verified)
-- Next implementation: PR 09 (AI Learning Quality, HSK Quiz/Exam & Unified Learning Outcomes)
+- Base: `hieu` (PR 09 completed & verified)
+- Next implementation: PR 10 (Unified Chinese Fantasy Design System & UX Polish)
 
 This is the living issue matrix for `AI_MASTERPLAN_HOAN_THIEN_APP_TIENg_TRUNG.md`. Status is based on current Flutter code and committed SQL migrations. It does not claim live-production verification.
 
@@ -39,11 +39,11 @@ Status vocabulary:
 | P1-07 | DONE_CODE | Canonical `LearningSourceContext` threaded across Unit Overview, Hanzi writing, and Speaking; curriculum passes unit/level context while free practice mode strictly isolates attempts | PR07 |
 | P1-08 | DONE_CODE | review completion, flashcard rating and mark-learned actions invalidate Review/Stats/Mastery/Profile/Path scopes via `ProgressService` and `LearningProgressSyncService` | PR07 |
 | P1-09 | DONE_CODE | `LearningSessionComposer` eliminated global random fallbacks; strict question budget and unit bounding enforced; truthful speech-to-text matching metrics without fake tone multipliers | PR06/PR07 |
-| P1-10 | OPEN | HSK Quiz and Exam remain outside the canonical durable learning result policy | PR09 |
+| P1-10 | DONE_CODE | HSK Quiz grounded in official curriculum database (`lexicon_words`) with seed fallback; HSK Exam raw score persisted immediately prior to AI analysis with non-duplicating retry support | PR09 |
 | P1-11 | DONE_CODE | Removed client `geminiApiKey` and direct API calls; all queries routed through secure Supabase Edge Function `gemini-ai-gateway` with token auth and quota enforcement | PR05 |
-| P1-12 | OPEN | multiple independent `FlutterTts` instances remain | PR08 |
+| P1-12 | DONE_CODE | Centralized `TtsService` registered in DI; eliminated scattered direct `FlutterTts()` instantiations across HSK Quiz, Exam, Dictionary, Conversations, and Lessons | PR09 |
 | P1-13 | DONE_CODE | `UnitBridgeResolver` resolves bidirectional mappings between text `duo_unit_id` and integer `lexicon_unit_id`; `LearningSourceContext` carries canonical provenance across activities | PR06 |
-| P1-14 | OPEN | Supabase learning history and local `history_logs.json` remain separate/overloaded in product terminology | PR09 |
+| P1-14 | DONE_CODE | Truthfully separated and labeled in UI: "Lịch sử học tập" (authoritative learning ledger) vs "Lịch sử công cụ AI" (local utility interactions) | PR09 |
 | P2-01 | DONE_CODE | Unified single source of truth for next-action recommendations in `LearningRecommendationService` and `RecommendedNextAction`; removed duplicate resolution in `HomeJourneyRepository` and `LearningJourneyRepository.getNextAction` | PR08 |
 | P2-02 | DONE_CODE | SRS spaced repetition due boundaries fixed in `SupabaseReviewRepository`; unmastered words with future review dates are not prematurely marked due | PR07 |
 | P2-03 | OPEN | route bindings/fallback `Get.put` ownership overlap and duplicate subscription DI remain | PR10 |

@@ -107,14 +107,17 @@ class _HskExamScreenState extends State<HskExamScreen> {
 
       if (state == 'submitted') {
         return HskExamResult(
-            score: controller.score.value,
-            questions: controller.questions.toList(),
-            answers: controller.userAnswers.toList(),
-            analysisLoading: controller.analysisLoading.value,
-            assessment: controller.overallAssessment.value,
-            strengths: controller.strengths.toList(),
-            weaknesses: controller.weaknesses.toList(),
-            suggestions: controller.studySuggestions.toList());
+          score: controller.score.value,
+          questions: controller.questions.toList(),
+          answers: controller.userAnswers.toList(),
+          analysisLoading: controller.analysisLoading.value,
+          assessment: controller.overallAssessment.value,
+          strengths: controller.strengths.toList(),
+          weaknesses: controller.weaknesses.toList(),
+          suggestions: controller.studySuggestions.toList(),
+          analysisError: controller.analysisError.value,
+          onRetryAnalysis: controller.retryAnalysis,
+        );
       }
 
       return HskExamQuestions(

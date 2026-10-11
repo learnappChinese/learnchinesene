@@ -1,42 +1,46 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
 import '../../../core/ai/model/ai_gateway_exception.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/services/history_service.dart';
+import '../../../core/services/tts_service.dart';
 
 class HskExamController extends GetxController {
-  final GeminiService _gemini = Get.find<GeminiService>();
-  final HistoryService _history = Get.find<HistoryService>();
-  final FlutterTts _tts = FlutterTts();
+  HskExamController({
+    GeminiService? geminiService,
+    HistoryService? historyService,
+    TtsService? ttsService,
+  })  : _gemini = geminiService ?? Get.find<GeminiService>(),
+        _history = historyService ?? Get.find<HistoryService>(),
+        _tts = ttsService ??
+            (Get.isRegistered<TtsService>()
+                ? Get.find<TtsService>()
+                : TtsService());
+
+  final GeminiService _gemini;
+  final HistoryService _history;
+  final TtsService _tts;
 
   final selectedLevel = 1.obs;
 
-  // Exam state
-  final examState =
-      'notStarted'.obs; // notStarted, loading, started, submitting, submitted
+  // Exam state: 'notStarted', 'loading', 'started', 'submitting', 'submitted'
+  final examState = 'notStarted'.obs;
   final questions = <Map<String, dynamic>>[].obs;
   final userAnswers = <String?>[].obs;
 
   // Analysis result
   final score = 0.obs;
   final analysisLoading = false.obs;
+  final analysisError = RxnString();
   final overallAssessment = ''.obs;
   final strengths = <String>[].obs;
   final weaknesses = <String>[].obs;
   final studySuggestions = <String>[].obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-    _tts.setLanguage('zh-CN');
-    _tts.setSpeechRate(0.75);
-  }
+  String? _currentAttemptId;
 
   Future<void> speak(String text) async {
-    if (text.trim().isNotEmpty) {
-      await _tts.speak(text);
-    }
+    await _tts.speak(text, speechRate: 0.75);
   }
 
   Future<void> generateExam() async {
@@ -48,6 +52,8 @@ class HskExamController extends GetxController {
     strengths.clear();
     weaknesses.clear();
     studySuggestions.clear();
+    analysisError.value = null;
+    _currentAttemptId = null;
 
     try {
       final res = await _gemini.fetchHskExam(selectedLevel.value);
@@ -91,7 +97,7 @@ class HskExamController extends GetxController {
 
     examState.value = 'submitting';
 
-    // Calculate score
+    // 1. Calculate deterministic objective score
     int correctCount = 0;
     for (int i = 0; i < questions.length; i++) {
       final correct =
@@ -103,9 +109,42 @@ class HskExamController extends GetxController {
     }
     score.value = correctCount;
 
-    // Get Gemini Analysis
-    analysisLoading.value = true;
+    final attemptId = DateTime.now().millisecondsSinceEpoch.toString();
+    _currentAttemptId = attemptId;
+
+    // 2. Persist raw exam score and answers BEFORE calling AI
+    try {
+      await _history.saveHistory(
+        HistoryItem(
+          id: attemptId,
+          type: 'Thi HSK',
+          timestamp: DateTime.now().toIso8601String(),
+          summary:
+              'Thi HSK ${selectedLevel.value}: Đạt ${score.value}/${questions.length}',
+          content: {
+            'level': selectedLevel.value,
+            'score': score.value,
+            'total': questions.length,
+            'has_ai_analysis': false,
+            'questions': questions.toList(),
+            'userAnswers': userAnswers.toList(),
+          },
+        ),
+      );
+    } catch (e) {
+      debugPrint('Failed to save raw exam history: $e');
+    }
+
+    // 3. Transition to submitted state so user sees verified score immediately
     examState.value = 'submitted';
+
+    // 4. Request AI Performance Analysis
+    await _runAiAnalysis(attemptId);
+  }
+
+  Future<void> _runAiAnalysis(String attemptId) async {
+    analysisLoading.value = true;
+    analysisError.value = null;
 
     Map<String, dynamic>? analysis;
     try {
@@ -137,47 +176,41 @@ class HskExamController extends GetxController {
           analysis['study_suggestions'] as List<dynamic>? ?? [];
       studySuggestions
           .assignAll(rawSuggestions.map((e) => e.toString()).toList());
+
+      // Update existing saved history item without duplicating
+      await _history.updateHistoryContent(attemptId, {
+        'has_ai_analysis': true,
+        'analysis': analysis,
+      });
     } catch (e) {
       final msg = e is AiGatewayException
           ? e.message
-          : 'Đã chấm điểm thành công, nhưng không thể tải phân tích chi tiết từ AI.';
-      Get.snackbar(
-        'Thông báo',
-        msg,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+          : 'Không thể kết nối AI để tải phân tích chi tiết. Điểm thi (${score.value}/${questions.length}) đã được lưu an toàn.';
+      analysisError.value = msg;
     } finally {
       analysisLoading.value = false;
     }
+  }
 
-    // Always preserve raw exam score and record in history!
-    try {
-      await _history.saveHistory(
-        HistoryItem(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          type: 'Thi HSK',
-          timestamp: DateTime.now().toIso8601String(),
-          summary:
-              'Thi HSK ${selectedLevel.value}: Đạt ${score.value}/${questions.length}',
-          content: {
-            'level': selectedLevel.value,
-            'score': score.value,
-            'total': questions.length,
-            if (analysis != null) 'analysis': analysis,
-            'questions': questions,
-            'userAnswers': userAnswers,
-          },
-        ),
-      );
-    } catch (e) {
-      debugPrint('Failed to save exam history: $e');
+  /// Retries AI analysis for the currently submitted exam without resubmitting
+  /// or duplicating exam score/history items.
+  Future<void> retryAnalysis() async {
+    if (examState.value != 'submitted' ||
+        questions.isEmpty ||
+        analysisLoading.value) {
+      return;
     }
+    final attemptId =
+        _currentAttemptId ?? DateTime.now().millisecondsSinceEpoch.toString();
+    await _runAiAnalysis(attemptId);
   }
 
   void reset() {
     examState.value = 'notStarted';
     questions.clear();
     userAnswers.clear();
+    analysisError.value = null;
+    _currentAttemptId = null;
   }
 
   @override

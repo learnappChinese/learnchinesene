@@ -1,11 +1,30 @@
 import 'package:get/get.dart';
+import '../../../core/learning/data/learning_history_repository.dart';
 import '../../../core/services/history_service.dart';
 
 class HistoryController extends GetxController {
-  final HistoryService _historyService = Get.find<HistoryService>();
+  HistoryController({
+    HistoryService? historyService,
+    LearningHistoryRepository? learningHistoryRepository,
+  })  : _historyService = historyService ??
+            (Get.isRegistered<HistoryService>()
+                ? Get.find<HistoryService>()
+                : HistoryService()),
+        _learningHistoryRepo =
+            learningHistoryRepository ?? SupabaseLearningHistoryRepository();
 
+  final HistoryService _historyService;
+  final LearningHistoryRepository _learningHistoryRepo;
+
+  // 0: Lịch sử học tập (Chính thức), 1: Lịch sử công cụ AI (Tiện ích)
+  final selectedTab = 0.obs;
   final isLoading = false.obs;
-  final historyItems = <HistoryItem>[].obs;
+
+  // Authoritative official learning progress and XP ledger
+  final learningItems = <Map<String, dynamic>>[].obs;
+
+  // Local AI utility conversations, translations, lookups
+  final aiHistoryItems = <HistoryItem>[].obs;
 
   @override
   void onInit() {
@@ -13,26 +32,44 @@ class HistoryController extends GetxController {
     loadHistory();
   }
 
+  void switchTab(int index) {
+    selectedTab.value = index;
+  }
+
   Future<void> loadHistory() async {
     isLoading.value = true;
     try {
-      final list = await _historyService.getHistory();
-      historyItems.value = list;
+      final results = await Future.wait([
+        _learningHistoryRepo.fetchRecentTimeline(limit: 50),
+        _historyService.getHistory(),
+      ]);
+
+      learningItems.assignAll(results[0] as List<Map<String, dynamic>>);
+      aiHistoryItems.assignAll(results[1] as List<HistoryItem>);
     } catch (_) {
-      Get.snackbar('Lỗi', 'Không thể tải lịch sử học tập.');
+      if (Get.context != null) {
+        Get.snackbar('Lỗi', 'Không thể tải lịch sử.');
+      }
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> clearAll() async {
+  Future<void> clearAiHistory() async {
     isLoading.value = true;
     try {
       await _historyService.clearHistory();
-      historyItems.clear();
-      Get.snackbar('Thông báo', 'Đã xóa toàn bộ lịch sử học tập.');
+      aiHistoryItems.clear();
+      if (Get.context != null) {
+        Get.snackbar(
+          'Thông báo',
+          'Đã xóa lịch sử công cụ AI. Lịch sử học tập chính thức được bảo lưu an toàn.',
+        );
+      }
     } catch (_) {
-      Get.snackbar('Lỗi', 'Không thể xóa lịch sử.');
+      if (Get.context != null) {
+        Get.snackbar('Lỗi', 'Không thể xóa lịch sử công cụ AI.');
+      }
     } finally {
       isLoading.value = false;
     }

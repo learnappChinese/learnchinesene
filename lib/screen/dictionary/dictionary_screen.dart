@@ -3,7 +3,7 @@ import 'widget/dictionary_entry_view.dart';
 import 'controller/dictionary_controller.dart';
 import 'package:get/get.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:flutter_tts/flutter_tts.dart';
+import '../../core/services/tts_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/gemini_service.dart';
@@ -19,7 +19,8 @@ class DictionaryScreen extends StatefulWidget {
 
 class _DictionaryScreenState extends State<DictionaryScreen> {
   final TextEditingController _inputController = TextEditingController();
-  final FlutterTts _tts = FlutterTts();
+  final TtsService _tts =
+      Get.isRegistered<TtsService>() ? Get.find<TtsService>() : TtsService();
   final stt.SpeechToText _speech = stt.SpeechToText();
 
   bool _isListening = false;
@@ -59,13 +60,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
 
   Future<void> _handleSearch() => controller.search(_inputController.text);
 
-  Future<void> _playAudio(String text) async {
-    try {
-      await _tts.setLanguage('zh-CN');
-      await _tts.setSpeechRate(0.4);
-      await _tts.speak(text);
-    } catch (_) {}
-  }
+  Future<void> _playAudio(String text) => _tts.speak(text, speechRate: 0.4);
 
   Future<void> _handleListen() async {
     var status = await Permission.microphone.status;
