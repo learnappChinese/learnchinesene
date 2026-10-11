@@ -9,6 +9,8 @@ import 'core/backend/supabase_service.dart';
 import 'core/entitlement/data/entitlement_repository.dart';
 import 'core/entitlement/service/premium_access_service.dart';
 import 'core/learning/service/learning_progress_sync_service.dart';
+import 'core/learning/service/learning_session_composer.dart';
+import 'core/learning/service/unit_bridge_resolver.dart';
 import 'core/services/gemini_service.dart';
 import 'core/services/history_service.dart';
 import 'core/services/iap_service.dart';
@@ -19,6 +21,9 @@ import 'screen/subscription/controller/subscription_controller.dart';
 
 void initDI() {
   Get.lazyPut<SupabaseClient>(() => Supabase.instance.client, fenix: true);
+  Get.lazyPut<UnitBridgeResolver>(() => UnitBridgeResolver(), fenix: true);
+  Get.lazyPut<LearningSessionComposer>(() => LearningSessionComposer(),
+      fenix: true);
   Get.lazyPut<LearningProgressSyncService>(
     () => LearningProgressSyncService(client: Get.find<SupabaseClient>()),
     fenix: true,

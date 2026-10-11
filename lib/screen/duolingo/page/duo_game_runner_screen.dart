@@ -54,6 +54,7 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
         gameId: widget.gameId,
         gameCode: widget.gameCode,
         levelId: widget.levelId,
+        unitId: 'unit_${widget.chapterNumber}',
       ),
       tag: tag,
     );

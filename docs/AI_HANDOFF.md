@@ -5,9 +5,10 @@
 - Timestamp: 2026-10-11 (Asia/Saigon)
 - Repo: `D:\Projects\Flutter_Project\learnchinesene`
 - Integration branch: `hieu`
-- HEAD: `6f965e25210cc5d2c97051a27e9d39f36c802f77` (PR 05 merged into `hieu`)
-- Merged feature branch: `feature/pr05-security-iap-gemini`
-- Base: `110740e5e3946546417f2c09afe2cc6fceac9423` on `hieu` (contains PR 01, PR 02, PR 03, PR 04)
+- Feature branch: `feature/pr06-curriculum-adaptive-session-composer`
+- PR 05 Status: Merged into `hieu` (`6f965e2`)
+- PR 06 Status: Code, tests, and CI complete. Ready for merge into `hieu`.
+- Next dependency: PR 07 (`Review, Hanzi, Speaking Context & SRS Quality`).
 
 ## Phase / PR hiện tại
 
@@ -16,8 +17,9 @@
 - PR02 `Skill Taxonomy & Unit Mastery`: merged into `hieu` via PR #24 (`19a6118`).
 - PR03 `Complete Learning Flow, Unlock & Boss Navigation`: merged into `hieu` via `9b3965e`.
 - PR04 `Authentication, Guest Progress & Cloud Migration`: merged into `hieu` (`110740e`).
-- PR05 `Production Security: Premium, IAP, Gemini AI & Supabase`: MERGED into `hieu` (`6f965e2`).
-- Next dependency: PR 06 (`Curriculum, Adaptive Session Composer & Content Quality`).
+- PR05 `Production Security: Premium, IAP, Gemini AI & Supabase`: merged into `hieu` (`6f965e2`).
+- PR06 `Curriculum, Adaptive Session Composer & Content Quality`: COMPLETED on `feature/pr06-curriculum-adaptive-session-composer`.
+- Next dependency: PR 07 (`Review, Hanzi, Speaking Context & SRS Quality`).
 
 ## Issue IDs đã xong
 
