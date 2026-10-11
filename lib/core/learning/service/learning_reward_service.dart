@@ -1,16 +1,28 @@
+import 'package:get/get.dart';
+
 import '../data/learning_progress_repository.dart';
 import '../model/learning_activity_submission.dart';
 import '../model/learning_result.dart';
+import 'learning_progress_sync_service.dart';
 
 /// Coordinates raw learning submissions.
 ///
 /// Signed-in results are evaluated by `complete_learning_activity_v2`.
 /// Guest results use the same rule contract through the local repository.
 class LearningRewardService {
-  LearningRewardService({LearningProgressRepository? repository})
-      : _repository = repository ?? SupabaseLearningProgressRepository();
+  LearningRewardService({
+    LearningProgressRepository? repository,
+    LearningProgressSyncService? syncService,
+  })  : _repository = repository ?? SupabaseLearningProgressRepository(),
+        _syncService = syncService ?? _registeredSyncService();
 
   final LearningProgressRepository _repository;
+  final LearningProgressSyncService? _syncService;
+
+  static LearningProgressSyncService? _registeredSyncService() {
+    if (!Get.isRegistered<LearningProgressSyncService>()) return null;
+    return Get.find<LearningProgressSyncService>();
+  }
 
   Future<void> startAttempt(LearningActivitySubmission submission) =>
       _repository.startAttempt(submission);
@@ -23,8 +35,11 @@ class LearningRewardService {
 
   Future<LearningResult> completeActivity(
     LearningActivitySubmission submission,
-  ) =>
-      _repository.completeActivity(submission);
+  ) async {
+    final result = await _repository.completeActivity(submission);
+    await _syncService?.syncAfterCompletion(result, submission);
+    return result;
+  }
 
   Future<LearningResult> processVocabularyReward({
     required String levelId,

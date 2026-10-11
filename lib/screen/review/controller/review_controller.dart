@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/models/word.dart';
+import '../../../core/learning/service/learning_progress_sync_service.dart';
 import '../../conversations/conversations_screen.dart';
 import '../../hanzi_writing/screens/hanzi_writing_home_screen.dart';
 import '../../hanzi_writing/screens/hanzi_writing_screen.dart';
@@ -12,10 +13,21 @@ import '../data/review_repository.dart';
 import '../model/review_item.dart';
 
 class ReviewController extends GetxController {
-  ReviewController({ReviewRepository? repository})
-      : _repository = repository ?? SupabaseReviewRepository();
+  ReviewController({
+    ReviewRepository? repository,
+    LearningProgressSyncService? syncService,
+  })  : _repository = repository ?? SupabaseReviewRepository(),
+        _syncService = syncService ?? _registeredSyncService();
 
   final ReviewRepository _repository;
+  final LearningProgressSyncService? _syncService;
+  LearningSyncRegistration? _syncRegistration;
+  int _loadRequest = 0;
+
+  static LearningProgressSyncService? _registeredSyncService() {
+    if (!Get.isRegistered<LearningProgressSyncService>()) return null;
+    return Get.find<LearningProgressSyncService>();
+  }
 
   final selectedCategory = ReviewCategory.words.obs;
   final summary = Rx<ReviewSummary?>(null);
@@ -27,44 +39,84 @@ class ReviewController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _syncRegistration = _syncService?.registerRefresher(
+      owner: 'review',
+      domains: const <LearningDomain>{
+        LearningDomain.review,
+        LearningDomain.identity,
+      },
+      refresh: (event) async {
+        if (event.type == LearningDomainEventType.identityChanged) {
+          summary.value = null;
+          items.clear();
+          words.clear();
+        }
+        await loadInitialData(rethrowFailure: true);
+      },
+    );
     loadInitialData();
   }
 
-  Future<void> loadInitialData() async {
+  Future<void> loadInitialData({bool rethrowFailure = false}) async {
+    final request = ++_loadRequest;
     isLoading.value = true;
     errorMessage.value = '';
     try {
-      summary.value = await _repository.loadReviewSummary();
-      await loadItems(selectedCategory.value);
+      final loadedSummary = await _repository.loadReviewSummary();
+      final loadedItems =
+          await _repository.loadReviewItems(selectedCategory.value);
+      if (isClosed || request != _loadRequest) return;
+      summary.value = loadedSummary;
+      _assignItems(selectedCategory.value, loadedItems);
     } catch (e) {
-      errorMessage.value = 'Không thể tải dữ liệu ôn tập: $e';
+      if (!isClosed && request == _loadRequest) {
+        errorMessage.value = 'Không thể tải dữ liệu ôn tập: $e';
+      }
+      if (rethrowFailure) rethrow;
     } finally {
-      isLoading.value = false;
+      if (!isClosed && request == _loadRequest) isLoading.value = false;
     }
   }
 
   Future<void> selectCategory(ReviewCategory category) async {
     if (selectedCategory.value == category && items.isNotEmpty) return;
+    final request = ++_loadRequest;
     selectedCategory.value = category;
     isLoading.value = true;
     errorMessage.value = '';
     try {
-      await loadItems(category);
+      final list = await _repository.loadReviewItems(category);
+      if (isClosed || request != _loadRequest) return;
+      _assignItems(category, list);
     } catch (e) {
-      errorMessage.value = 'Không thể tải danh sách ôn tập: $e';
+      if (!isClosed && request == _loadRequest) {
+        errorMessage.value = 'Không thể tải danh sách ôn tập: $e';
+      }
     } finally {
-      isLoading.value = false;
+      if (!isClosed && request == _loadRequest) isLoading.value = false;
     }
   }
 
   Future<void> loadItems(ReviewCategory category) async {
+    final request = ++_loadRequest;
     final list = await _repository.loadReviewItems(category);
+    if (!isClosed && request == _loadRequest) _assignItems(category, list);
+  }
+
+  void _assignItems(ReviewCategory category, List<ReviewItem> list) {
     items.assignAll(list);
 
     // Keep backwards-compatibility for words property
     if (category == ReviewCategory.words) {
       words.assignAll(_mapItemsToWords(list));
     }
+  }
+
+  @override
+  void onClose() {
+    _loadRequest++;
+    _syncRegistration?.dispose();
+    super.onClose();
   }
 
   List<Word> _mapItemsToWords(List<ReviewItem> reviewItems) {

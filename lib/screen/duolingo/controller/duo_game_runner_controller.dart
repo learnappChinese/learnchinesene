@@ -6,7 +6,6 @@ import '../../../core/learning/service/learning_reward_service.dart';
 import 'duo_game_repository.dart';
 import '../../../core/database/duo_db_helper.dart';
 import '../../../core/services/speech_service.dart';
-import '../../home/controller/home_controller.dart';
 
 class DuoGameRunnerController extends GetxController {
   final int gameId;
@@ -249,10 +248,6 @@ class DuoGameRunnerController extends GetxController {
         );
 
         if (reward.passed) await _unlockNextGuestLevel();
-      }
-
-      if (Get.isRegistered<HomeController>()) {
-        await Get.find<HomeController>().refreshStats();
       }
 
       // Xử lý logic Unlock Level kế tiếp nếu thi đỗ

@@ -2,11 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:get/get.dart';
-import '../../../../core/database/db_helper.dart';
 import '../../../../core/learning/model/learning_activity_submission.dart';
 import '../../../../core/learning/service/learning_reward_service.dart';
-import '../../../home/controller/home_controller.dart';
 import 'widget/chinese_restaurant_options.dart';
 import '../../widgets/game_screen_header.dart';
 import '../../theme/app_colors.dart';
@@ -15,7 +12,6 @@ class ChineseRestaurantScreen extends StatefulWidget {
   final VoidCallback onBack;
 
   const ChineseRestaurantScreen({super.key, required this.onBack});
-
 
   @override
   State<ChineseRestaurantScreen> createState() =>
@@ -265,7 +261,9 @@ class _ChineseRestaurantScreenState extends State<ChineseRestaurantScreen> {
         orElse: () => _menuItems.first,
       );
 
-      final otherFoods = _menuItems.where((m) => m.hanzi != target.hanzi).toList()
+      final otherFoods = _menuItems
+          .where((m) => m.hanzi != target.hanzi)
+          .toList()
         ..shuffle(random);
       final choices = [target, otherFoods[0], otherFoods[1]]..shuffle(random);
 
@@ -362,9 +360,6 @@ class _ChineseRestaurantScreenState extends State<ChineseRestaurantScreen> {
       if (mounted) {
         setState(() => _earnedXp = result.xpEarned);
       }
-      if (Get.isRegistered<HomeController>()) {
-        Get.find<HomeController>().refreshStats();
-      }
     } catch (_) {}
 
     if (!mounted) return;
@@ -413,7 +408,8 @@ class _ChineseRestaurantScreenState extends State<ChineseRestaurantScreen> {
             if (_earnedXp != null && _earnedXp! > 0) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.amber.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
@@ -485,8 +481,7 @@ class _ChineseRestaurantScreenState extends State<ChineseRestaurantScreen> {
             ),
           ),
           if (_isLoading)
-            const Center(
-                child: CircularProgressIndicator(color: Colors.white))
+            const Center(child: CircularProgressIndicator(color: Colors.white))
           else if (_orders.isEmpty)
             Center(
               child: ElevatedButton(

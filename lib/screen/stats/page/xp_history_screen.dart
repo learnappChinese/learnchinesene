@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../core/learning/data/learning_history_repository.dart';
+import '../../../core/learning/service/learning_progress_sync_service.dart';
 import '../../../core/responsive/responsive_layout.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/widgets/learning_scaffold.dart';
@@ -22,6 +24,8 @@ class _XpHistoryScreenState extends State<XpHistoryScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _events = [];
   String _selectedFilter = 'all';
+  LearningSyncRegistration? _syncRegistration;
+  int _loadRequest = 0;
 
   final List<Map<String, String>> _filters = const [
     {'id': 'all', 'label': 'Tất cả'},
@@ -37,26 +41,52 @@ class _XpHistoryScreenState extends State<XpHistoryScreen> {
   void initState() {
     super.initState();
     _repo = widget.historyRepository ?? SupabaseLearningHistoryRepository();
+    if (Get.isRegistered<LearningProgressSyncService>()) {
+      _syncRegistration =
+          Get.find<LearningProgressSyncService>().registerRefresher(
+        owner: 'xp-history',
+        domains: const <LearningDomain>{
+          LearningDomain.history,
+          LearningDomain.identity,
+        },
+        refresh: (event) async {
+          if (event.type == LearningDomainEventType.identityChanged &&
+              mounted) {
+            setState(() => _events = []);
+          }
+          await _loadEvents(rethrowFailure: true);
+        },
+      );
+    }
     _loadEvents();
   }
 
-  Future<void> _loadEvents() async {
+  @override
+  void dispose() {
+    _loadRequest++;
+    _syncRegistration?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadEvents({bool rethrowFailure = false}) async {
+    final request = ++_loadRequest;
     setState(() => _isLoading = true);
     try {
       final list = await _repo.fetchFullXpLedger(
         limit: 100,
         filterType: _selectedFilter == 'all' ? null : _selectedFilter,
       );
-      if (mounted) {
+      if (mounted && request == _loadRequest) {
         setState(() {
           _events = list;
           _isLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted && request == _loadRequest) {
         setState(() => _isLoading = false);
       }
+      if (rethrowFailure) rethrow;
     }
   }
 
@@ -270,7 +300,8 @@ class _XpHistoryScreenState extends State<XpHistoryScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: GameVisualTokens.imperialGold.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),

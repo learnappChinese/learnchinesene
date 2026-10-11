@@ -1,98 +1,96 @@
-# AI HANDOFF
+# AI Handoff
 
-## Repository
+## Timestamp + repo + branch + HEAD
 
-- Repo: `learnappChinese/learnchinesene`
-- Base branch: `hieu`
-- Current branch: `feature/learning-pro-ui-flow`
+- Timestamp: 2026-10-11 (Asia/Saigon)
+- Repo: `D:\Projects\Flutter_Project\learnchinesene`
+- Integration branch: `hieu`
+- Feature branch: `feature/pr01-learning-progress-sync`
+- Base: `a6186408c1fdc526409a09dae360a0e89ff3b1ef`
+- PR01 implementation commit: `d990e5e155b3549eb2718090f91e7809ed0b9ac6`
 
-## Current Goal
+## Phase / PR hiện tại
 
-Deliver the unified Chinese Learning Adventure architecture according to `AI_UNIFIED_LEARNING_ADVENTURE_MASTER_SPEC.md`:
-1. Shared learning logic
-2. XP/history/mastery/streak synchronized across the entire app
-3. Stage → Result → Unlock → Boss → Next Unit
-4. Cross-tab consistency (Home, Learning, Game, Progress, Profile)
-5. Area-specific visual upgrades according to designated spec roles
+- PR00 baseline/status inventory: complete.
+- PR01 `LearningProgressSyncService`: code, local automated acceptance, push and PR creation complete.
+- PR02 mapping characterization is prepared but semantic mapping/database behavior has not been changed.
 
-## Completed Work
+## Issue IDs đã xong
 
-### 1. Shared Learning Logic & Mastery (`LearningMasteryService`)
-- Implemented `lib/core/learning/service/learning_mastery_service.dart`:
-  - `SkillMasteryProfile`: Computes clamped percentages (0-100%) for overall, vocabulary, listening, speaking, hanzi, and sentence skills.
-  - `DefaultLearningMasteryService`: Loads live skill mastery from `SupabaseLearningRewardRepository` with graceful fallbacks.
-- Unit tests: `test/core/learning/learning_mastery_service_test.dart` (Passing).
+- `P0-01` DONE_CODE: typed domain invalidation, one reward success boundary, no gameplay dependency on `HomeController`.
+- `P0-03` DONE_CODE: mounted Home/Progress/Game, Unit, Sections/Units, Review, Stats, XP History and Profile owners refresh by domain.
+- `P1-05` DONE_CODE: Home slice-wise refresh with partial success and stale-response protection.
+- `P1-08` DONE_CODE: review, flashcard and mark-learned invalidation.
+- `P2-06` DONE_CODE: centralized app-resume invalidation.
+- `P0-05`, `P1-01`, `P1-06`: PARTIAL; see `docs/IMPLEMENTATION_STATUS.md`.
+- `P0-02` remains OPEN and is the next dependency.
 
-### 2. XP Ledger & History Synchronization (`LearningHistoryRepository`)
-- Implemented `lib/core/learning/data/learning_history_repository.dart`:
-  - `fetchTodayXp`: Aggregates XP earned today with timezone normalization.
-  - `fetch7DayXpActivity`: Pulls rolling 7-day daily XP with dual-key mappings (`dayLabel`/`day_label`, `isToday`/`is_today`, `xpEarned`/`xp_amount`).
-  - `fetchRecentTimeline`: Fetches recent unified attempts with automatic XP ledger fallback.
-  - `fetchFullXpLedger`: Queries full paginated XP ledger with activity filtering.
-  - `fetchAttemptHistory`: Queries attempt history records with score and accuracy details.
-- Unit tests: `test/core/learning/learning_history_repository_test.dart` (Passing).
+## Files changed / migrations
 
-### 3. Mini-Games Plugged into Authoritative Reward Pipeline
-- Integrated all 4 mini-games in `lib/screen/dragon_panda/screens/` with `LearningRewardService.completeActivity()`:
-  - `quick_answer_screen.dart`: `activityType: 'quiz'`, `sourceType: 'quick_answer'`. Records accuracy, combo, awards XP, triggers `HomeController.refreshStats()`, displays `+XP` badge.
-  - `tone_ninja_screen.dart`: `activityType: 'listening'`, `sourceType: 'tone_ninja'`. Records metrics on both game over and victory, awards XP, updates `HomeController`, displays `+XP` badge.
-  - `chinese_restaurant_screen.dart`: `activityType: 'sentence'`, `sourceType: 'chinese_restaurant'`. Records completed order metrics, awards XP, updates `HomeController`, displays `+XP` badge.
-  - `radical_builder_screen.dart`: `activityType: 'hanzi'`, `sourceType: 'radical_builder'`. Records decomposed radical metrics, awards XP, updates `HomeController`, displays `+XP` badge.
+Core implementation:
 
-### 4. Stage → Result → Unlock → Boss → Next Unit Flow
-- Extended `LearningResult` model (`lib/core/learning/model/learning_result.dart`) with Section 26 fields: `bossReady`, `unitCompleted`, `nextUnitId`, and `nextStageId`.
-- Aligned Result CTAs (`lib/core/widgets/mission_complete_overlay.dart` & `lib/screen/vocabulary_adventure/page/vocabulary_adventure_screen.dart`) with Section 27 contract:
-  - Fail → `THỬ LẠI` (Icons.refresh_rounded)
-  - Next Stage → `ẢI TIẾP THEO` (Icons.arrow_forward_rounded)
-  - Boss Ready → `ĐẾN CỔNG BOSS` (Icons.local_fire_department_rounded)
-  - Unit Complete → `BÀI TIẾP THEO` (Icons.military_tech_rounded)
-  - No Next → `VỀ BẢN ĐỒ` (Icons.map_rounded)
-- Updated `UnitOverviewScreen._handleStageReturn()`: When returning from a completed stage that makes the Boss ready (`!wasBossReady && controller.isBossReady`), automatically presents the Boss Gate Modal. When a unit is completed, automatically transitions to `UnitCompleteScreen`.
+- `lib/core/learning/service/learning_progress_sync_service.dart` (new)
+- `lib/core/learning/service/learning_reward_service.dart`
+- `lib/di.dart`
+- Home, Unit overview, Sections/Units, Review, Stats, XP History, Profile controllers/widgets.
+- Completion callers in Duo, Boss, Speaking, Hanzi, Vocabulary Adventure and four Dragon/Panda mini-games no longer call Home directly.
+- Flashcards, Word List and Word Detail emit lexicon invalidation after a successful write.
 
-### 5. Cross-Tab Synchronization & Role-Specific Visual Upgrades
-- `HomeController` (`lib/screen/home/controller/home_controller.dart`): Added reactive observables `todayXp`, `lifetimeXp`, `streak`, `masteryProfile`, `sevenDayXp`, `recentTimeline`. Concurrently syncs DB stats, journey, review summary, today XP, 7-day activity, recent timeline, and skill mastery.
-- `HomeScreen` (`lib/screen/home/home_screen.dart`): Bound synced XP (`todayXp` with `lifetimeXp` fallback) and `streak`.
-- `HomeProgressTab` (`lib/screen/home/widgets/home_progress_tab.dart`): Overhauled into a rich learning analytics & history dashboard: 2x2 summary metric cards, 7-day XP activity chart with today highlighted, skill mastery cards, recent attempt/XP history timeline, and quick-action routes.
-- `XpHistoryScreen` (`lib/screen/stats/page/xp_history_screen.dart`): Created full XP ledger view with activity filter chips (All, Vocabulary, Listening, Speaking, Hanzi, Boss, Quick Answer).
-- `HomeLearningTab` (`lib/screen/home/widgets/home_learning_tab.dart`): Elevated into a true Curriculum + Practice Hub centered around the Stage Map with current unit hero, review due alert, and quick skills grid.
-- `ProfilePage` (`lib/screen/system/profile_page.dart` & `profile_achievements.dart`): Resolved runtime crashes; elevated into an authentic Chinese Fantasy Adventure identity and lifetime achievements screen with rank titles, lifetime metrics, achievement badges, and language competency chips.
+Tests:
 
-## Files Changed
+- `test/core/learning/learning_progress_sync_service_test.dart` (new)
+- `test/core/learning/duo_activity_mapping_characterization_test.dart` (new)
+- `test/screen/home/home_controller_sync_test.dart` (new)
 
-- `lib/core/learning/service/learning_mastery_service.dart`: SkillMasteryProfile & DefaultLearningMasteryService.
-- `lib/core/learning/data/learning_history_repository.dart`: authoritative history queries, 7-day XP activity, timeline fallback.
-- `lib/core/learning/model/learning_result.dart`: Section 26 fields (bossReady, unitCompleted, nextUnitId, nextStageId).
-- `lib/core/widgets/mission_complete_overlay.dart`: Section 27 CTA buttons and icons.
-- `lib/screen/dragon_panda/screens/quick_answer/quick_answer_screen.dart`: authoritative reward integration.
-- `lib/screen/dragon_panda/screens/tone_ninja/tone_ninja_screen.dart`: authoritative reward integration.
-- `lib/screen/dragon_panda/screens/chinese_restaurant/chinese_restaurant_screen.dart`: authoritative reward integration.
-- `lib/screen/dragon_panda/screens/radical_builder/radical_builder_screen.dart`: authoritative reward integration.
-- `lib/screen/home/controller/home_controller.dart`: cross-tab reactive synchronization.
-- `lib/screen/home/home_screen.dart`: bound cross-tab stats and HomeLearningTab wiring.
-- `lib/screen/home/widgets/home_learning_tab.dart`: Stage Map hero and curriculum practice hub.
-- `lib/screen/home/widgets/home_progress_tab.dart`: learning analytics & history dashboard.
-- `lib/screen/stats/page/xp_history_screen.dart`: full XP ledger history screen.
-- `lib/screen/system/profile_page.dart`: canonical stat binding and lifecycle listener.
-- `lib/screen/system/widget/profile_achievements.dart`: identity and lifetime achievements.
-- `lib/screen/unit_overview/page/unit_overview_screen.dart`: stage return handler and UnitCompleteScreen navigation.
-- `lib/screen/vocabulary_adventure/page/vocabulary_adventure_screen.dart`: mission completion CTA handling.
-- `test/core/learning/learning_mastery_service_test.dart`: unit tests for mastery profile.
-- `test/core/learning/learning_history_repository_test.dart`: unit tests for history repository.
+Documents:
 
-## Tests
+- `docs/CURRENT_APP_FLOW_ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_STATUS.md`
+- `docs/implementation_reports/PR_00_01.md`
+- `docs/AI_HANDOFF.md`
 
-- All core learning tests: PASS (46/46 passed in `test/core/learning/`).
-- Flutter analyze: PASS (0 errors, 0 warnings across all modified modules).
+SQL migrations: NONE. No database table/RPC/data mutation was made.
 
-## Git State
+## Commands actually run + PASS/FAIL
 
-- Branch: `feature/learning-pro-ui-flow`.
+- `git fetch origin`: PASS.
+- PR00 baseline `flutter test test/core/learning`: PASS, 46 tests.
+- PR00 baseline `flutter analyze`: FAIL on 145 pre-existing warnings/info issues; no compiler error.
+- `dart format <changed Dart files>`: PASS.
+- Focused `flutter test test/core/learning test/screen/home/home_controller_sync_test.dart test/screen/review/review_hub_test.dart test/screen/unit_overview/unit_overview_test.dart`: PASS, 65 tests.
+- First parallel `flutter test`: FAIL because a worker closed while loading `duo_word_connect_state_test.dart`; a UI test then did not complete. No assertion failure was reported.
+- Rerun of both affected files: PASS, 9 tests.
+- `flutter test --concurrency=1`: PASS, 201 tests.
+- Current `flutter analyze`: FAIL on 144 warnings/info issues (one fewer than baseline); no compile error and no new analyzer issue attributed to PR01.
+- `flutter build apk --debug`: PASS; output `build/app/outputs/flutter-apk/app-debug.apk`. Gradle/AGP/Kotlin future-support warnings remain.
+- Backend SQL integration: NOT_RUN (no live access).
+- iOS smoke: NOT_RUN (Windows environment).
 
-## DO NOT REDO
+## Live Supabase verified?
 
-- Do not repeat the schema/product audit.
-- Do not reintroduce client-side unlock inference or arbitrary index+1 progression.
-- Do not reintroduce default `sec_1_unit_1` runtime data.
-- Do not chunk stages into a fixed number of challenges.
-- Do not create duplicate XP/attempt tables or bypass `complete_learning_activity_v2`.
-- Do not bypass `LearningRewardService` in mini-games.
+NO.
+
+- Supabase CLI: not installed.
+- Supabase MCP/live database connection: unavailable.
+- Latest committed migration inspected: `20261010101000_harden_learning_history_rls.sql`.
+- Code and committed migrations were compared; production function bodies, response fields, grants/RLS drift and real user data were not verified.
+
+## Pending blockers
+
+- PR02 semantic mastery correction requires read-only live verification of `complete_learning_activity_v2`, `private.unit_mastery_for_user`, `unit_mastery_v2` and representative attempts before any migration/backfill.
+- Authenticated multi-device, guest→login migration and account-switch acceptance require test accounts/live environment.
+- Store entitlement PR requires store credentials/sandbox and approval for backend entitlement design.
+- Existing repository analyzer debt: 144 warnings/info issues.
+
+## Next exact 3 coding steps
+
+1. On the existing feature/next branch, convert the PR02 characterization table into an explicit `gameCode → skill evidence` contract matching `LearningStageGroupingService`, without changing XP or old rows.
+2. Verify that contract against live mastery RPC/function output; if live access is still unavailable, stop database work and report the exact required SQL/RPC evidence instead of guessing a migration.
+3. Implement PR03 typed completion/navigation outcome, remove Boss `xpEarned: 50`, and align guest dependency traversal after PR02 evidence is accepted.
+
+## Git status / PR URL
+
+- Implementation commit: `d990e5e155b3549eb2718090f91e7809ed0b9ac6`.
+- PR: https://github.com/learnappChinese/learnchinesene/pull/23 (base `hieu`).
+- Worktree after handoff metadata update contains only unrelated untracked screenshot/image assets listed below.
+- Preserve unrelated untracked user assets/spec files unless deliberately included; do not stage `docs/emulator_current.png`, `docs/screenshots/`, or `docs/unit_overview_stages_preview.jpg` for this PR.

@@ -9,7 +9,6 @@ import '../../../core/services/speech_service.dart';
 import '../../../core/services/vocabulary_service.dart';
 import '../../../core/services/audio_service.dart';
 import '../../../core/helper/permission_helper.dart';
-import '../../home/controller/home_controller.dart';
 
 class SpeakingController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -194,10 +193,6 @@ class SpeakingController extends GetxController
       );
       learningResult.value = reward;
       _activeAttemptId = null;
-
-      if (Get.isRegistered<HomeController>()) {
-        await Get.find<HomeController>().refreshStats();
-      }
     } catch (error) {
       if (!isClosed) {
         errorMessage.value = 'Không thể lưu kết quả phát âm: $error';

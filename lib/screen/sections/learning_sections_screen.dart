@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/learning/data/learning_journey_repository.dart';
 import '../../core/learning/model/learning_journey_models.dart';
+import '../../core/learning/service/learning_progress_sync_service.dart';
 import '../../core/responsive/responsive_layout.dart';
 import '../../core/theme/game_visual_tokens.dart';
 import '../../core/widgets/learning_scaffold.dart';
@@ -23,33 +24,62 @@ class _LearningSectionsScreenState extends State<LearningSectionsScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<LearningSectionViewModel> _sections = const [];
+  LearningSyncRegistration? _syncRegistration;
+  int _loadRequest = 0;
 
   @override
   void initState() {
     super.initState();
+    if (Get.isRegistered<LearningProgressSyncService>()) {
+      _syncRegistration =
+          Get.find<LearningProgressSyncService>().registerRefresher(
+        owner: 'learning-sections',
+        domains: const <LearningDomain>{
+          LearningDomain.journey,
+          LearningDomain.unitPath,
+          LearningDomain.identity,
+        },
+        refresh: (event) async {
+          if (event.type == LearningDomainEventType.identityChanged &&
+              mounted) {
+            setState(() => _sections = const []);
+          }
+          await _loadSections(rethrowFailure: true);
+        },
+      );
+    }
     _loadSections();
   }
 
-  Future<void> _loadSections() async {
+  @override
+  void dispose() {
+    _loadRequest++;
+    _syncRegistration?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSections({bool rethrowFailure = false}) async {
+    final request = ++_loadRequest;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     try {
       final list = await _journeyRepo.getSections();
-      if (mounted) {
+      if (mounted && request == _loadRequest) {
         setState(() {
           _sections = list;
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && request == _loadRequest) {
         setState(() {
           _errorMessage = 'Không thể tải danh sách phần học: $e';
           _isLoading = false;
         });
       }
+      if (rethrowFailure) rethrow;
     }
   }
 
@@ -158,7 +188,7 @@ class _LearningSectionsScreenState extends State<LearningSectionsScreen> {
                 }
                 Get.to(
                   () => SectionUnitsScreen(section: section),
-                )?.then((_) => _loadSections());
+                );
               },
             );
           },
