@@ -5,9 +5,9 @@
 - Timestamp: 2026-10-11 (Asia/Saigon)
 - Repo: `D:\Projects\Flutter_Project\learnchinesene`
 - Integration branch: `hieu`
-- Feature branch: `feature/pr06-curriculum-adaptive-session-composer`
-- PR 05 Status: Merged into `hieu` (`6f965e2`)
-- PR 06 Status: Code, tests, and CI complete. Ready for merge into `hieu`.
+- HEAD: `9cebe28` (PR 06 merged into `hieu`)
+- Merged feature branch: `feature/pr06-curriculum-adaptive-session-composer`
+- PR 06 Merge Commit: `9cebe28`
 - Next dependency: PR 07 (`Review, Hanzi, Speaking Context & SRS Quality`).
 
 ## Phase / PR hiện tại
@@ -18,7 +18,7 @@
 - PR03 `Complete Learning Flow, Unlock & Boss Navigation`: merged into `hieu` via `9b3965e`.
 - PR04 `Authentication, Guest Progress & Cloud Migration`: merged into `hieu` (`110740e`).
 - PR05 `Production Security: Premium, IAP, Gemini AI & Supabase`: merged into `hieu` (`6f965e2`).
-- PR06 `Curriculum, Adaptive Session Composer & Content Quality`: COMPLETED on `feature/pr06-curriculum-adaptive-session-composer`.
+- PR06 `Curriculum, Adaptive Session Composer & Content Quality`: MERGED into `hieu` (`9cebe28`).
 - Next dependency: PR 07 (`Review, Hanzi, Speaking Context & SRS Quality`).
 
 ## Issue IDs đã xong
