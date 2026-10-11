@@ -18,7 +18,8 @@ class DuoGamePathController extends GetxController {
   Future<void> loadLevels() async {
     isLoading.value = true;
     try {
-      final list = await DuoGameRepository.instance.getGameLevels(gameId, gameCode);
+      final list =
+          await DuoGameRepository.instance.getGameLevels(gameId, gameCode);
       levels.assignAll(list);
     } catch (e) {
       Get.snackbar('Lỗi', 'Không thể tải Lộ trình Game: $e');

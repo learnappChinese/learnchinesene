@@ -164,8 +164,7 @@ class LessonsController extends GetxController {
       grammarPoints.assignAll([
         <String, dynamic>{
           'point': 'Nội dung Unit',
-          'explanation_vi':
-              '${metrics['words'] ?? words.length} từ vựng • '
+          'explanation_vi': '${metrics['words'] ?? words.length} từ vựng • '
               '${metrics['examples'] ?? examples.length} câu ví dụ • '
               '${metrics['learned'] ?? 0} từ đã học.',
           'examples': [

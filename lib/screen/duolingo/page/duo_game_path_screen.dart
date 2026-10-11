@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/learning_scene_background.dart';
 import '../widget/duo_path_content.dart';
 import '../duo_game_visuals.dart';
 import 'package:get/get.dart';
@@ -37,13 +38,14 @@ class _DuoGamePathScreenState extends State<DuoGamePathScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text(widget.gameName),
-        backgroundColor: Colors.white,
-        elevation: 1,
       ),
-      body: _buildLevelPath(context),
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.lanternTown,
+        child: _buildLevelPath(context),
+      ),
     );
   }
 

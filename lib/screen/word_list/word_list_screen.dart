@@ -6,6 +6,7 @@ import '../../core/widgets/empty_state_widget.dart';
 import '../../core/responsive/responsive_layout.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/word_card.dart';
+import '../../core/widgets/learning_scene_background.dart';
 import '../quiz/quiz_screen.dart';
 import '../word_detail/word_detail_screen.dart';
 import 'controller/word_list_controller.dart';
@@ -43,7 +44,10 @@ class _WordListScreenState extends State<WordListScreen> {
           ),
         ],
       ),
-      body: _buildWordContent(context),
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.bambooVillage,
+        child: _buildWordContent(context),
+      ),
     );
   }
 

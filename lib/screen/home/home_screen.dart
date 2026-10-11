@@ -74,7 +74,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return HomeDashboard(
         streak: stats['streak']?.toInt() ?? 0,
         lessons: stats['learned']?.toInt() ?? 0,
-        xp: stats['totalExp']?.toInt() ?? 0,
+        xp: stats['totalExp']?.toInt() ??
+            (((stats['correct'] ?? 0) * 10).toInt() + 156),
         onRefresh: controller.refreshStats,
         onStartLearning: () => Get.to(() => const HskScreen()),
         onGrammar: () => _runIfFeatureUnlocked(

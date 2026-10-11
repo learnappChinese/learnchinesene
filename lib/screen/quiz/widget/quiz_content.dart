@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/quiz_question.dart';
 import '../../../core/responsive/responsive_layout.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/quiz_option_button.dart';
+import '../../../core/widgets/mission_complete_overlay.dart';
 
 class QuizQuestionView extends StatelessWidget {
   const QuizQuestionView(
@@ -206,86 +208,23 @@ class QuizResultView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final percent = (score / questionCount * 100).round();
-    return Center(
-      child: ConstrainedBox(
-        constraints:
-            BoxConstraints(maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-        child: ListView(
-          padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveHelper.horizontalPadding(context),
-            vertical: 24,
+    final stars = percent >= 85 ? 3 : percent >= 50 ? 2 : 1;
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: MissionCompleteOverlay(
+            stars: stars,
+            score: score * 10,
+            accuracy: percent,
+            xpEarned: score * 15,
+            bestCombo: score > 2 ? 3 : 1,
+            wordsMastered: score,
+            isRecord: percent == 100,
+            onNextMission: onRetry,
+            onBackToMap: () => Get.back(),
           ),
-          children: [
-            const SizedBox(height: 20),
-            _buildScoreSummary(percent),
-            const SizedBox(height: 24),
-            Text(
-              percent >= 80
-                  ? '太棒了! Bạn làm rất tốt.'
-                  : 'Cố gắng tốt lắm — luyện tập sẽ giúp bạn tiến bộ.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Mỗi câu trả lời đều giúp ghi nhớ tốt hơn. Hãy tiếp tục nhé!',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, height: 1.5),
-            ),
-            const SizedBox(height: 28),
-            PrimaryButton(
-              label: 'Làm lại',
-              icon: Icons.replay_rounded,
-              onPressed: onRetry,
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: onReview,
-              icon: const Icon(Icons.fact_check_outlined),
-              label: const Text('Ôn lại câu sai'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(52),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildScoreSummary(int percent) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.redDark, AppColors.red, AppColors.orange],
-        ),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.emoji_events_rounded,
-            size: 58,
-            color: Colors.white,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '$percent%',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 52,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          Text(
-            'Đúng $score/$questionCount câu',
-            style: const TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-        ],
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/game_visual_tokens.dart';
 
 class DuoStageNode extends StatelessWidget {
   final int stageNumber;
@@ -26,14 +27,14 @@ class DuoStageNode extends StatelessWidget {
     Color nodeBgColor = isLocked
         ? Colors.grey.shade300
         : isCompleted
-            ? Colors.green
-            : Colors.amber.shade700;
+            ? GameVisualTokens.jade
+            : GameVisualTokens.imperialGold;
 
     Color shadowColor = isLocked
         ? Colors.grey.shade500
         : isCompleted
-            ? Colors.green.shade800
-            : Colors.amber.shade900;
+            ? GameVisualTokens.jadeDark
+            : const Color(0xFFB8860B);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -68,9 +69,13 @@ class DuoStageNode extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: GameVisualTokens.parchment,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: isLocked
+                  ? Colors.grey.shade300
+                  : GameVisualTokens.imperialGold.withValues(alpha: 0.4),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -86,7 +91,7 @@ class DuoStageNode extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: isLocked ? Colors.grey : Colors.black87,
+                  color: isLocked ? Colors.grey : GameVisualTokens.templeWood,
                 ),
               ),
               if (isCompleted) ...[

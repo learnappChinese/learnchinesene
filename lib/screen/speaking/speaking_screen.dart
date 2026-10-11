@@ -3,6 +3,7 @@ import 'widget/speaking_cards.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/responsive/responsive_layout.dart';
+import '../../core/widgets/learning_scene_background.dart';
 import 'controller/speaking_controller.dart';
 
 class SpeakingScreen extends StatefulWidget {
@@ -155,7 +156,10 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
       );
     }
 
-    return content;
+    return LearningSceneBackground(
+      theme: LearningSceneTheme.bambooVillage,
+      child: content,
+    );
   }
 
   Widget _buildPracticeHeader() {

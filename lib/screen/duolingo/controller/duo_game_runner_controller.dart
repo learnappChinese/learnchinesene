@@ -15,17 +15,17 @@ class DuoGameRunnerController extends GetxController {
   });
 
   final isLoading = true.obs;
-  
+
   // Danh sách các câu hỏi/thử thách
   final challenges = <dynamic>[].obs;
-  
+
   final currentIndex = 0.obs;
   final isAnsweredCorrectly = RxnBool();
-  
+
   final correctCount = 0.obs;
   final wrongCount = 0.obs;
   final score = 0.obs;
-  
+
   // Lưu danh sách câu sai để làm lại ở cuối
   final incorrectChallenges = <dynamic>[].obs;
 
@@ -43,14 +43,16 @@ class DuoGameRunnerController extends GetxController {
     isLoading.value = true;
     try {
       // 1. Kiểm tra xem có session làm dở dang không
-      final active = await DuoDbHelper.instance.getActiveSession(gameId, levelId);
-      
+      final active =
+          await DuoDbHelper.instance.getActiveSession(gameId, levelId);
+
       // Load questions tương ứng
       List<dynamic> list = [];
       if (gameCode == 'learn_words') {
         list = await DuoGameRepository.instance.getLearnWordsQuestions(levelId);
       } else if (gameCode == 'word_connect') {
-        list = await DuoGameRepository.instance.getWordConnectQuestions(levelId);
+        list =
+            await DuoGameRepository.instance.getWordConnectQuestions(levelId);
       } else if (gameCode == 'select_answer') {
         list = await DuoGameRepository.instance.getSelectQuestions(levelId);
       } else if (gameCode == 'listen_select') {
@@ -60,11 +62,13 @@ class DuoGameRunnerController extends GetxController {
       } else if (gameCode == 'gap_fill') {
         list = await DuoGameRepository.instance.getGapFillQuestions(levelId);
       } else if (gameCode == 'tap_complete') {
-        list = await DuoGameRepository.instance.getTapCompleteQuestions(levelId);
+        list =
+            await DuoGameRepository.instance.getTapCompleteQuestions(levelId);
       } else if (gameCode == 'dialogue') {
         list = await DuoGameRepository.instance.getDialogueQuestions(levelId);
       } else if (gameCode == 'sentence_order') {
-        list = await DuoGameRepository.instance.getSentenceOrderQuestions(levelId);
+        list =
+            await DuoGameRepository.instance.getSentenceOrderQuestions(levelId);
       } else if (gameCode == 'speaking') {
         list = await DuoGameRepository.instance.getSpeakingQuestions(levelId);
       }
@@ -100,9 +104,9 @@ class DuoGameRunnerController extends GetxController {
   // Gửi câu trả lời
   void submitAnswer(bool isCorrect) async {
     if (isAnsweredCorrectly.value != null) return;
-    
+
     isAnsweredCorrectly.value = isCorrect;
-    
+
     if (isCorrect) {
       correctCount.value++;
       score.value += 10;
@@ -126,7 +130,7 @@ class DuoGameRunnerController extends GetxController {
     if (currentIndex.value < challenges.length - 1) {
       currentIndex.value++;
       _resetTurn();
-      
+
       // Cập nhật session dở dang
       await DuoDbHelper.instance.saveActiveSession(
         gameId,
@@ -152,7 +156,7 @@ class DuoGameRunnerController extends GetxController {
   Future<void> _finishSession() async {
     final total = correctCount.value + wrongCount.value;
     final ratio = total > 0 ? (correctCount.value / total) : 1.0;
-    
+
     int stars = 1;
     if (ratio >= 1.0) {
       stars = 3;
@@ -196,7 +200,7 @@ class DuoGameRunnerController extends GetxController {
   Future<void> _unlockNextAvailableLevel() async {
     final levels = await DuoDbHelper.instance.getGamePath(gameId, gameCode);
     bool foundCurrent = false;
-    
+
     for (var l in levels) {
       final id = l['level_id'] as String;
       final cCount = l['challenge_count'] as int;

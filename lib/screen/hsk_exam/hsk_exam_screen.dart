@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'widget/hsk_exam_content.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/learning_scene_background.dart';
 import 'controller/hsk_exam_controller.dart';
 
 class HskExamScreen extends StatefulWidget {
@@ -26,7 +27,7 @@ class _HskExamScreenState extends State<HskExamScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text(
           'Thi thử HSK với AI',
@@ -34,8 +35,11 @@ class _HskExamScreenState extends State<HskExamScreen> {
         ),
         actions: [_buildExamAction()],
       ),
-      body: SafeArea(
-        child: _buildExamContent(),
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.imperialCity,
+        child: SafeArea(
+          child: _buildExamContent(),
+        ),
       ),
     );
   }
