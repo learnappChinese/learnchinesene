@@ -169,19 +169,28 @@ void main() {
 
       // 1. Mastered words are NEVER due
       expect(
-        calculateDue(mastered: true, wrongCount: 0, nextReviewAt: now.subtract(const Duration(days: 1))),
+        calculateDue(
+            mastered: true,
+            wrongCount: 0,
+            nextReviewAt: now.subtract(const Duration(days: 1))),
         isFalse,
       );
 
       // 2. Scheduled in future with 0 wrong count is NOT due
       expect(
-        calculateDue(mastered: false, wrongCount: 0, nextReviewAt: now.add(const Duration(days: 2))),
+        calculateDue(
+            mastered: false,
+            wrongCount: 0,
+            nextReviewAt: now.add(const Duration(days: 2))),
         isFalse,
       );
 
       // 3. Scheduled in past (overdue) IS due
       expect(
-        calculateDue(mastered: false, wrongCount: 0, nextReviewAt: now.subtract(const Duration(hours: 1))),
+        calculateDue(
+            mastered: false,
+            wrongCount: 0,
+            nextReviewAt: now.subtract(const Duration(hours: 1))),
         isTrue,
       );
 
@@ -193,14 +202,18 @@ void main() {
 
       // 5. Wrong count > 0 requires review regardless of future date
       expect(
-        calculateDue(mastered: false, wrongCount: 2, nextReviewAt: now.add(const Duration(days: 1))),
+        calculateDue(
+            mastered: false,
+            wrongCount: 2,
+            nextReviewAt: now.add(const Duration(days: 1))),
         isTrue,
       );
     });
   });
 
   group('PR 07: Truthful Speaking Metrics', () {
-    testWidgets('SpeakingResultCard renders truthful speech-match labels without fake multipliers',
+    testWidgets(
+        'SpeakingResultCard renders truthful speech-match labels without fake multipliers',
         (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -232,7 +245,8 @@ void main() {
   });
 
   group('PR 07: Speaking and Hanzi Source Context Isolation', () {
-    test('Curriculum speaking passes duoUnitId and levelId to reward service', () async {
+    test('Curriculum speaking passes duoUnitId and levelId to reward service',
+        () async {
       final stubReward = StubRewardService();
       final context = const LearningSourceContext(
         courseId: 'duo_chinese',
@@ -263,7 +277,9 @@ void main() {
       expect(stubReward.lastStartedLevelId, 'unit_3_stage_speaking');
     });
 
-    test('Practice mode speaking isolates attempts and does NOT pass unit/level IDs', () async {
+    test(
+        'Practice mode speaking isolates attempts and does NOT pass unit/level IDs',
+        () async {
       final stubReward = StubRewardService();
       final context = const LearningSourceContext(
         courseId: 'duo_chinese',
@@ -294,7 +310,9 @@ void main() {
       expect(stubReward.lastStartedLevelId, isNull);
     });
 
-    test('Curriculum Hanzi writing passes duoUnitId and levelId to reward service', () async {
+    test(
+        'Curriculum Hanzi writing passes duoUnitId and levelId to reward service',
+        () async {
       final stubReward = StubRewardService();
       final context = const LearningSourceContext(
         courseId: 'duo_chinese',
@@ -318,7 +336,8 @@ void main() {
       expect(stubReward.lastCompletedLevelId, 'unit_4_stage_hanzi');
     });
 
-    test('Free Hanzi library practice isolates attempts from Unit stages', () async {
+    test('Free Hanzi library practice isolates attempts from Unit stages',
+        () async {
       final stubReward = StubRewardService();
       final controller = HanziWritingController(
         rewardService: stubReward,
@@ -336,7 +355,8 @@ void main() {
   });
 
   group('PR 07: Review Hub Error State', () {
-    testWidgets('shows truthful error UI instead of fake 0 items due on load failure',
+    testWidgets(
+        'shows truthful error UI instead of fake 0 items due on load failure',
         (tester) async {
       final failingRepo = FailingReviewRepository();
       final controller = ReviewController(repository: failingRepo);

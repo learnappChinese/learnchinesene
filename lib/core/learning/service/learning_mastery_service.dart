@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../database/db_helper.dart';
 import '../data/learning_progress_repository.dart';
-import '../model/unit_mastery.dart';
 
 class SkillMasteryProfile {
   const SkillMasteryProfile({
@@ -38,21 +37,10 @@ class DefaultLearningMasteryService implements LearningMasteryService {
   DefaultLearningMasteryService({
     SupabaseClient? client,
     LearningProgressRepository? progressRepository,
-  })  : _client = client,
-        _progressRepo = progressRepository ??
+  }) : _progressRepo = progressRepository ??
             SupabaseLearningProgressRepository(client: client);
 
-  final SupabaseClient? _client;
   final LearningProgressRepository _progressRepo;
-
-  SupabaseClient? get _activeClient {
-    if (_client != null) return _client;
-    try {
-      return Supabase.instance.client;
-    } catch (_) {
-      return null;
-    }
-  }
 
   @override
   Future<SkillMasteryProfile> getOverallSkillMastery({
@@ -63,7 +51,6 @@ class DefaultLearningMasteryService implements LearningMasteryService {
     double speakScore = 0.0;
     double hanziScore = 0.0;
     double sentScore = 0.0;
-    int dataPoints = 0;
 
     // 1. Try unit mastery if unitId given
     if (currentUnitId != null && currentUnitId.isNotEmpty) {
@@ -71,19 +58,15 @@ class DefaultLearningMasteryService implements LearningMasteryService {
         final unitMastery = await _progressRepo.fetchUnitMastery(currentUnitId);
         if (unitMastery.vocabulary != null) {
           vocabScore += unitMastery.vocabulary!;
-          dataPoints++;
         }
         if (unitMastery.listening != null) {
           listenScore += unitMastery.listening!;
-          dataPoints++;
         }
         if (unitMastery.speaking != null) {
           speakScore += unitMastery.speaking!;
-          dataPoints++;
         }
         if (unitMastery.hanzi != null) {
           hanziScore += unitMastery.hanzi!;
-          dataPoints++;
         }
       } catch (e) {
         debugPrint('[LearningMasteryService] fetchUnitMastery failed: $e');
@@ -93,11 +76,11 @@ class DefaultLearningMasteryService implements LearningMasteryService {
     // 2. Supplement / fallback from DB stats
     try {
       final dbStats = await DbHelper.instance.getStats();
-      final learned = (dbStats['learned'] as num?)?.toDouble() ?? 0;
-      final mastered = (dbStats['mastered'] as num?)?.toDouble() ?? 0;
-      final speakingAvg = (dbStats['speakingAverage'] as num?)?.toDouble() ?? 0;
-      final correct = (dbStats['correct'] as num?)?.toDouble() ?? 0;
-      final wrong = (dbStats['wrong'] as num?)?.toDouble() ?? 0;
+      final learned = dbStats['learned']?.toDouble() ?? 0;
+      final mastered = dbStats['mastered']?.toDouble() ?? 0;
+      final speakingAvg = dbStats['speakingAverage']?.toDouble() ?? 0;
+      final correct = dbStats['correct']?.toDouble() ?? 0;
+      final wrong = dbStats['wrong']?.toDouble() ?? 0;
 
       final totalQuestions = correct + wrong;
       final accuracy = totalQuestions > 0 ? (correct / totalQuestions) : 0.0;

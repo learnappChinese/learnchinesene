@@ -315,8 +315,8 @@ class DuoDbHelper {
       if (rows.isNotEmpty) {
         final row = Map<String, dynamic>.from(rows.first);
         final prefs = await SharedPreferences.getInstance();
-        final cachedIds = prefs.getStringList(
-            '${_sessionKey(gameId, levelId)}_challenge_ids');
+        final cachedIds = prefs
+            .getStringList('${_sessionKey(gameId, levelId)}_challenge_ids');
         if (cachedIds != null && cachedIds.isNotEmpty) {
           row['challenge_ids'] = cachedIds;
         }

@@ -51,7 +51,6 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
 
   int _totalAttempts = 0; // touch attempts in this round
   int _failedAttemptsThisStroke = 0;
-  DateTime? _sessionStartedAt;
   DateTime? _roundStartedAt;
 
   // Active user writing line repaint notifier
@@ -156,7 +155,6 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
         _roundConfigs = generateRoundConfigs(paths.length);
         _currentRoundIndex = 0;
         _completedRoundResults.clear();
-        _sessionStartedAt = DateTime.now();
         _isRoundCompleted = false;
         _isSessionCompleted = false;
 
@@ -385,24 +383,8 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
       _completedRoundResults.clear();
       _isRoundCompleted = false;
       _isSessionCompleted = false;
-      _sessionStartedAt = DateTime.now();
       _initializeRound(_roundConfigs[_currentRoundIndex]);
     });
-  }
-
-  String _getModeName(HanziPracticeMode mode) {
-    switch (mode) {
-      case HanziPracticeMode.guidedTrace:
-        return 'Luyện viết có hướng dẫn';
-      case HanziPracticeMode.completeRemaining:
-        return 'Hoàn thiện nét vẽ';
-      case HanziPracticeMode.faintCharacter:
-        return 'Luyện viết theo nét mờ';
-      case HanziPracticeMode.startPointOnly:
-        return 'Chỉ hiện điểm bắt đầu';
-      case HanziPracticeMode.fromScratch:
-        return 'Tự viết theo trí nhớ';
-    }
   }
 
   String _buildRoundInstruction({
@@ -430,23 +412,7 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     if (_isRoundCompleted || _isSessionCompleted) {
       return '';
     }
-
-    if (_feedbackColor == AppColors.error) {
-      return 'Nét chưa đúng, hãy thử lại';
-    }
-
-    final nextNum = _currentStrokeIndex + 1;
-    final totalNum = _strokePaths.length;
-
-    if (_currentStrokeIndex == 0 && _failedAttemptsThisStroke == 0) {
-      return 'Hãy viết nét 1/$totalNum';
-    }
-
-    if (_feedbackColor == AppColors.success) {
-      return 'Đúng rồi! Tiếp tục nét $nextNum/$totalNum';
-    }
-
-    return 'Hãy viết nét $nextNum/$totalNum';
+    return _validationFeedback;
   }
 
   @override

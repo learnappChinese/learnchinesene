@@ -30,7 +30,6 @@ abstract final class GameVisualTokens {
   static const templeWood = Color(0xFF451A03);
   static const parchment = Color(0xFFFFFBEB);
 
-
   static const radiusS = 12.0;
   static const radiusM = 18.0;
   static const radiusL = 24.0;

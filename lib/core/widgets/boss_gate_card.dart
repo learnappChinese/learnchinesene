@@ -67,7 +67,8 @@ class BossGateCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: GameVisualTokens.crimson,
                           borderRadius: BorderRadius.circular(8),
@@ -137,13 +138,17 @@ class BossGateCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            isUnlocked ? Icons.sports_martial_arts_rounded : Icons.lock_rounded,
+                            isUnlocked
+                                ? Icons.sports_martial_arts_rounded
+                                : Icons.lock_rounded,
                             color: Colors.white,
                             size: 20,
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            isUnlocked ? '⚔️ CHIẾN ĐẤU BOSS' : 'Hoàn thành nhiệm vụ còn lại',
+                            isUnlocked
+                                ? '⚔️ CHIẾN ĐẤU BOSS'
+                                : 'Hoàn thành nhiệm vụ còn lại',
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w900,

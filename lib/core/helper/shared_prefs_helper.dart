@@ -4,7 +4,8 @@ class SharedPrefsHelper {
   static const String _kActiveProductId = 'activeProductId';
   static const String _kPurchaseDate = 'purchaseDate';
 
-  static Future<void> saveSubscriptionStatus(String productId, DateTime date) async {
+  static Future<void> saveSubscriptionStatus(
+      String productId, DateTime date) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kActiveProductId, productId);
     await prefs.setInt(_kPurchaseDate, date.millisecondsSinceEpoch);

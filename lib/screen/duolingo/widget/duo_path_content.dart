@@ -287,7 +287,8 @@ class DuoPathHeader extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: GameVisualTokens.imperialGold,
                         borderRadius: BorderRadius.circular(6),
@@ -345,7 +346,8 @@ class DuoPathHeader extends StatelessWidget {
                 height: 46,
                 child: FilledButton.icon(
                   onPressed: onQuickPractice,
-                  icon: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
+                  icon: const Icon(Icons.bolt_rounded,
+                      color: Colors.white, size: 20),
                   label: const Text(
                     'LUYỆN TẬP NHANH (QUICK PRACTICE)',
                     style: TextStyle(
@@ -408,4 +410,3 @@ class DuoPathHeader extends StatelessWidget {
     );
   }
 }
-

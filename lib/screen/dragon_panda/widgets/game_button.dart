@@ -46,7 +46,8 @@ class _GameButtonState extends State<GameButton> {
         duration: const Duration(milliseconds: 90),
         height: widget.height,
         width: widget.width ?? double.infinity,
-        margin: EdgeInsets.only(top: _isPressed ? 4 : 0, bottom: _isPressed ? 0 : 4),
+        margin: EdgeInsets.only(
+            top: _isPressed ? 4 : 0, bottom: _isPressed ? 0 : 4),
         decoration: BoxDecoration(
           gradient: widget.gradient,
           borderRadius: BorderRadius.circular(widget.borderRadius),

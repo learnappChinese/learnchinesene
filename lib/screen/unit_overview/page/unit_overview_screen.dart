@@ -782,9 +782,8 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
         context,
         title: 'Nhiệm vụ chưa mở',
         message: 'Hoàn thành các nhiệm vụ trước để mở khóa nhiệm vụ này.',
-        requiredTitle: uncompleted != null
-            ? 'Cần hoàn thành: ${uncompleted.title}'
-            : null,
+        requiredTitle:
+            uncompleted != null ? 'Cần hoàn thành: ${uncompleted.title}' : null,
         actionLabel: uncompleted != null ? 'LÀM NHIỆM VỤ NÀY' : null,
         onViewRequired: uncompleted != null
             ? () => _openMission(chapter, uncompleted)

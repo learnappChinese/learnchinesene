@@ -23,7 +23,8 @@ class SupabaseLearningRecommendationService
     LearningJourneyRepository? journeyRepository,
     ReviewRepository? reviewRepository,
     Future<List<Map<String, dynamic>>> Function(String unitId)? pathLoader,
-    Future<List<Map<String, dynamic>>> Function({String? userId, String? levelId})?
+    Future<List<Map<String, dynamic>>> Function(
+            {String? userId, String? levelId})?
         activeSessionLoader,
     Future<int> Function()? overdueCountLoader,
   })  : _client = client,
@@ -134,8 +135,7 @@ class SupabaseLearningRecommendationService
         (currentUnit.state == UnitCompletionState.completed ||
             currentUnit.bossWon)) {
       try {
-        final nextUnit =
-            await _resolvedJourneyRepo.getNextUnit(currentUnit.id);
+        final nextUnit = await _resolvedJourneyRepo.getNextUnit(currentUnit.id);
         if (nextUnit != null && nextUnit.isUnlocked) {
           return RecommendedNextAction(
             type: RecommendedActionType.nextUnit,
@@ -170,7 +170,8 @@ class SupabaseLearningRecommendationService
             label: 'KHÁM PHÁ',
             title: 'Khám phá bản đồ học tập',
             subtitle: 'Bạn đã hoàn thành các bài học hiện tại!',
-            description: 'Xem lại các khu vực và thử thách trên toàn hành trình.',
+            description:
+                'Xem lại các khu vực và thử thách trên toàn hành trình.',
             estimatedMinutes: 3,
             xpReward: 10,
             rewardPreview: 'Khám phá thế giới',
@@ -274,10 +275,9 @@ class SupabaseLearningRecommendationService
           orElse: () => null,
         );
     if (nextMission != null) {
-      final gameName =
-          '${nextMission['game_name'] ?? 'Nhiệm vụ tiếp theo'}';
-      final isFailed = nextMission['is_failed'] == true ||
-          nextMission['state'] == 'failed';
+      final gameName = '${nextMission['game_name'] ?? 'Nhiệm vụ tiếp theo'}';
+      final isFailed =
+          nextMission['is_failed'] == true || nextMission['state'] == 'failed';
       final gameId = (nextMission['game_id'] as num?)?.toInt();
       final stageId = (nextMission['stage_id'] as num?)?.toInt();
 
@@ -375,8 +375,7 @@ class SupabaseLearningRecommendationService
       final session = rows.first;
       final currentIndex = (session['current_index'] as num?)?.toInt() ?? 0;
       final gameId = (session['game_id'] as num?)?.toInt();
-      final resolvedLevelId =
-          '${session['level_id'] ?? levelId ?? ''}';
+      final resolvedLevelId = '${session['level_id'] ?? levelId ?? ''}';
 
       return RecommendedNextAction(
         type: RecommendedActionType.resume,

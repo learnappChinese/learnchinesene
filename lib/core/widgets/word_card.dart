@@ -353,4 +353,3 @@ class _WordCardState extends State<WordCard> {
     );
   }
 }
-

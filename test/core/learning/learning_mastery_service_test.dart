@@ -17,7 +17,8 @@ class _FakeProgressRepo implements LearningProgressRepository {
   }
 
   @override
-  Future<LearningResult> completeActivity(LearningActivitySubmission submission) async {
+  Future<LearningResult> completeActivity(
+      LearningActivitySubmission submission) async {
     throw UnimplementedError();
   }
 
@@ -25,13 +26,17 @@ class _FakeProgressRepo implements LearningProgressRepository {
   Future<void> startAttempt(LearningActivitySubmission submission) async {}
 
   @override
-  Future<void> abandonAttempt(String attemptId, {Map<String, dynamic> metadata = const {}}) async {}
+  Future<void> abandonAttempt(String attemptId,
+      {Map<String, dynamic> metadata = const {}}) async {}
 
   @override
-  Future<List<Map<String, dynamic>>> fetchAttemptHistory({int limit = 50}) async => [];
+  Future<List<Map<String, dynamic>>> fetchAttemptHistory(
+          {int limit = 50}) async =>
+      [];
 
   @override
-  Future<List<Map<String, dynamic>>> fetchXpHistory({int limit = 50}) async => [];
+  Future<List<Map<String, dynamic>>> fetchXpHistory({int limit = 50}) async =>
+      [];
 
   @override
   Future<void> migrateGuestProgressToCloud() async {}
@@ -75,7 +80,8 @@ void main() {
         progressRepository: _FakeProgressRepo(),
       );
 
-      final result = await service.getOverallSkillMastery(currentUnitId: 'unit-1');
+      final result =
+          await service.getOverallSkillMastery(currentUnitId: 'unit-1');
       expect(result.vocabulary, closeTo(0.85, 0.01));
       expect(result.listening, closeTo(0.70, 0.01));
       expect(result.speaking, closeTo(0.90, 0.01));

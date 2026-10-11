@@ -54,7 +54,8 @@ HomeDashboard dashboard({
 
 void main() {
   for (final width in [320.0, 360.0, 390.0, 440.0]) {
-    testWidgets('Dashboard fits ${width.toInt()}px and displays Chinese Fantasy artwork & metrics',
+    testWidgets(
+        'Dashboard fits ${width.toInt()}px and displays Chinese Fantasy artwork & metrics',
         (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 956);

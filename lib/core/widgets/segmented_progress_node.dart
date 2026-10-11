@@ -324,7 +324,9 @@ class SegmentedProgressNode extends StatelessWidget {
         return Icon(
           isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
           size: 13,
-          color: isFilled ? GameVisualTokens.imperialGold : const Color(0xFFCBD5E1),
+          color: isFilled
+              ? GameVisualTokens.imperialGold
+              : const Color(0xFFCBD5E1),
         );
       }),
     );

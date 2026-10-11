@@ -83,14 +83,16 @@ void main() {
         await tester.pumpAndSettle();
       }
       expect(actions, ['practice', 'vocabulary', 'lessons', 'conversation']);
-      await tester.drag(find.byKey(const PageStorageKey('home-learning-scroll')),
+      await tester.drag(
+          find.byKey(const PageStorageKey('home-learning-scroll')),
           const Offset(0, -500));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
   }
 
-  testWidgets('HomeLearningTab renders journey and review summary without overflow',
+  testWidgets(
+      'HomeLearningTab renders journey and review summary without overflow',
       (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 700);
@@ -143,4 +145,3 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 }
-

@@ -22,9 +22,8 @@ class HomeProgressTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.isRegistered<HomeController>()
-        ? Get.find<HomeController>()
-        : null;
+    final controller =
+        Get.isRegistered<HomeController>() ? Get.find<HomeController>() : null;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
@@ -484,7 +483,8 @@ class HomeProgressTab extends StatelessWidget {
               child: Center(
                 child: Text(
                   'Chưa có lượt học nào gần đây. Hãy bắt đầu ngay!',
-                  style: TextStyle(fontSize: 13.sp, color: const Color(0xFF94A3B8)),
+                  style: TextStyle(
+                      fontSize: 13.sp, color: const Color(0xFF94A3B8)),
                 ),
               ),
             )

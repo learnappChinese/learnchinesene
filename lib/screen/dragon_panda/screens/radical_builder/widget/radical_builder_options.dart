@@ -40,7 +40,8 @@ class RadicalOptionTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: borderColor, width: isCorrect == true || isWrong ? 3 : 2),
+          border: Border.all(
+              color: borderColor, width: isCorrect == true || isWrong ? 3 : 2),
           boxShadow: [
             BoxShadow(
               color: isCorrect == true
@@ -67,4 +68,3 @@ class RadicalOptionTile extends StatelessWidget {
     );
   }
 }
-

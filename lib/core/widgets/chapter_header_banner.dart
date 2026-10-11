@@ -75,7 +75,8 @@ class ChapterHeaderBanner extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: GameVisualTokens.imperialGold,
                           borderRadius: BorderRadius.circular(8),
@@ -137,7 +138,8 @@ class ChapterHeaderBanner extends StatelessWidget {
                       runSpacing: 6,
                       children: objectives.map((obj) {
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(12),

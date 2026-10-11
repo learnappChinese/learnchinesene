@@ -1,6 +1,5 @@
 const int defaultPracticeRoundCount = 10;
 
-
 enum HanziPracticeMode {
   guidedTrace,
   completeRemaining,

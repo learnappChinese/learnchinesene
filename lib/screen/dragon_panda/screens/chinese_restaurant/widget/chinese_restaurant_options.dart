@@ -88,7 +88,8 @@ class RestaurantFoodCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style:
+                    const TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
             ),
           ],
@@ -97,4 +98,3 @@ class RestaurantFoodCard extends StatelessWidget {
     );
   }
 }
-

@@ -65,7 +65,8 @@ class LearningPresentationMapper {
   static bool _isTechnical(String value) {
     if (value.isEmpty) return true;
     final normalized = value.toLowerCase().replaceAll('-', '_');
-    return RegExp(r'^(path\s+section|section_|unit_|level_|game_|chương\s+\d+$)')
+    return RegExp(
+                r'^(path\s+section|section_|unit_|level_|game_|chương\s+\d+$)')
             .hasMatch(normalized) ||
         normalized.startsWith('path section') ||
         normalized.contains('unit_index') ||

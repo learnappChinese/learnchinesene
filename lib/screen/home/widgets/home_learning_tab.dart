@@ -96,7 +96,8 @@ class HomeLearningTab extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: GameVisualTokens.gold.withValues(alpha: 0.6), width: 2),
+        border: Border.all(
+            color: GameVisualTokens.gold.withValues(alpha: 0.6), width: 2),
         boxShadow: const [
           BoxShadow(
             color: Color(0x33064E3B),
@@ -114,7 +115,8 @@ class HomeLearningTab extends StatelessWidget {
             children: [
               Flexible(
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.w),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.w),
                   decoration: BoxDecoration(
                     color: GameVisualTokens.imperialGold,
                     borderRadius: BorderRadius.circular(12.r),
@@ -138,7 +140,8 @@ class HomeLearningTab extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.star_rounded, color: GameVisualTokens.gold, size: 18),
+                    const Icon(Icons.star_rounded,
+                        color: GameVisualTokens.gold, size: 18),
                     SizedBox(width: 2.w),
                     Text(
                       '${j.stars}',
@@ -180,7 +183,8 @@ class HomeLearningTab extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: (progress.isFinite ? progress : 0.0).clamp(0.0, 1.0),
                     backgroundColor: Colors.white24,
-                    valueColor: const AlwaysStoppedAnimation<Color>(GameVisualTokens.gold),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                        GameVisualTokens.gold),
                     minHeight: 8.w,
                   ),
                 ),
@@ -207,7 +211,8 @@ class HomeLearningTab extends StatelessWidget {
                     backgroundColor: GameVisualTokens.gold,
                     foregroundColor: Colors.black,
                     elevation: 3,
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.w),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.w),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.r),
                     ),
@@ -216,7 +221,8 @@ class HomeLearningTab extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.explore_rounded, color: Colors.black, size: 20),
+                      const Icon(Icons.explore_rounded,
+                          color: Colors.black, size: 20),
                       SizedBox(width: 6.w),
                       Flexible(
                         child: FittedBox(
@@ -244,14 +250,16 @@ class HomeLearningTab extends StatelessWidget {
                     minimumSize: Size(0, 44.w),
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white38),
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.w),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.w),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                   ),
                   child: Text(
                     'Các vùng',
-                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
+                    style:
+                        TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -269,7 +277,8 @@ class HomeLearningTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFFFBEB),
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: GameVisualTokens.imperialGold.withValues(alpha: 0.5)),
+        border: Border.all(
+            color: GameVisualTokens.imperialGold.withValues(alpha: 0.5)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x11000000),

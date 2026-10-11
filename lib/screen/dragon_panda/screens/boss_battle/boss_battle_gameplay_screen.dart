@@ -12,7 +12,7 @@ import 'view/boss_battle_arena.dart';
 
 import 'widgets/boss_battle_gameplay_widgets.dart';
 
-enum _ActorState { idle, attacking, hurt, victory, defeated }
+enum _ActorState { idle, attacking, hurt }
 
 class _FloatingDamage {
   final int id;
@@ -68,7 +68,6 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
   int combo = 0;
   int questionIndex = 0;
 
-
   bool isAnimating = false;
   String? feedbackText;
   int? selectedAnswerIndex;
@@ -94,7 +93,6 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
   ui.Image? _bgImage;
   ui.Image? _pandaImage;
   ui.Image? _dragonImage;
-  bool _imagesLoaded = false;
 
   final BossBattleArenaController _arenaController =
       BossBattleArenaController();
@@ -187,7 +185,6 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
     _ticker.repeat();
   }
 
-
   Future<void> _loadQuestionsFromDb() async {
     try {
       final List<SpeakingPracticeItem> items =
@@ -198,21 +195,35 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
 
         for (int i = 0; i < items.length; i++) {
           final target = items[i];
-          final otherItems = items.where((it) => it.targetText != target.targetText).toList()
+          final otherItems = items
+              .where((it) => it.targetText != target.targetText)
+              .toList()
             ..shuffle(random);
 
           if (otherItems.length >= 3) {
             final opts = [
               {'hanzi': target.targetText, 'pinyin': target.pinyin},
-              {'hanzi': otherItems[0].targetText, 'pinyin': otherItems[0].pinyin},
-              {'hanzi': otherItems[1].targetText, 'pinyin': otherItems[1].pinyin},
-              {'hanzi': otherItems[2].targetText, 'pinyin': otherItems[2].pinyin},
+              {
+                'hanzi': otherItems[0].targetText,
+                'pinyin': otherItems[0].pinyin
+              },
+              {
+                'hanzi': otherItems[1].targetText,
+                'pinyin': otherItems[1].pinyin
+              },
+              {
+                'hanzi': otherItems[2].targetText,
+                'pinyin': otherItems[2].pinyin
+              },
             ]..shuffle(random);
 
-            final correctIdx = opts.indexWhere((o) => o['hanzi'] == target.targetText);
+            final correctIdx =
+                opts.indexWhere((o) => o['hanzi'] == target.targetText);
 
             dynamicQuestions.add({
-              'prompt': target.meaning.isNotEmpty ? target.meaning : target.targetText,
+              'prompt': target.meaning.isNotEmpty
+                  ? target.meaning
+                  : target.targetText,
               'hanziPrompt': target.targetText,
               'pinyinPrompt': target.pinyin,
               'options': opts,
@@ -231,7 +242,6 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
       }
     } catch (_) {}
   }
-
 
   Future<void> _initTts() async {
     try {
@@ -266,12 +276,9 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
           _bgImage = results[0];
           _pandaImage = results[1];
           _dragonImage = results[2];
-          _imagesLoaded = true;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _imagesLoaded = true);
-    }
+    } catch (_) {}
   }
 
   Future<ui.Image> _decodeImage(String path) async {
@@ -336,7 +343,6 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
               bossHp = (bossHp - damage).clamp(0, maxBossHp);
               _addFloatingDamage('-$damage', const Color(0xFFFFD54F), true);
             });
-
 
             _runCameraShake(7.0, 200);
 
@@ -405,7 +411,6 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
               playerHp = (playerHp - dragonDmg).clamp(0, maxPlayerHp);
               _addFloatingDamage('-$dragonDmg', const Color(0xFFFF5252), false);
             });
-
 
             _runCameraShake(11.0, 220);
 
@@ -630,7 +635,6 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
       ],
     );
   }
-
 }
 
 class _BattleArenaCanvasPainter extends CustomPainter {
