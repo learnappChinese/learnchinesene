@@ -632,10 +632,24 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
 
   void _openStage(ChapterAdventure chapter, LearningStageViewModel stage) {
     if (stage.isLocked) {
+      final prerequisite = _findPrerequisiteStage(stage);
       showLockedMissionSheet(
         context,
         title: 'Ải chưa mở khóa',
         message: _stageLockMessage(stage),
+        requiredTitle: prerequisite != null
+            ? 'Cần hoàn thành: Ải ${prerequisite.title}'
+            : (stage.lockReason == 'chapter_locked'
+                ? 'Yêu cầu: Đánh bại Boss bài trước'
+                : (stage.lockReason == 'mastery_too_low'
+                    ? 'Yêu cầu: Thành thạo ≥ ${((stage.requiredMastery ?? .70) * 100).round()}%'
+                    : null)),
+        actionLabel: prerequisite != null
+            ? 'LÀM ẢI ${prerequisite.title.toUpperCase()}'
+            : null,
+        onViewRequired: prerequisite != null
+            ? () => _openStage(chapter, prerequisite)
+            : null,
       );
       return;
     }
@@ -724,6 +738,26 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
     }
   }
 
+  LearningStageViewModel? _findPrerequisiteStage(LearningStageViewModel stage) {
+    final required = stage.requiredStageId;
+    if (required != null) {
+      final found = controller.stages.where((candidate) {
+        final level = candidate.sourceLevelIds.firstOrNull;
+        return '${candidate.sourceGameId}:$level' == required;
+      }).firstOrNull;
+      if (found != null) return found;
+    }
+    final idx = controller.stages.indexOf(stage);
+    if (idx > 0) {
+      for (var i = idx - 1; i >= 0; i--) {
+        if (!controller.stages[i].isCompleted) {
+          return controller.stages[i];
+        }
+      }
+    }
+    return null;
+  }
+
   String _stageLockMessage(LearningStageViewModel stage) {
     if (stage.lockReason == 'mastery_too_low') {
       final required = ((stage.requiredMastery ?? .70) * 100).round();
@@ -732,25 +766,29 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
     if (stage.lockReason == 'chapter_locked') {
       return 'Hãy đánh bại Boss của bài học trước để mở khóa.';
     }
-    final required = stage.requiredStageId;
-    if (required != null) {
-      final prerequisite = controller.stages.where((candidate) {
-        final level = candidate.sourceLevelIds.firstOrNull;
-        return '${candidate.sourceGameId}:$level' == required;
-      }).firstOrNull;
-      if (prerequisite != null) {
-        return 'Cần hoàn thành Ải ${prerequisite.title}.';
-      }
+    final prerequisite = _findPrerequisiteStage(stage);
+    if (prerequisite != null) {
+      return 'Cần hoàn thành Ải ${prerequisite.title}.';
     }
     return 'Cần hoàn thành ải trước để mở khóa.';
   }
 
   void _openMission(ChapterAdventure chapter, ChapterMission mission) {
     if (mission.state == AdventureNodeState.locked) {
+      final uncompleted = chapter.missions
+          .where((m) => m.state != AdventureNodeState.completed && m != mission)
+          .firstOrNull;
       showLockedMissionSheet(
         context,
         title: 'Nhiệm vụ chưa mở',
         message: 'Hoàn thành các nhiệm vụ trước để mở khóa nhiệm vụ này.',
+        requiredTitle: uncompleted != null
+            ? 'Cần hoàn thành: ${uncompleted.title}'
+            : null,
+        actionLabel: uncompleted != null ? 'LÀM NHIỆM VỤ NÀY' : null,
+        onViewRequired: uncompleted != null
+            ? () => _openMission(chapter, uncompleted)
+            : null,
       );
       return;
     }

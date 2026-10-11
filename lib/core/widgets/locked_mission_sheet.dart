@@ -9,6 +9,8 @@ Future<void> showLockedMissionSheet(
   required String message,
   String? requiredTitle,
   VoidCallback? onViewRequired,
+  String? actionLabel,
+  IconData? actionIcon,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -71,10 +73,12 @@ Future<void> showLockedMissionSheet(
         ],
         const SizedBox(height: LearningSpacing.lg),
         LearningPrimaryButton(
-          label: onViewRequired == null ? 'ĐÃ HIỂU' : 'XEM NHIỆM VỤ CẦN LÀM',
-          icon: onViewRequired == null
-              ? Icons.check_rounded
-              : Icons.route_rounded,
+          label: actionLabel ??
+              (onViewRequired == null ? 'ĐÃ HIỂU' : 'XEM NHIỆM VỤ CẦN LÀM'),
+          icon: actionIcon ??
+              (onViewRequired == null
+                  ? Icons.check_rounded
+                  : Icons.route_rounded),
           onPressed: () {
             Navigator.of(sheetContext).pop();
             onViewRequired?.call();

@@ -12,7 +12,9 @@ import '../../core/widgets/learning_scaffold.dart';
 import '../../core/widgets/locked_mission_sheet.dart';
 
 class UnitScreen extends StatefulWidget {
-  const UnitScreen({super.key});
+  const UnitScreen({super.key, this.controller});
+
+  final UnitController? controller;
 
   @override
   State<UnitScreen> createState() => _UnitScreenState();
@@ -20,14 +22,27 @@ class UnitScreen extends StatefulWidget {
 
 class _UnitScreenState extends State<UnitScreen> {
   late final UnitController controller;
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
-    // The existing GetX route owns this registration.
-    controller = Get.isRegistered<UnitController>()
-        ? Get.find<UnitController>()
-        : Get.put(UnitController());
+    if (widget.controller != null) {
+      controller = widget.controller!;
+    } else if (Get.isRegistered<UnitController>()) {
+      controller = Get.find<UnitController>();
+    } else {
+      controller = Get.put(UnitController());
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController && Get.isRegistered<UnitController>()) {
+      Get.delete<UnitController>();
+    }
+    super.dispose();
   }
 
   @override

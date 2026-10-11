@@ -7,7 +7,9 @@ import '../../core/widgets/stat_card.dart';
 import 'controller/stats_controller.dart';
 
 class StatsScreen extends StatefulWidget {
-  const StatsScreen({super.key});
+  const StatsScreen({super.key, this.controller});
+
+  final StatsController? controller;
 
   @override
   State<StatsScreen> createState() => _StatsScreenState();
@@ -15,14 +17,27 @@ class StatsScreen extends StatefulWidget {
 
 class _StatsScreenState extends State<StatsScreen> {
   late final StatsController controller;
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
-    // The existing GetX route owns this registration.
-    controller = Get.isRegistered<StatsController>()
-        ? Get.find<StatsController>()
-        : Get.put(StatsController());
+    if (widget.controller != null) {
+      controller = widget.controller!;
+    } else if (Get.isRegistered<StatsController>()) {
+      controller = Get.find<StatsController>();
+    } else {
+      controller = Get.put(StatsController());
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController && Get.isRegistered<StatsController>()) {
+      Get.delete<StatsController>();
+    }
+    super.dispose();
   }
 
   @override

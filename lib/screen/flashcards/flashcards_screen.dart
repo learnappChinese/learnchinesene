@@ -9,7 +9,9 @@ import '../../core/responsive/responsive_layout.dart';
 import '../../core/widgets/learning_scene_background.dart';
 
 class FlashcardsScreen extends StatefulWidget {
-  const FlashcardsScreen({super.key});
+  const FlashcardsScreen({super.key, this.controller});
+
+  final FlashcardsController? controller;
 
   @override
   State<FlashcardsScreen> createState() => _FlashcardsScreenState();
@@ -30,12 +32,20 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   static int _nextControllerId = 0;
   late final String _controllerTag;
   late final FlashcardsController controller;
+  late final bool _ownsController;
 
   @override
   void initState() {
     super.initState();
-    _controllerTag = 'flashcards-${_nextControllerId++}';
-    controller = Get.put(FlashcardsController(), tag: _controllerTag);
+    if (widget.controller != null) {
+      controller = widget.controller!;
+      _ownsController = false;
+      _controllerTag = '';
+    } else {
+      _controllerTag = 'flashcards-${_nextControllerId++}';
+      controller = Get.put(FlashcardsController(), tag: _controllerTag);
+      _ownsController = true;
+    }
     _flipController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -48,7 +58,9 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
 
   @override
   void dispose() {
-    Get.delete<FlashcardsController>(tag: _controllerTag);
+    if (_ownsController) {
+      Get.delete<FlashcardsController>(tag: _controllerTag);
+    }
     _flipController.dispose();
     super.dispose();
   }
@@ -65,10 +77,16 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   }
 
   void _flipCard() {
-    if (_isFlipped) {
-      _flipController.reverse();
+    final disableAnimations =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (disableAnimations) {
+      _flipController.value = _isFlipped ? 0.0 : 1.0;
     } else {
-      _flipController.forward();
+      if (_isFlipped) {
+        _flipController.reverse();
+      } else {
+        _flipController.forward();
+      }
     }
     setState(() {
       _isFlipped = !_isFlipped;
@@ -130,7 +148,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
             _loadDeck();
           }
         },
-        selectedColor: AppColors.red.withOpacity(0.2),
+        selectedColor: AppColors.red.withValues(alpha: 0.2),
         checkmarkColor: AppColors.red,
         labelStyle: TextStyle(
           color: isSelected ? AppColors.red : Colors.black87,
@@ -154,15 +172,23 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Thẻ: ${_currentIndex + 1} / ${_deck.length}',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: AppColors.muted),
+              Flexible(
+                child: Text(
+                  'Thẻ: ${_currentIndex + 1} / ${_deck.length}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: AppColors.muted),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              Text(
-                'Độ chính xác: ${(progress * 100).round()}%',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: AppColors.muted),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Độ chính xác: ${(progress * 100).round()}%',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: AppColors.muted),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                ),
               ),
             ],
           ),
@@ -172,7 +198,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: theme.colorScheme.surfaceVariant,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
               valueColor: const AlwaysStoppedAnimation<Color>(AppColors.red),
             ),
           ),
@@ -216,7 +242,6 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
             child: IgnorePointer(
               ignoring: !_isFlipped,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildSrsButton('hard', 'Khó', AppColors.error),
                   _buildSrsButton('good', 'Vừa', AppColors.orange),
@@ -232,18 +257,24 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   }
 
   Widget _buildSrsButton(String val, String label, Color color) {
-    return ElevatedButton(
-      onPressed: _isAnswering ? null : () => _answerCard(val),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 2,
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: ElevatedButton(
+          onPressed: _isAnswering ? null : () => _answerCard(val),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 2,
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }

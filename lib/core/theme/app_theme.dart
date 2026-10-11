@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 import 'game_visual_tokens.dart';
@@ -27,6 +28,11 @@ abstract final class AppTheme {
         elevation: 0,
         centerTitle: false,
         foregroundColor: AppColors.ink,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
         titleTextStyle: TextStyle(
           color: AppColors.ink,
           fontSize: 20,
@@ -158,6 +164,11 @@ abstract final class AppTheme {
         elevation: 0,
         centerTitle: false,
         foregroundColor: Colors.white,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
       ),
       cardTheme: CardThemeData(
         color: const Color(0xFF2A2029),

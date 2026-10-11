@@ -30,14 +30,18 @@ class ProgressService {
     );
     try {
       await _syncService?.syncAfterLexiconChange();
-    } catch (_) {}
+    } catch (e) {
+      Get.log('[ProgressService] syncAfterLexiconChange failed: $e');
+    }
   }
 
   Future<void> markLearned(int wordId) async {
     await _dbHelper.markLearned(wordId);
     try {
       await _syncService?.syncAfterLexiconChange();
-    } catch (_) {}
+    } catch (e) {
+      Get.log('[ProgressService] syncAfterLexiconChange failed: $e');
+    }
   }
 
   Future<List<Word>> getReviewWords() {

@@ -21,7 +21,9 @@ class AudioService {
   Future<void> stop() async {
     try {
       await _player.stop();
-    } catch (_) {}
+    } catch (e) {
+      // Audio stop failure logged
+    }
   }
 
   Future<void> dispose() async {

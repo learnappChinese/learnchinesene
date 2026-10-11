@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/learning_journey_repository.dart';
@@ -87,7 +88,10 @@ class SupabaseLearningRecommendationService
           }
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+          '[LearningRecommendationService] Resolve targetUnitId from progress failed: $e');
+    }
 
     // Fallback for new user with zero prior activity
     if (targetUnitId == null || targetUnitId.isEmpty) {
@@ -104,7 +108,10 @@ class SupabaseLearningRecommendationService
             targetUnitId = firstUnlocked.id;
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint(
+            '[LearningRecommendationService] Fallback firstSectionUnits failed: $e');
+      }
     }
 
     final userId = _client?.auth.currentUser?.id;
@@ -169,7 +176,10 @@ class SupabaseLearningRecommendationService
             rewardPreview: 'Khám phá thế giới',
           );
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint(
+            '[LearningRecommendationService] Check unit completed/nextUnit failed: $e');
+      }
     }
 
     // -------------------------------------------------------------
@@ -179,7 +189,9 @@ class SupabaseLearningRecommendationService
     if (targetUnitId != null && targetUnitId.isNotEmpty) {
       try {
         path = await _loadPath(targetUnitId);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[LearningRecommendationService] _loadPath failed: $e');
+      }
     }
 
     final bossNode = path.cast<Map<String, dynamic>?>().firstWhere(
@@ -305,7 +317,10 @@ class SupabaseLearningRecommendationService
         final weakSkill =
             _weakSkillRecommendation(mastery, targetUnitId, currentUnit);
         if (weakSkill != null) return weakSkill;
-      } catch (_) {}
+      } catch (e) {
+        debugPrint(
+            '[LearningRecommendationService] fetchUnitMastery failed: $e');
+      }
     }
 
     // -------------------------------------------------------------

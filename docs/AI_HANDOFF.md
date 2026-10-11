@@ -5,8 +5,8 @@
 - Timestamp: 2026-10-11 (Asia/Saigon)
 - Repo: `D:\Projects\Flutter_Project\learnchinesene`
 - Integration branch: `hieu`
-- Feature branch: `feature/pr09-hsk-exam-quiz-engine`
-- Next implementation: PR 10 (`Unified Chinese Fantasy Design System & UX Polish`).
+- Feature branch: `feature/pr10-design-system-ux`
+- Current implementation: PR 10 (`Unified Chinese Fantasy Design System, Accessibility & UX Polish`) — COMPLETED & VERIFIED.
 
 ## Phase / PR hiện tại
 
@@ -19,8 +19,8 @@
 - PR06 `Curriculum, Adaptive Session Composer & Content Quality`: MERGED into `hieu` (`9cebe28`).
 - PR07 `Review, Hanzi, Speaking Context & SRS Quality`: MERGED into `hieu` (`a1cfaf8`).
 - PR08 `Personalized Home, Smart Next Action & Learning Recommendation`: MERGED into `hieu` (`c88e86d`).
-- PR09 `AI Learning Quality, HSK Quiz/Exam & Unified Learning Outcomes`: COMPLETED & VERIFIED.
-- Next implementation: PR 10 (`Unified Chinese Fantasy Design System & UX Polish`).
+- PR09 `AI Learning Quality, HSK Quiz/Exam & Unified Learning Outcomes`: MERGED into `hieu` (`1012a60`).
+- PR10 `Unified Chinese Fantasy Design System, Accessibility & UX Polish`: COMPLETED & READY FOR MERGE.
 
 ## Issue IDs đã xong
 
@@ -34,6 +34,7 @@
 - `P1-03` DONE_CODE: standardized navigation outcome with typed `LearningNavigationOutcome` (`completed`, `failed`, `paused`, `abandoned`, `cancelled`, `retry`, `nextMission`, `fightBoss`, `nextUnit`).
 - `P1-04` DONE_CODE: guest mode level unlock now follows `reward.nextNodeId` / path dependencies rather than linear index guessing.
 - `P1-05` DONE_CODE: Home slice-wise refresh with partial success and stale-response protection.
+- `P1-06` PARTIAL: Profile observes canonical invalidation and no longer overwrites fresh DB stats.
 - `P1-07` DONE_CODE: Canonical `LearningSourceContext` threaded across Unit Overview, Hanzi writing, and Speaking.
 - `P1-08` DONE_CODE: review, flashcard and mark-learned invalidation.
 - `P1-09` DONE_CODE: `LearningSessionComposer` eliminated global random fallbacks; strict question budget and unit bounding enforced.
@@ -44,49 +45,82 @@
 - `P1-14` DONE_CODE: Truthfully separated and labeled in UI: "Lịch sử học tập" (authoritative learning ledger) vs "Lịch sử công cụ AI" (local utility interactions).
 - `P2-01` DONE_CODE: Unified single source of truth for next-action recommendations in `LearningRecommendationService` and `RecommendedNextAction`.
 - `P2-02` DONE_CODE: SRS spaced repetition due boundaries fixed in `SupabaseReviewRepository`.
+- `P2-03` DONE_CODE: Standardized constructor injection (`this.controller`) and route-scoped disposal (`_ownsController`) across 15 screens; fixed SubscriptionPage Obx reactivity on activeProductId; eliminated state leaks.
 - `P2-04` DONE_CODE: Home strictly renders Today XP from `controller.todayXp.value` (including 0); eliminated deceptive fallback that swapped Lifetime XP into Today's metric.
+- `P2-05` DONE_CODE: Eliminated broad silent catches across services, repositories, and controllers; replaced with structured debugPrint and typed exception logging.
 - `P2-06` DONE_CODE: centralized app-resume invalidation.
 
-## Files changed in PR 09
+## Files changed in PR 10
 
-Core implementation:
-- `lib/core/services/tts_service.dart` (new centralized TTS service)
-- `lib/di.dart` (registered `TtsService`)
-- `lib/screen/hsk_quiz/data/hsk_quiz_repository.dart` (new curriculum repository & standard seed)
-- `lib/screen/hsk_quiz/domain/hsk_quiz_question_generator.dart` (curriculum-grounded question generator)
-- `lib/screen/hsk_quiz/controller/hsk_quiz_controller.dart` (repository integration & practice history)
-- `lib/screen/hsk_quiz/hsk_quiz_screen.dart` (centralized TTS and curriculum repository)
-- `lib/screen/hsk_exam/controller/hsk_exam_controller.dart` (raw score persistence before AI, `retryAnalysis`, centralized TTS)
-- `lib/screen/hsk_exam/widget/hsk_exam_content.dart` (AI analysis retry UI & error handling)
-- `lib/screen/hsk_exam/hsk_exam_screen.dart` (wire retry callback & error state)
-- `lib/core/services/history_service.dart` (added `updateHistoryContent`)
-- `lib/screen/history/controller/history_controller.dart` (dual system management)
-- `lib/screen/history/widget/history_content.dart` (added `LearningAttemptTile` & AI utility labels)
-- `lib/screen/history/history_screen.dart` (two-tab UI with honest labels)
-- `lib/screen/dictionary/dictionary_screen.dart` (centralized TTS)
-- `lib/screen/conversations/controller/conversations_controller.dart` (centralized TTS)
-- `lib/screen/lessons/controller/lessons_controller.dart` (centralized TTS)
+Design tokens, Theme & System UI:
+- `lib/core/theme/app_colors.dart`
+- `lib/core/theme/app_theme.dart`
+- `lib/screen/dragon_panda/theme/app_colors.dart`
+
+Accessibility & Reduced Motion UX:
+- `lib/core/widgets/panda_companion.dart`
+- `lib/screen/flashcards/flashcards_screen.dart`
+
+Actionable Locked Stage/Mission Sheets:
+- `lib/core/widgets/locked_mission_sheet.dart`
+- `lib/screen/unit_overview/page/unit_overview_screen.dart`
+- `lib/screen/duolingo/page/duo_game_path_screen.dart`
+
+Controller Lifecycle & Route Scoping (P2-03):
+- `lib/screen/word_list/word_list_screen.dart`
+- `lib/screen/word_detail/word_detail_screen.dart`
+- `lib/screen/quiz/quiz_screen.dart`
+- `lib/screen/lessons/lessons_screen.dart`
+- `lib/screen/conversations/conversations_screen.dart`
+- `lib/screen/hsk_exam/hsk_exam_screen.dart`
+- `lib/screen/stats/stats_screen.dart`
+- `lib/screen/hsk/hsk_screen.dart`
+- `lib/screen/unit/unit_screen.dart`
+- `lib/screen/review/review_screen.dart`
+- `lib/screen/history/history_screen.dart`
+- `lib/screen/duolingo/duo_game_center_screen.dart`
+- `lib/screen/learning_overview/learning_overview_screen.dart`
+- `lib/screen/subscription/page/subscription_page.dart`
+- `lib/screen/flashcards/flashcards_screen.dart`
+
+Elimination of Broad Silent Catches (P2-05):
+- `lib/screen/unit_overview/controller/unit_overview_controller.dart`
+- `lib/screen/subscription/controller/subscription_controller.dart`
+- `lib/screen/hsk_quiz/controller/hsk_quiz_controller.dart`
+- `lib/screen/dictionary/dictionary_screen.dart`
+- `lib/core/widgets/word_card.dart`
+- `lib/core/services/audio_service.dart`
+- `lib/core/services/progress_service.dart`
+- `lib/core/services/history_service.dart`
+- `lib/core/models/duo_challenge.dart`
+- `lib/core/learning/service/learning_recommendation_service.dart`
+- `lib/core/learning/service/learning_mastery_service.dart`
+- `lib/core/learning/data/learning_journey_repository.dart`
+- `lib/core/learning/data/learning_progress_repository.dart`
+- `lib/core/auth/service/guest_progress_migration_service.dart`
 
 Tests:
-- `test/core/services/tts_service_test.dart` (new)
-- `test/screen/hsk_quiz/hsk_quiz_curriculum_grounding_test.dart` (new)
-- `test/screen/hsk_exam/hsk_exam_durability_test.dart` (new)
-- `test/screen/history/history_two_systems_test.dart` (new)
+- `test/screen/ui_followup/design_system_responsive_test.dart` (new comprehensive suite)
+- `test/screen/ui_followup/remaining_screens_test.dart` (authoritative victory XP fixture)
 
-Documents:
-- `docs/implementation_reports/PR_09.md` (new)
-- `docs/IMPLEMENTATION_STATUS.md` (updated)
-- `docs/AI_HANDOFF.md` (updated)
+Documentation:
+- `docs/implementation_reports/PR_10.md`
+- `docs/IMPLEMENTATION_STATUS.md`
+- `docs/AI_HANDOFF.md`
 
-## What NOT to redo
-- Do NOT re-audit recommendations (PR 08 is merged).
-- Do NOT re-generate questions via Gemini in HSK Quiz.
-- Do NOT call direct `FlutterTts()` in HSK Quiz/Exam/Dictionary/Conversations/Lessons.
-- Do NOT delete official learning records when user clears AI tool history.
-
-## Next Step
-- Commit PR 09 changes with proper author.
-- Push `feature/pr09-hsk-exam-quiz-engine` to origin.
-- Merge `--no-ff` into `hieu`.
-- Push `hieu` to `origin/hieu`.
-- Proceed with PR 10 (`Unified Chinese Fantasy Design System & UX Polish`).
+## Verification Evidence
+- `flutter test test/screen/ui_followup`: 30/30 tests passed
+- `flutter test test/core`: 133/133 tests passed
+- `flutter test test/screen/home`: 35/35 tests passed
+- `flutter test test/screen/review`: 12/12 tests passed
+- `flutter test test/screen/vocabulary_adventure`: 11/11 tests passed
+- `flutter test test/screen/boss_battle`: 9/9 tests passed
+- `flutter test test/screen/hsk_quiz`: 7/7 tests passed
+- `flutter test test/screen/unit_overview`: 6/6 tests passed
+- `flutter test test/screen/hsk`: 5/5 tests passed
+- `flutter test test/screen/hsk_exam`: 3/3 tests passed
+- `flutter test test/screen/catalog`: 3/3 tests passed
+- `flutter test test/screen/history`: 3/3 tests passed
+- `flutter test test/screen/duolingo`: 2/2 tests passed
+- `flutter test test/features`: 1/1 tests passed
+- `flutter analyze`: 0 errors across the entire codebase.

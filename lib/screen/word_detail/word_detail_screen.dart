@@ -10,7 +10,9 @@ import 'controller/word_detail_controller.dart';
 import '../../core/models/word.dart';
 
 class WordDetailScreen extends StatefulWidget {
-  const WordDetailScreen({super.key});
+  const WordDetailScreen({super.key, this.controller});
+
+  final WordDetailController? controller;
 
   @override
   State<WordDetailScreen> createState() => _WordDetailScreenState();
@@ -18,14 +20,27 @@ class WordDetailScreen extends StatefulWidget {
 
 class _WordDetailScreenState extends State<WordDetailScreen> {
   late final WordDetailController controller;
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
-    // The existing GetX route owns this registration.
-    controller = Get.isRegistered<WordDetailController>()
-        ? Get.find<WordDetailController>()
-        : Get.put(WordDetailController());
+    if (widget.controller != null) {
+      controller = widget.controller!;
+    } else if (Get.isRegistered<WordDetailController>()) {
+      controller = Get.find<WordDetailController>();
+    } else {
+      controller = Get.put(WordDetailController());
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController && Get.isRegistered<WordDetailController>()) {
+      Get.delete<WordDetailController>();
+    }
+    super.dispose();
   }
 
   @override

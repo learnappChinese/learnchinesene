@@ -161,7 +161,10 @@ class SubscriptionController extends GetxController {
             String platform = 'android';
             try {
               if (Platform.isIOS) platform = 'ios';
-            } catch (_) {}
+            } catch (e) {
+              debugPrint(
+                  '[SubscriptionController] Platform check fallback to android: $e');
+            }
 
             final transactionId = purchaseDetails.purchaseID ??
                 purchaseDetails.verificationData.serverVerificationData;

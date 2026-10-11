@@ -6,7 +6,9 @@ import '../../core/widgets/learning_scene_background.dart';
 import 'controller/hsk_exam_controller.dart';
 
 class HskExamScreen extends StatefulWidget {
-  const HskExamScreen({super.key});
+  const HskExamScreen({super.key, this.controller});
+
+  final HskExamController? controller;
 
   @override
   State<HskExamScreen> createState() => _HskExamScreenState();
@@ -14,14 +16,27 @@ class HskExamScreen extends StatefulWidget {
 
 class _HskExamScreenState extends State<HskExamScreen> {
   late final HskExamController controller;
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
-    // GetX retains the existing route ownership and cleanup.
-    controller = Get.isRegistered<HskExamController>()
-        ? Get.find<HskExamController>()
-        : Get.put(HskExamController());
+    if (widget.controller != null) {
+      controller = widget.controller!;
+    } else if (Get.isRegistered<HskExamController>()) {
+      controller = Get.find<HskExamController>();
+    } else {
+      controller = Get.put(HskExamController());
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController && Get.isRegistered<HskExamController>()) {
+      Get.delete<HskExamController>();
+    }
+    super.dispose();
   }
 
   @override
