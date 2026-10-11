@@ -1,8 +1,8 @@
 # Implementation Status
 
 - Snapshot date: 2026-10-11
-- Base: `hieu` at `110740e5e3946546417f2c09afe2cc6fceac9423` (PR 04 merged)
-- Next implementation: PR 05 (Security: IAP Verification & Gemini API Protection)
+- Base: `hieu` at `6f965e25210cc5d2c97051a27e9d39f36c802f77` (PR 05 merged)
+- Next implementation: PR 06 (Curriculum, Adaptive Session Composer & Content Quality)
 
 This is the living issue matrix for `AI_MASTERPLAN_HOAN_THIEN_APP_TIENg_TRUNG.md`. Status is based on current Flutter code and committed SQL migrations. It does not claim live-production verification.
 

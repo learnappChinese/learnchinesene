@@ -5,7 +5,8 @@
 - Timestamp: 2026-10-11 (Asia/Saigon)
 - Repo: `D:\Projects\Flutter_Project\learnchinesene`
 - Integration branch: `hieu`
-- Feature branch: `feature/pr05-security-iap-gemini`
+- HEAD: `6f965e25210cc5d2c97051a27e9d39f36c802f77` (PR 05 merged into `hieu`)
+- Merged feature branch: `feature/pr05-security-iap-gemini`
 - Base: `110740e5e3946546417f2c09afe2cc6fceac9423` on `hieu` (contains PR 01, PR 02, PR 03, PR 04)
 
 ## Phase / PR hiện tại
@@ -15,7 +16,7 @@
 - PR02 `Skill Taxonomy & Unit Mastery`: merged into `hieu` via PR #24 (`19a6118`).
 - PR03 `Complete Learning Flow, Unlock & Boss Navigation`: merged into `hieu` via `9b3965e`.
 - PR04 `Authentication, Guest Progress & Cloud Migration`: merged into `hieu` (`110740e`).
-- PR05 `Production Security: Premium, IAP, Gemini AI & Supabase`: code, backend migration, edge function, tests and documentation complete.
+- PR05 `Production Security: Premium, IAP, Gemini AI & Supabase`: MERGED into `hieu` (`6f965e2`).
 - Next dependency: PR 06 (`Curriculum, Adaptive Session Composer & Content Quality`).
 
 ## Issue IDs đã xong
@@ -86,12 +87,13 @@ NO.
 
 ## Next exact 3 coding steps
 
-1. Merge PR 05 into integration branch `hieu`.
-2. Begin PR 06: Curriculum, Adaptive Session Composer & Content Quality.
-3. Review and refine curriculum data loaders and adaptive session composition for Duo and Lexicon journeys.
+1. Begin PR 06: Curriculum, Adaptive Session Composer & Content Quality.
+2. Unify overlapping progression/navigation surfaces (`P2-01`).
+3. Refine `LearningRecommendationService` and session composition based on user history and skill mastery (`P2-02`).
 
 ## Git status / PR URL
 
-- Implementation branch: `feature/pr05-security-iap-gemini`.
-- Base branch: `hieu`.
-- Target PR: PR 05.
+- Integration branch: `hieu`.
+- Merge commit: `6f965e25210cc5d2c97051a27e9d39f36c802f77` (PR 05 merged).
+- Merged feature branch: `feature/pr05-security-iap-gemini`.
+- Next task: PR 06.
