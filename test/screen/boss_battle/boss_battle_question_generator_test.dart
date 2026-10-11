@@ -5,7 +5,8 @@ import 'package:flash_learn_chinese/screen/boss_battle/domain/boss_battle_questi
 import 'package:flash_learn_chinese/screen/boss_battle/model/boss_battle_question.dart';
 
 void main() {
-  test('generator preserves correct answer and avoids duplicate question ids', () {
+  test('generator preserves correct answer and avoids duplicate question ids',
+      () {
     final generator = BossBattleQuestionGenerator(random: Random(7));
     final seeds = List.generate(
       8,

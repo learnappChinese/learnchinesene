@@ -325,8 +325,8 @@ class HomeLearningSections extends StatelessWidget {
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5.w, vertical: 1.w),
                             decoration: BoxDecoration(
-                              color:
-                                  GameVisualTokens.crimson.withValues(alpha: .12),
+                              color: GameVisualTokens.crimson
+                                  .withValues(alpha: .12),
                               borderRadius: BorderRadius.circular(4.r),
                             ),
                             child: Text(

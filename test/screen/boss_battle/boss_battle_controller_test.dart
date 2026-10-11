@@ -76,7 +76,8 @@ void main() {
     expect(controller.correctCount.value, 0);
     expect(controller.wrongCount.value, 1);
     expect(controller.combo.value, 0);
-    expect(controller.playerHp.value, lessThan(BossBattleController.maxPlayerHp));
+    expect(
+        controller.playerHp.value, lessThan(BossBattleController.maxPlayerHp));
     expect(controller.bossHp.value, BossBattleController.maxBossHp);
   });
 

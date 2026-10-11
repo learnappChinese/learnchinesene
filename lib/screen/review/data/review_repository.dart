@@ -30,18 +30,23 @@ class SupabaseReviewRepository implements ReviewRepository {
         final wordProgressRows = List<Map<String, dynamic>>.from(
           await _client
               .from('lexicon_user_progress')
-              .select('word_id, wrong_count, mastered, next_review_at, listening_score')
+              .select(
+                  'word_id, wrong_count, mastered, next_review_at, listening_score')
               .eq('user_id', userId),
         );
         final now = DateTime.now().toUtc();
         for (final row in wordProgressRows) {
           final wrong = (row['wrong_count'] as num?)?.toInt() ?? 0;
           final mastered = row['mastered'] == true;
-          final nextReview = DateTime.tryParse('${row['next_review_at'] ?? ''}');
-          final isDue = wrong > 0 || !mastered || (nextReview != null && !nextReview.isAfter(now));
+          final nextReview =
+              DateTime.tryParse('${row['next_review_at'] ?? ''}');
+          final isDue = wrong > 0 ||
+              !mastered ||
+              (nextReview != null && !nextReview.isAfter(now));
           if (isDue) wordsDue++;
 
-          final listenScore = (row['listening_score'] as num?)?.toDouble() ?? 100.0;
+          final listenScore =
+              (row['listening_score'] as num?)?.toDouble() ?? 100.0;
           if (listenScore < 75 || wrong > 1) listeningDue++;
         }
 
@@ -206,7 +211,8 @@ class SupabaseReviewRepository implements ReviewRepository {
         final practiceRows = List<Map<String, dynamic>>.from(
           await _client
               .from('lexicon_speaking_practice')
-              .select('id, target_text, recognized_text, accuracy_score, tone_score')
+              .select(
+                  'id, target_text, recognized_text, accuracy_score, tone_score')
               .eq('user_id', userId)
               .order('accuracy_score')
               .limit(12),
