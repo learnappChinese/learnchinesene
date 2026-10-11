@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/learning/data/learning_journey_repository.dart';
 import '../../../core/learning/model/learning_journey_models.dart';
+import '../../../core/learning/model/learning_navigation_outcome.dart';
 import '../../../core/responsive/responsive_layout.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/widgets/learning_scaffold.dart';
@@ -19,7 +20,7 @@ class UnitCompleteScreen extends StatefulWidget {
     this.sectionNumber = 1,
     this.unitNumber = 1,
     this.bossName,
-    this.xpEarned = 50,
+    this.xpEarned = 0,
     this.starsEarned = 3,
     this.journeyRepository,
   });
@@ -85,7 +86,11 @@ class _UnitCompleteScreenState extends State<UnitCompleteScreen> {
   }
 
   void _onBackToUnit() {
-    Get.back(result: true);
+    Get.back(
+      result: LearningNavigationOutcome.completed(
+        nextUnitId: _nextUnit?.id,
+      ),
+    );
   }
 
   @override
@@ -114,7 +119,8 @@ class _UnitCompleteScreenState extends State<UnitCompleteScreen> {
                   const PandaCompanion(
                     size: 130,
                     mood: PandaMood.victory,
-                    speechText: 'Tuyệt đỉnh công phu! Bạn đã hoàn thành bài học!',
+                    speechText:
+                        'Tuyệt đỉnh công phu! Bạn đã hoàn thành bài học!',
                   ),
                   const SizedBox(height: 20),
                   _buildSummaryCard(),

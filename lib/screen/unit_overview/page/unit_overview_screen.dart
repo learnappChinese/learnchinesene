@@ -16,6 +16,7 @@ import '../../duolingo/duo_game_visuals.dart';
 import '../../duolingo/page/duo_game_runner_screen.dart';
 import '../../vocabulary_adventure/binding/vocabulary_adventure_binding.dart';
 import '../../vocabulary_adventure/page/vocabulary_adventure_screen.dart';
+import '../../../core/learning/model/learning_navigation_outcome.dart';
 import '../../../core/learning/model/learning_stage_models.dart';
 import '../../../core/widgets/segmented_progress_node.dart';
 import '../../hanzi_writing/screens/hanzi_writing_home_screen.dart';
@@ -118,7 +119,8 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
                     const SizedBox(height: 16),
                     _buildUnitCompleteCard(chapter),
                   ],
-                  if (controller.isBossReady && !controller.isUnitCompleted) ...[
+                  if (controller.isBossReady &&
+                      !controller.isUnitCompleted) ...[
                     const SizedBox(height: 16),
                     _buildBossGateCard(chapter),
                   ],
@@ -572,8 +574,22 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
 
   void _handleStageReturn(dynamic result) {
     final wasBossReady = controller.isBossReady;
+    final isSuccess = result == true ||
+        (result is LearningNavigationOutcome && result.isSuccess);
+    final outcome = result is LearningNavigationOutcome ? result : null;
+
     controller.loadUnitOverview().then((_) {
-      if (result == true && mounted) {
+      if (!mounted) return;
+
+      if (outcome != null && outcome.isFightBoss) {
+        final chapter = controller.chapter.value;
+        if (chapter != null) {
+          _openBoss(chapter);
+          return;
+        }
+      }
+
+      if (isSuccess) {
         final chapter = controller.chapter.value;
         if (controller.isUnitCompleted && chapter != null) {
           Get.to(
@@ -583,6 +599,8 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
               sectionNumber: chapter.regionNumber,
               unitNumber: chapter.chapterNumber,
               bossName: chapter.boss?.bossName,
+              xpEarned: outcome?.result?.xpEarned ?? 0,
+              starsEarned: outcome?.result?.stars ?? 3,
             ),
           );
         } else if (!wasBossReady && controller.isBossReady && chapter != null) {
@@ -735,8 +753,10 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
     Get.to(
       () => BossBattleScreen(stage: bossStage),
     )?.then((result) {
+      final isSuccess = result == true ||
+          (result is LearningNavigationOutcome && result.isSuccess);
       controller.loadUnitOverview().then((_) {
-        if (result == true && mounted) {
+        if (isSuccess && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('🏆 ĐÃ ĐÁNH BẠI BOSS! HOÀN THÀNH BÀI HỌC! ⭐⭐⭐'),

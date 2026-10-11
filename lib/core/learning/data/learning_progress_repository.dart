@@ -235,6 +235,14 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
     );
     final totalXp = (stats['total_exp'] as num?)?.toInt() ?? 0;
     final newTotalXp = totalXp + evaluation.xpEarned;
+    final isBossAct = submission.activityType == 'boss';
+    final isUnitDone = isBossAct && evaluation.passed;
+    bool isBossAvail = false;
+    if (submission.unitId != null && submission.unitId!.isNotEmpty) {
+      final localMastery = await _fetchLocalUnitMastery(submission.unitId!);
+      isBossAvail = localMastery.isBossAvailable && !localMastery.isCompleted;
+    }
+
     final result = LearningResult(
       activityType: submission.activityType,
       sourceId: submission.sourceId,
@@ -256,10 +264,15 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
       firstClear: firstClear && evaluation.passed,
       perfect: evaluation.perfect,
       attemptNumber: attemptNumber,
+      unlockedNext: evaluation.passed,
+      bossReady: isBossAvail,
+      unitCompleted: isUnitDone,
       reason: evaluation.reason,
       metadata: <String, dynamic>{
         ...submission.metadata,
         'hanzi_mastered': evaluation.hanziMastered,
+        'boss_ready': isBossAvail,
+        'unit_completed': isUnitDone,
       },
     );
 

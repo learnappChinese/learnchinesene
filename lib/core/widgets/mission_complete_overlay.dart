@@ -202,17 +202,32 @@ class MissionCompleteOverlay extends StatelessWidget {
 
   String _ctaText(LearningResult result) {
     if (!result.passed) return 'THỬ LẠI';
-    if (result.unitCompleted) return 'BÀI TIẾP THEO';
-    if (result.bossReady) return 'ĐẾN CỔNG BOSS';
-    if (result.unlockedNext) return 'ẢI TIẾP THEO';
+    if (result.unitCompleted) return 'KHÁM PHÁ UNIT MỚI';
+    if (result.activityType == 'boss' && result.passed)
+      return 'SANG BÀI TIẾP THEO';
+    if (result.bossReady) return 'CHIẾN ĐẤU BOSS';
+    if (result.masteryAfter > 0 &&
+        result.masteryAfter < 0.70 &&
+        result.passed) {
+      return 'LUYỆN KỸ NĂNG YẾU';
+    }
+    if (result.unlockedNext || result.passed) return 'TIẾP TỤC NHIỆM VỤ';
     return 'VỀ BẢN ĐỒ';
   }
 
   IconData _ctaIcon(LearningResult result) {
     if (!result.passed) return Icons.refresh_rounded;
-    if (result.unitCompleted) return Icons.military_tech_rounded;
+    if (result.unitCompleted) return Icons.explore_rounded;
+    if (result.activityType == 'boss' && result.passed)
+      return Icons.arrow_forward_rounded;
     if (result.bossReady) return Icons.local_fire_department_rounded;
-    if (result.unlockedNext) return Icons.arrow_forward_rounded;
+    if (result.masteryAfter > 0 &&
+        result.masteryAfter < 0.70 &&
+        result.passed) {
+      return Icons.fitness_center_rounded;
+    }
+    if (result.unlockedNext || result.passed)
+      return Icons.arrow_forward_rounded;
     return Icons.map_rounded;
   }
 

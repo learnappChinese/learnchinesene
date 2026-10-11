@@ -17,6 +17,7 @@ enum AdventureNodeState {
   locked,
   available,
   inProgress,
+  paused,
   failed,
   completed,
   perfect,
@@ -100,6 +101,7 @@ class AdventureNode extends StatelessWidget {
           GameVisualTokens.jade,
         );
       case AdventureNodeState.inProgress:
+      case AdventureNodeState.paused:
       case AdventureNodeState.available:
         return (
           const Color(0xFFE0F2FE),

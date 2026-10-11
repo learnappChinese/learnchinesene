@@ -27,6 +27,9 @@ class UnitMastery {
   final bool bossWon;
   final UnitCompletionState state;
 
+  bool get isBossAvailable => bossAvailable;
+  bool get isCompleted => state == UnitCompletionState.completed;
+
   factory UnitMastery.fromMap(Map<String, dynamic> map) {
     double? score(String key) => (map[key] as num?)?.toDouble();
 

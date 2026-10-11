@@ -67,16 +67,21 @@ class LearningResult {
   bool get isPerfect => perfect;
   String? get failReason => failed && reason.isNotEmpty ? reason : null;
   String? get nextStageId => nextNodeId;
+  bool get isBossReady => bossReady;
+  bool get isUnitCompleted => unitCompleted;
 
   factory LearningResult.fromJson(Map<String, dynamic> json) {
     final meta = json['metadata'] is Map
         ? Map<String, dynamic>.from(json['metadata'])
         : const <String, dynamic>{};
+    final nextNode = (json['next_node_id'] ?? json['next_stage_id']) as String?;
+    final actType = '${json['activity_type'] ?? ''}';
+    final isPassed = json['passed'] == true;
     return LearningResult(
-      activityType: '${json['activity_type'] ?? ''}',
+      activityType: actType,
       sourceId: '${json['source_id'] ?? ''}',
       attemptId: '${json['attempt_id'] ?? ''}',
-      passed: json['passed'] == true,
+      passed: isPassed,
       failed: json['failed'] == true,
       stars: (json['stars'] as num?)?.toInt() ?? 0,
       score: (json['score'] as num?)?.toDouble() ?? 0.0,
@@ -97,10 +102,13 @@ class LearningResult {
       perfect: json['perfect'] == true || json['is_perfect'] == true,
       attemptNumber: (json['attempt_number'] as num?)?.toInt() ?? 1,
       unlockedNext: json['unlocked_next'] == true,
-      nextNodeId: (json['next_node_id'] ?? json['next_stage_id']) as String?,
-      bossReady: json['boss_ready'] == true || meta['boss_ready'] == true,
-      unitCompleted:
-          json['unit_completed'] == true || meta['unit_completed'] == true,
+      nextNodeId: nextNode,
+      bossReady: json['boss_ready'] == true ||
+          meta['boss_ready'] == true ||
+          (nextNode?.startsWith('boss:') == true),
+      unitCompleted: json['unit_completed'] == true ||
+          meta['unit_completed'] == true ||
+          (actType == 'boss' && isPassed),
       nextUnitId: (json['next_unit_id'] ?? meta['next_unit_id']) as String?,
       reason: '${json['reason'] ?? json['fail_reason'] ?? ''}',
       idempotent: json['idempotent'] == true,

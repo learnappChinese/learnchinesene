@@ -3,24 +3,35 @@ import '../../../theme/app_colors.dart';
 import '../../../widgets/game_button.dart';
 
 class BossVictoryContent extends StatelessWidget {
-  const BossVictoryContent(
-      {super.key, required this.onContinue, required this.onBackToHub});
+  const BossVictoryContent({
+    super.key,
+    required this.onContinue,
+    required this.onBackToHub,
+    this.xpEarned = 0,
+    this.stars = 3,
+  });
+
   final VoidCallback onContinue;
   final VoidCallback onBackToHub;
+  final int xpEarned;
+  final int stars;
 
   @override
   Widget build(BuildContext context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 3 Glowing Stars
+          // Dynamic Glowing Stars
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Text('⭐', style: TextStyle(fontSize: 34)),
-              SizedBox(width: 8),
-              Text('⭐', style: TextStyle(fontSize: 52)),
-              SizedBox(width: 8),
-              Text('⭐', style: TextStyle(fontSize: 34)),
+            children: [
+              Text(stars >= 1 ? '⭐' : '🖤',
+                  style: const TextStyle(fontSize: 34)),
+              const SizedBox(width: 8),
+              Text(stars >= 2 ? '⭐' : '🖤',
+                  style: const TextStyle(fontSize: 52)),
+              const SizedBox(width: 8),
+              Text(stars >= 3 ? '⭐' : '🖤',
+                  style: const TextStyle(fontSize: 34)),
             ],
           ),
           const SizedBox(height: 12),
@@ -117,12 +128,22 @@ class BossVictoryContent extends StatelessWidget {
             child: Wrap(
               alignment: WrapAlignment.spaceAround,
               runSpacing: 12,
-              children: const [
+              children: [
                 _RewardBadge(
-                    icon: '🔷', text: '+100 XP', color: AppColors.primaryBlue),
-                _RewardBadge(
-                    icon: '🪙', text: '+50 coin', color: Color(0xFFD97706)),
-                _RewardBadge(icon: '💎', text: '+1 gem', color: Colors.purple),
+                  icon: '🔷',
+                  text: '+$xpEarned XP',
+                  color: AppColors.primaryBlue,
+                ),
+                const _RewardBadge(
+                  icon: '🪙',
+                  text: '+50 coin',
+                  color: Color(0xFFD97706),
+                ),
+                const _RewardBadge(
+                  icon: '💎',
+                  text: '+1 gem',
+                  color: Colors.purple,
+                ),
               ],
             ),
           ),
