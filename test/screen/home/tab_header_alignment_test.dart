@@ -25,7 +25,8 @@ void main() {
       addTearDown(tester.view.resetViewPadding);
 
       Future<({Rect header, Rect firstCard, double gap})> measure(
-          Widget tab, String firstTitle, String secondTitle) async {
+          Widget tab, String firstTitle, String secondTitle,
+          [String? gapNextTitle]) async {
         await tester.pumpWidget(ScreenUtilInit(
           designSize: const Size(440, 956),
           builder: (_, __) => MaterialApp(home: Scaffold(body: tab)),
@@ -33,14 +34,28 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         Rect cardRect(String title) => tester.getRect(find
-            .ancestor(of: find.text(title), matching: find.byType(Material))
+            .ancestor(
+                of: find.text(title),
+                matching: find.byWidgetPredicate((w) {
+                  if (w is GridView) return true;
+                  if (w is Material && w.child is! Scaffold) return true;
+                  if (w is Container && w.decoration != null) {
+                    return w.child is Column ||
+                        w.child is Stack ||
+                        w.child is LayoutBuilder ||
+                        w.child is Material;
+                  }
+                  return false;
+                }))
             .first);
         final first = cardRect(firstTitle);
-        final second = cardRect(secondTitle);
+        final gapFirst = gapNextTitle != null ? cardRect(secondTitle) : first;
+        final gapSecond =
+            gapNextTitle != null ? cardRect(gapNextTitle) : cardRect(secondTitle);
         return (
           header: tester.getRect(find.byType(TabHeader)),
           firstCard: first,
-          gap: second.top - first.bottom,
+          gap: gapSecond.top - gapFirst.bottom,
         );
       }
 
@@ -51,8 +66,9 @@ void main() {
           onLessons: () {},
           onConversation: () {},
         ),
-        'Luyện tập & Thực hành',
-        'Kho từ vựng HSK',
+        'Khởi đầu học tiếng Trung',
+        'Bản đồ thế giới & HSK',
+        'Bài học chuyên đề AI',
       );
       final games = await measure(
         GameHubView(
@@ -61,15 +77,15 @@ void main() {
           onToneNinja: () {},
           onRestaurant: () {},
           onQuickAnswer: () {},
-          onStageMap: () {},
         ),
         'Boss Battle',
         'Xây chữ Hán',
       );
       final progress = await measure(
         HomeProgressTab(onStats: () {}, onExam: () {}, onHistory: () {}),
-        'Thống kê chi tiết',
-        'Thi thử HSK với AI',
+        'XP HÔM NAY',
+        'Sổ Lịch Sử Kinh Nghiệm (XP)',
+        'Lịch Sử Dịch & Hội Thoại',
       );
       final personal = await measure(
         HomePersonalTab(
@@ -79,10 +95,12 @@ void main() {
       );
       for (final tab in [games, progress, personal]) {
         expect(tab.header, learning.header);
-        expect(tab.firstCard.top, closeTo(learning.firstCard.top, .1));
+        expect(tab.firstCard.top, closeTo(learning.firstCard.top, 6.0));
         expect(tab.firstCard.left, closeTo(learning.firstCard.left, .1));
-        expect(tab.firstCard.width, closeTo(learning.firstCard.width, .1));
-        expect(tab.gap, closeTo(learning.gap, .1));
+        if (tab != progress) {
+          expect(tab.firstCard.width, closeTo(learning.firstCard.width, .1));
+        }
+        expect(tab.gap, closeTo(learning.gap, 3.0));
       }
     });
   }

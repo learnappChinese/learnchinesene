@@ -69,8 +69,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.text('Tiến độ & Đánh giá'), findsOneWidget);
-      expect(tester.getTopLeft(find.text('Tiến độ & Đánh giá')).dy,
+      expect(find.textContaining('Tiến độ'), findsWidgets);
+      expect(tester.getTopLeft(find.textContaining('Tiến độ').first).dy,
           greaterThan(62));
 
       if (capture) {
@@ -82,14 +82,14 @@ void main() {
           await File(previewPath).writeAsBytes(bytes!.buffer.asUint8List());
           image.dispose();
         });
-        expect(tester.getBottomLeft(find.text('Lịch sử & Phân tích')).dy,
-            lessThan(tester.getTopLeft(find.text('Tiến độ')).dy));
+        expect(tester.getBottomLeft(find.text('Lịch Sử Dịch & Hội Thoại')).dy,
+            lessThan(tester.getTopLeft(find.textContaining('Tiến độ').first).dy));
       }
 
       for (final title in [
-        'Thống kê chi tiết',
-        'Thi thử HSK với AI',
-        'Lịch sử & Phân tích',
+        'Sổ Lịch Sử Kinh Nghiệm (XP)',
+        'Lịch Sử Dịch & Hội Thoại',
+        'Thi Thử HSK Với Giáo Viên AI',
       ]) {
         final card = find
             .ancestor(of: find.text(title), matching: find.byType(Material))
@@ -102,7 +102,7 @@ void main() {
             closeTo(tester.getRect(card).center.dy, .1));
         await tester.tapAt(tester.getCenter(arrow));
       }
-      expect(actions, ['stats', 'exam', 'history']);
+      expect(actions, ['stats', 'history', 'exam']);
       await tester.tap(find.text('Học tập'));
       await tester.tap(find.byTooltip('Trang chủ'));
       expect(destinations, [1, 0]);
@@ -135,9 +135,9 @@ void main() {
     ));
     await tester.pumpAndSettle();
     for (final description in [
-      'Theo dõi tiến trình và số liệu học tập của bạn',
-      'Chấm điểm và nhận xét chi tiết từ giáo viên AI',
-      'Xem lại các bản dịch,\nhội thoại và kết quả thi',
+      'Xem toàn bộ giao dịch XP đã ghi nhận vào hệ thống',
+      'Tra cứu các bản dịch và bài hội thoại đã thực hiện',
+      'Làm đề kiểm tra năng lực HSK 1-6 chuẩn hóa',
     ]) {
       final finder = find.text(description);
       await tester.ensureVisible(finder);
@@ -150,7 +150,7 @@ void main() {
               paragraph.getMaxIntrinsicHeight(paragraph.size.width) - .1));
       await tester.tap(finder);
     }
-    expect(actions, ['stats', 'exam', 'history']);
+    expect(actions, ['stats', 'history', 'exam']);
     expect(tester.takeException(), isNull);
   });
 }

@@ -86,7 +86,7 @@ abstract final class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size(64, 48),
           foregroundColor: AppColors.ink,
           side: const BorderSide(color: Color(0xFFE5DAD0)),
           shape: RoundedRectangleBorder(

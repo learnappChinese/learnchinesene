@@ -75,10 +75,10 @@ void main() {
         find.text(passed ? 'HOÀN THÀNH NHIỆM VỤ' : 'CHƯA ĐẠT'),
         findsOneWidget,
       );
-      expect(find.text(passed ? 'NHIỆM VỤ TIẾP THEO' : 'THỬ LẠI'),
+      expect(find.text(passed ? 'ẢI TIẾP THEO' : 'THỬ LẠI'),
           findsOneWidget);
       await tester.tap(
-        find.text(passed ? 'NHIỆM VỤ TIẾP THEO' : 'THỬ LẠI'),
+        find.text(passed ? 'ẢI TIẾP THEO' : 'THỬ LẠI'),
       );
       expect(primaryTapped, isTrue);
       expect(tester.takeException(), isNull);

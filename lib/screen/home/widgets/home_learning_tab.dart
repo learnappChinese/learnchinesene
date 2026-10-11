@@ -203,10 +203,11 @@ class HomeLearningTab extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onLearningPath ?? onPractice,
                   style: ElevatedButton.styleFrom(
+                    minimumSize: Size(0, 44.w),
                     backgroundColor: GameVisualTokens.gold,
                     foregroundColor: Colors.black,
                     elevation: 3,
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 12.w),
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.w),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.r),
                     ),
@@ -240,19 +241,17 @@ class HomeLearningTab extends StatelessWidget {
                 OutlinedButton(
                   onPressed: onSections,
                   style: OutlinedButton.styleFrom(
+                    minimumSize: Size(0, 44.w),
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white38),
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 12.w),
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.w),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                   ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      'Các vùng',
-                      style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
-                    ),
+                  child: Text(
+                    'Các vùng',
+                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],

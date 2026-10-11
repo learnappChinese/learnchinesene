@@ -170,19 +170,24 @@ class HomeProgressTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(icon, style: TextStyle(fontSize: 18.sp)),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.w),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 9.sp,
-                    fontWeight: FontWeight.w800,
-                    color: color,
-                    letterSpacing: 0.5,
+              Flexible(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.w),
+                  decoration: BoxDecoration(
+                    color: bg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -567,7 +572,7 @@ class HomeProgressTab extends StatelessWidget {
           subtitle: 'Xem toàn bộ giao dịch XP đã ghi nhận vào hệ thống',
           icon: Icons.receipt_long_rounded,
           color: GameVisualTokens.imperialGold,
-          onTap: () => Get.to(() => const XpHistoryScreen()),
+          onTap: onStats,
         ),
         SizedBox(height: 10.w),
         _actionTile(
