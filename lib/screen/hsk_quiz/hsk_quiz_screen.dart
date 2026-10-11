@@ -1,13 +1,13 @@
-import 'controller/hsk_quiz_controller.dart';
 import 'package:flutter/material.dart';
-import 'widget/hsk_quiz_content.dart';
-import 'package:flutter_tts/flutter_tts.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/services/gemini_service.dart';
-import '../../core/responsive/responsive_layout.dart';
 import 'package:get/get.dart';
-import '../subscription/controller/subscription_controller.dart';
 import '../../core/helper/upgrade_dialog_helper.dart';
+import '../../core/responsive/responsive_layout.dart';
+import '../../core/services/tts_service.dart';
+import '../../core/theme/app_colors.dart';
+import '../subscription/controller/subscription_controller.dart';
+import 'controller/hsk_quiz_controller.dart';
+import 'data/hsk_quiz_repository.dart';
+import 'widget/hsk_quiz_content.dart';
 
 class HskQuizScreen extends StatefulWidget {
   const HskQuizScreen({super.key});
@@ -17,7 +17,7 @@ class HskQuizScreen extends StatefulWidget {
 }
 
 class _HskQuizScreenState extends State<HskQuizScreen> {
-  final FlutterTts _tts = FlutterTts();
+  late final TtsService _tts;
 
   int _selectedLevel = 1;
   static int _nextControllerId = 0;
@@ -28,16 +28,20 @@ class _HskQuizScreenState extends State<HskQuizScreen> {
   @override
   void initState() {
     super.initState();
+    _tts =
+        Get.isRegistered<TtsService>() ? Get.find<TtsService>() : TtsService();
     _controllerTag = 'hsk-quiz-${_nextControllerId++}';
     controller = Get.put(
-        HskQuizController(
-            loadVocabulary: (level) =>
-                Get.find<GeminiService>().fetchHskVocabulary(level, count: 40)),
-        tag: _controllerTag);
+      HskQuizController(
+        repository: CloudHskQuizRepository(),
+      ),
+      tag: _controllerTag,
+    );
     _errorWorker = ever<String?>(controller.error, (message) {
       if (!mounted || message == null) return;
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: AppColors.error));
+        SnackBar(content: Text(message), backgroundColor: AppColors.error),
+      );
     });
   }
 
@@ -51,12 +55,7 @@ class _HskQuizScreenState extends State<HskQuizScreen> {
 
   Future<void> _generateQuestions() => controller.generate(_selectedLevel);
 
-  Future<void> _playTts(String text) async {
-    try {
-      await _tts.setLanguage('zh-CN');
-      await _tts.speak(text);
-    } catch (_) {}
-  }
+  Future<void> _playTts(String text) => _tts.speak(text);
 
   @override
   Widget build(BuildContext context) {

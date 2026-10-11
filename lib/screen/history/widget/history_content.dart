@@ -1,6 +1,118 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/services/history_service.dart';
+import '../../../core/theme/app_colors.dart';
+
+class LearningAttemptTile extends StatelessWidget {
+  const LearningAttemptTile({
+    super.key,
+    required this.attempt,
+    required this.timeLabel,
+  });
+
+  final Map<String, dynamic> attempt;
+  final String timeLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = '${attempt['title'] ?? 'Bài học'}';
+    final icon = '${attempt['icon'] ?? '⭐'}';
+    final xp =
+        (attempt['xpEarned'] ?? attempt['xp_amount'] as num?)?.toInt() ?? 0;
+    final stars = (attempt['stars'] as num?)?.toInt() ?? 0;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.red.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(icon, style: const TextStyle(fontSize: 22)),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Tiến độ chính thức',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.success,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          timeLabel,
+                          style: const TextStyle(
+                              fontSize: 11, color: AppColors.muted),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.ink,
+                      fontSize: 14,
+                    ),
+                  ),
+                  if (stars > 0) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '⭐' * stars.clamp(1, 3),
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (xp > 0)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppColors.orange.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '+$xp XP',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.orange,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class HistoryItemTile extends StatelessWidget {
   const HistoryItemTile(
@@ -17,6 +129,7 @@ class HistoryItemTile extends StatelessWidget {
     Color tagColor = AppColors.red;
     if (item.type == 'Hội thoại') tagColor = AppColors.orange;
     if (item.type == 'Thi HSK') tagColor = AppColors.success;
+    if (item.type == 'Trắc nghiệm HSK') tagColor = AppColors.redDark;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -30,7 +143,7 @@ class HistoryItemTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                item.type,
+                'AI Tiện ích: ${item.type}',
                 style: TextStyle(
                     fontSize: 10, fontWeight: FontWeight.bold, color: tagColor),
               ),
@@ -83,7 +196,7 @@ class HistoryDetailSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '$type - Chi tiết',
+              '$type - Chi tiết tiện ích AI',
               style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -160,6 +273,17 @@ class HistoryDetailSheet extends StatelessWidget {
                 Text(content['analysis']['overall_assessment'] ?? '',
                     style: const TextStyle(height: 1.4, color: AppColors.ink)),
               ],
+            ] else if (type == 'Trắc nghiệm HSK') ...[
+              Text('Kết quả: ${content['score']}/${content['total']} câu đúng',
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.red)),
+              const SizedBox(height: 8),
+              Text(
+                'Luyện tập trắc nghiệm cấp độ HSK ${content['level'] ?? 1}. Chế độ luyện tập tự do không tính điểm kinh nghiệm lộ trình.',
+                style: const TextStyle(color: AppColors.muted, fontSize: 13),
+              ),
             ],
             const SizedBox(height: 20),
           ],

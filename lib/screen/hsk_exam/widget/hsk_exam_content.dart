@@ -216,16 +216,19 @@ class HskExamQuestions extends StatelessWidget {
 }
 
 class HskExamResult extends StatelessWidget {
-  const HskExamResult(
-      {super.key,
-      required this.score,
-      required this.questions,
-      required this.answers,
-      required this.analysisLoading,
-      required this.assessment,
-      required this.strengths,
-      required this.weaknesses,
-      required this.suggestions});
+  const HskExamResult({
+    super.key,
+    required this.score,
+    required this.questions,
+    required this.answers,
+    required this.analysisLoading,
+    required this.assessment,
+    required this.strengths,
+    required this.weaknesses,
+    required this.suggestions,
+    this.analysisError,
+    this.onRetryAnalysis,
+  });
   final int score;
   final List<Map<String, dynamic>> questions;
   final List<String?> answers;
@@ -234,6 +237,8 @@ class HskExamResult extends StatelessWidget {
   final List<String> strengths;
   final List<String> weaknesses;
   final List<String> suggestions;
+  final String? analysisError;
+  final VoidCallback? onRetryAnalysis;
 
   @override
   Widget build(BuildContext context) {
@@ -260,6 +265,39 @@ class HskExamResult extends StatelessWidget {
                     SizedBox(height: 16),
                     Text('Đang tải phản hồi từ giáo viên AI...',
                         style: TextStyle(color: AppColors.muted)),
+                  ],
+                ),
+              ),
+            )
+          else if (analysisError != null &&
+              analysisError!.isNotEmpty &&
+              assessment.isEmpty)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    const Icon(Icons.cloud_off_rounded,
+                        size: 40, color: AppColors.orange),
+                    const SizedBox(height: 12),
+                    Text(
+                      analysisError!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: AppColors.ink, height: 1.4, fontSize: 13),
+                    ),
+                    if (onRetryAnalysis != null) ...[
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: onRetryAnalysis,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('Thử lại phân tích AI'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.orange,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

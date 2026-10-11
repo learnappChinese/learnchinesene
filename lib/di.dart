@@ -14,6 +14,7 @@ import 'core/learning/service/unit_bridge_resolver.dart';
 import 'core/services/gemini_service.dart';
 import 'core/services/history_service.dart';
 import 'core/services/iap_service.dart';
+import 'core/services/tts_service.dart';
 import 'screen/home/controller/home_controller.dart';
 import 'screen/home/data/home_journey_repository.dart';
 import 'screen/splash/controller/splash_controller.dart';
@@ -67,6 +68,7 @@ void initDI() {
     fenix: true,
   );
   Get.lazyPut(() => HistoryService(), fenix: true);
+  Get.lazyPut(() => TtsService(), fenix: true);
   Get.lazyPut(() => SplashController(), fenix: true);
   Get.lazyPut<HomeJourneyRepository>(() => CloudHomeJourneyRepository(),
       fenix: true);

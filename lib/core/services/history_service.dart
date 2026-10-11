@@ -73,6 +73,34 @@ class HistoryService {
     }
   }
 
+  Future<void> updateHistoryContent(
+    String id,
+    Map<String, dynamic> extraContent,
+  ) async {
+    try {
+      final list = await getHistory();
+      final index = list.indexWhere((e) => e.id == id);
+      if (index != -1) {
+        final existing = list[index];
+        final updatedContent = Map<String, dynamic>.from(existing.content)
+          ..addAll(extraContent);
+        list[index] = HistoryItem(
+          id: existing.id,
+          type: existing.type,
+          timestamp: existing.timestamp,
+          summary: existing.summary,
+          content: updatedContent,
+        );
+        final file = await _file;
+        await file.writeAsString(
+          jsonEncode(list.map((e) => e.toMap()).toList()),
+        );
+      }
+    } catch (_) {
+      // Ignore update error
+    }
+  }
+
   Future<void> clearHistory() async {
     try {
       final file = await _file;

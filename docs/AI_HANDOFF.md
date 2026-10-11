@@ -5,8 +5,8 @@
 - Timestamp: 2026-10-11 (Asia/Saigon)
 - Repo: `D:\Projects\Flutter_Project\learnchinesene`
 - Integration branch: `hieu`
-- Feature branch: `feature/pr08-personalized-home-recommendations`
-- Next dependency: PR 09 (`AI Learning Quality, HSK Quiz/Exam & Unified Learning Outcomes`).
+- Feature branch: `feature/pr09-hsk-exam-quiz-engine`
+- Next implementation: PR 10 (`Unified Chinese Fantasy Design System & UX Polish`).
 
 ## Phase / PR hiện tại
 
@@ -18,8 +18,9 @@
 - PR05 `Production Security: Premium, IAP, Gemini AI & Supabase`: merged into `hieu` (`6f965e2`).
 - PR06 `Curriculum, Adaptive Session Composer & Content Quality`: MERGED into `hieu` (`9cebe28`).
 - PR07 `Review, Hanzi, Speaking Context & SRS Quality`: MERGED into `hieu` (`a1cfaf8`).
-- PR08 `Personalized Home, Smart Next Action & Learning Recommendation`: COMPLETED & VERIFIED.
-- Next dependency: PR 09 (`AI Learning Quality, HSK Quiz/Exam & Unified Learning Outcomes`).
+- PR08 `Personalized Home, Smart Next Action & Learning Recommendation`: MERGED into `hieu` (`c88e86d`).
+- PR09 `AI Learning Quality, HSK Quiz/Exam & Unified Learning Outcomes`: COMPLETED & VERIFIED.
+- Next implementation: PR 10 (`Unified Chinese Fantasy Design System & UX Polish`).
 
 ## Issue IDs đã xong
 
@@ -33,69 +34,59 @@
 - `P1-03` DONE_CODE: standardized navigation outcome with typed `LearningNavigationOutcome` (`completed`, `failed`, `paused`, `abandoned`, `cancelled`, `retry`, `nextMission`, `fightBoss`, `nextUnit`).
 - `P1-04` DONE_CODE: guest mode level unlock now follows `reward.nextNodeId` / path dependencies rather than linear index guessing.
 - `P1-05` DONE_CODE: Home slice-wise refresh with partial success and stale-response protection.
+- `P1-07` DONE_CODE: Canonical `LearningSourceContext` threaded across Unit Overview, Hanzi writing, and Speaking.
 - `P1-08` DONE_CODE: review, flashcard and mark-learned invalidation.
+- `P1-09` DONE_CODE: `LearningSessionComposer` eliminated global random fallbacks; strict question budget and unit bounding enforced.
+- `P1-10` DONE_CODE: HSK Quiz grounded in official curriculum database (`lexicon_words`) with seed fallback; HSK Exam raw score persisted immediately prior to AI analysis with non-duplicating retry support.
 - `P1-11` DONE_CODE: removed client `geminiApiKey` and direct API calls; all queries routed through secure Supabase Edge Function `gemini-ai-gateway` with token auth and quota enforcement.
+- `P1-12` DONE_CODE: Centralized `TtsService` registered in DI; eliminated scattered direct `FlutterTts()` instantiations across HSK Quiz, Exam, Dictionary, Conversations, and Lessons.
+- `P1-13` DONE_CODE: `UnitBridgeResolver` resolves bidirectional mappings between text `duo_unit_id` and integer `lexicon_unit_id`; `LearningSourceContext` carries canonical provenance across activities.
+- `P1-14` DONE_CODE: Truthfully separated and labeled in UI: "Lịch sử học tập" (authoritative learning ledger) vs "Lịch sử công cụ AI" (local utility interactions).
+- `P2-01` DONE_CODE: Unified single source of truth for next-action recommendations in `LearningRecommendationService` and `RecommendedNextAction`.
+- `P2-02` DONE_CODE: SRS spaced repetition due boundaries fixed in `SupabaseReviewRepository`.
+- `P2-04` DONE_CODE: Home strictly renders Today XP from `controller.todayXp.value` (including 0); eliminated deceptive fallback that swapped Lifetime XP into Today's metric.
 - `P2-06` DONE_CODE: centralized app-resume invalidation.
-- Next dependency: PR 06 (`Curriculum, Adaptive Session Composer & Content Quality`).
 
-## Files changed / migrations
+## Files changed in PR 09
 
 Core implementation:
-
-- `lib/core/config/app_config.dart` (removed hardcoded Gemini API key)
-- `lib/core/ai/model/ai_gateway_exception.dart` (new)
-- `lib/core/services/gemini_service.dart` (routed via Edge Function gateway)
-- `supabase/functions/gemini-ai-gateway/index.ts` (new Supabase Edge Function)
-- `supabase/migrations/20261011180000_secure_entitlements_and_ai_quotas.sql` (new)
-- `lib/core/entitlement/model/user_entitlement.dart` (new)
-- `lib/core/entitlement/data/entitlement_repository.dart` (new)
-- `lib/core/entitlement/service/premium_access_service.dart` (new)
-- `lib/core/services/iap_service.dart` (lazy InAppPurchase instance)
-- `lib/screen/subscription/controller/subscription_controller.dart` (server-verified flow)
-- `lib/screen/subscription/page/subscription_page.dart` (verified status, restore, terms)
-- `lib/screen/dictionary/controller/dictionary_controller.dart`
-- `lib/screen/conversations/controller/conversations_controller.dart`
-- `lib/screen/hsk_exam/controller/hsk_exam_controller.dart`
-- `lib/di.dart`
+- `lib/core/services/tts_service.dart` (new centralized TTS service)
+- `lib/di.dart` (registered `TtsService`)
+- `lib/screen/hsk_quiz/data/hsk_quiz_repository.dart` (new curriculum repository & standard seed)
+- `lib/screen/hsk_quiz/domain/hsk_quiz_question_generator.dart` (curriculum-grounded question generator)
+- `lib/screen/hsk_quiz/controller/hsk_quiz_controller.dart` (repository integration & practice history)
+- `lib/screen/hsk_quiz/hsk_quiz_screen.dart` (centralized TTS and curriculum repository)
+- `lib/screen/hsk_exam/controller/hsk_exam_controller.dart` (raw score persistence before AI, `retryAnalysis`, centralized TTS)
+- `lib/screen/hsk_exam/widget/hsk_exam_content.dart` (AI analysis retry UI & error handling)
+- `lib/screen/hsk_exam/hsk_exam_screen.dart` (wire retry callback & error state)
+- `lib/core/services/history_service.dart` (added `updateHistoryContent`)
+- `lib/screen/history/controller/history_controller.dart` (dual system management)
+- `lib/screen/history/widget/history_content.dart` (added `LearningAttemptTile` & AI utility labels)
+- `lib/screen/history/history_screen.dart` (two-tab UI with honest labels)
+- `lib/screen/dictionary/dictionary_screen.dart` (centralized TTS)
+- `lib/screen/conversations/controller/conversations_controller.dart` (centralized TTS)
+- `lib/screen/lessons/controller/lessons_controller.dart` (centralized TTS)
 
 Tests:
-
-- `test/core/security/security_iap_gemini_test.dart` (new, 11 tests)
+- `test/core/services/tts_service_test.dart` (new)
+- `test/screen/hsk_quiz/hsk_quiz_curriculum_grounding_test.dart` (new)
+- `test/screen/hsk_exam/hsk_exam_durability_test.dart` (new)
+- `test/screen/history/history_two_systems_test.dart` (new)
 
 Documents:
+- `docs/implementation_reports/PR_09.md` (new)
+- `docs/IMPLEMENTATION_STATUS.md` (updated)
+- `docs/AI_HANDOFF.md` (updated)
 
-- `docs/IMPLEMENTATION_STATUS.md`
-- `docs/implementation_reports/PR_05.md` (new)
-- `docs/AI_HANDOFF.md`
+## What NOT to redo
+- Do NOT re-audit recommendations (PR 08 is merged).
+- Do NOT re-generate questions via Gemini in HSK Quiz.
+- Do NOT call direct `FlutterTts()` in HSK Quiz/Exam/Dictionary/Conversations/Lessons.
+- Do NOT delete official learning records when user clears AI tool history.
 
-## Commands actually run + PASS/FAIL
-
-- `flutter test test/core/security/security_iap_gemini_test.dart`: PASS (11 tests).
-- `flutter test test/core/security/ test/core/auth/ test/core/widgets/ test/core/backend/`: PASS (34 tests).
-- `flutter test --concurrency=1 test/core/learning/`: PASS (74 tests).
-- Total automated tests: PASS (108 tests).
-- `flutter analyze`: PASS (0 errors, 0 warnings across all PR 05 files).
-- `dart format`: PASS (all PR 05 files formatted).
-- Live Google Play / Apple Store sandbox: NOT_RUN (Requires Google Play Console and App Store Connect credentials; architecture and server verification RPC ready).
-- iOS smoke: NOT_RUN (Windows environment).
-
-## Live Supabase verified?
-
-NO.
-
-- Supabase CLI: not installed.
-- Supabase MCP/live database connection: unavailable in current IDE context.
-- Migration file `20261011180000_secure_entitlements_and_ai_quotas.sql` and Edge Function `gemini-ai-gateway` are ready for deployment via Supabase Dashboard / CLI in CI/CD or production.
-
-## Next exact 3 coding steps
-
-1. Begin PR 06: Curriculum, Adaptive Session Composer & Content Quality.
-2. Unify overlapping progression/navigation surfaces (`P2-01`).
-3. Refine `LearningRecommendationService` and session composition based on user history and skill mastery (`P2-02`).
-
-## Git status / PR URL
-
-- Integration branch: `hieu`.
-- Merge commit: `6f965e25210cc5d2c97051a27e9d39f36c802f77` (PR 05 merged).
-- Merged feature branch: `feature/pr05-security-iap-gemini`.
-- Next task: PR 06.
+## Next Step
+- Commit PR 09 changes with proper author.
+- Push `feature/pr09-hsk-exam-quiz-engine` to origin.
+- Merge `--no-ff` into `hieu`.
+- Push `hieu` to `origin/hieu`.
+- Proceed with PR 10 (`Unified Chinese Fantasy Design System & UX Polish`).
