@@ -3,6 +3,7 @@ import 'widget/speaking_cards.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/responsive/responsive_layout.dart';
+import '../../core/learning/model/learning_source_context.dart';
 import '../../core/widgets/learning_scene_background.dart';
 import '../../core/widgets/learning_scaffold.dart';
 import 'controller/speaking_controller.dart';
@@ -13,6 +14,7 @@ class SpeakingScreen extends StatefulWidget {
   final int? unitId;
   final bool random;
   final bool isBottomSheet;
+  final LearningSourceContext? sourceContext;
 
   const SpeakingScreen({
     super.key,
@@ -21,6 +23,7 @@ class SpeakingScreen extends StatefulWidget {
     this.unitId,
     this.random = false,
     this.isBottomSheet = false,
+    this.sourceContext,
   });
 
   @override
@@ -47,6 +50,7 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
         unitId: widget.unitId,
         random: widget.random,
         isBottomSheet: widget.isBottomSheet,
+        sourceContext: widget.sourceContext,
       ),
       tag: _controllerTag,
     );

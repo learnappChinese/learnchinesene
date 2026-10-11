@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 import '../../../core/database/db_helper.dart';
 import '../../../core/learning/model/learning_result.dart';
+import '../../../core/learning/model/learning_source_context.dart';
 import '../../../core/learning/service/learning_reward_service.dart';
 import '../../../core/models/hanzi_character.dart';
 import '../models/hanzi_practice_config.dart';
@@ -27,7 +28,10 @@ class HanziWritingController extends GetxController {
     return isClosed ? null : character;
   }
 
-  Future<void> beginPractice(int characterId) async {
+  Future<void> beginPractice(
+    int characterId, {
+    LearningSourceContext? sourceContext,
+  }) async {
     if (_attemptId != null && learningResult.value == null) {
       await _rewardService.abandonAttempt(
         _attemptId!,
@@ -39,14 +43,27 @@ class HanziWritingController extends GetxController {
     _startedAt = DateTime.now();
     _activeCharacterId = characterId;
     learningResult.value = null;
+
+    final String? rewardUnitId = (sourceContext?.isCurriculum == true)
+        ? sourceContext!.duoUnitId
+        : null;
+    final String? rewardLevelId = (sourceContext?.isCurriculum == true)
+        ? sourceContext!.levelId
+        : null;
+
     await _rewardService.startHanziAttempt(
       characterId: characterId,
       attemptId: _attemptId!,
+      unitId: rewardUnitId,
+      levelId: rewardLevelId,
     );
   }
 
   Future<void> saveProgress(
-      int characterId, List<HanziRoundResult> rounds) async {
+    int characterId,
+    List<HanziRoundResult> rounds, {
+    LearningSourceContext? sourceContext,
+  }) async {
     if (isClosed) return;
     final totalScore = rounds.fold(0.0, (sum, round) => sum + round.score);
     final averageScore = rounds.isEmpty ? 0.0 : totalScore / rounds.length;
@@ -54,11 +71,21 @@ class HanziWritingController extends GetxController {
     try {
       final attemptId = _attemptId ??
           'hanzi_${characterId}_${DateTime.now().microsecondsSinceEpoch}';
+
+      final String? rewardUnitId = (sourceContext?.isCurriculum == true)
+          ? sourceContext!.duoUnitId
+          : null;
+      final String? rewardLevelId = (sourceContext?.isCurriculum == true)
+          ? sourceContext!.levelId
+          : null;
+
       learningResult.value = await _rewardService.processHanziReward(
         characterId: characterId,
         attemptId: attemptId,
         bestScore: averageScore,
         attempts: attempts,
+        unitId: rewardUnitId,
+        levelId: rewardLevelId,
         durationSeconds:
             DateTime.now().difference(_startedAt ?? DateTime.now()).inSeconds,
       );

@@ -12,15 +12,18 @@ import '../painters/user_stroke_painter.dart';
 import '../services/stroke_validator.dart';
 import '../services/svg_stroke_parser.dart';
 import '../models/hanzi_practice_config.dart';
+import '../../../core/learning/model/learning_source_context.dart';
 import '../../../core/responsive/responsive_layout.dart';
 import '../../../core/widgets/learning_scaffold.dart';
 
 class HanziWritingScreen extends StatefulWidget {
   final int characterId;
+  final LearningSourceContext? sourceContext;
 
   const HanziWritingScreen({
     super.key,
     required this.characterId,
+    this.sourceContext,
   });
 
   @override
@@ -138,7 +141,10 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
         return;
       }
 
-      await controller.beginPractice(widget.characterId);
+      await controller.beginPractice(
+        widget.characterId,
+        sourceContext: widget.sourceContext,
+      );
       if (!mounted || request != _loadRequest) return;
 
       setState(() {
@@ -339,7 +345,10 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   }
 
   Future<void> _saveProgress() => controller.saveProgress(
-      widget.characterId, List.of(_completedRoundResults));
+        widget.characterId,
+        List.of(_completedRoundResults),
+        sourceContext: widget.sourceContext,
+      );
   void _goToNextRound() {
     _autoNextRoundTimer?.cancel();
     setState(() {
@@ -356,7 +365,10 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => HanziWritingScreen(characterId: next.id!),
+          builder: (_) => HanziWritingScreen(
+            characterId: next.id!,
+            sourceContext: widget.sourceContext,
+          ),
         ),
       );
     } else {

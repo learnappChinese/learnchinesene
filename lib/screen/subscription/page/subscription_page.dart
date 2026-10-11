@@ -170,7 +170,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     SubscriptionPackageDefinition package,
   ) {
     final product = controller.productFor(package.productId);
-    final active = controller.activeProductId == package.productId;
+    final active = controller.activeProductId.value == package.productId;
     return PackageCardWidget(
       key: ValueKey(package.productId),
       index: package.index,

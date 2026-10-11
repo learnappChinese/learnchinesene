@@ -40,10 +40,9 @@ class SupabaseReviewRepository implements ReviewRepository {
           final wrong = (row['wrong_count'] as num?)?.toInt() ?? 0;
           final mastered = row['mastered'] == true;
           final nextReview =
-              DateTime.tryParse('${row['next_review_at'] ?? ''}');
-          final isDue = wrong > 0 ||
-              !mastered ||
-              (nextReview != null && !nextReview.isAfter(now));
+              DateTime.tryParse('${row['next_review_at'] ?? ''}')?.toUtc();
+          final isDue = !mastered &&
+              (wrong > 0 || nextReview == null || !nextReview.isAfter(now));
           if (isDue) wordsDue++;
 
           final listenScore =
@@ -74,9 +73,8 @@ class SupabaseReviewRepository implements ReviewRepository {
           final score = (row['best_score'] as num?)?.toDouble() ?? 0.0;
           final practices = (row['practice_count'] as num?)?.toInt() ?? 0;
           final nextReview =
-              DateTime.tryParse('${row['next_review_at'] ?? ''}');
-          return score < 85 ||
-              practices < 3 ||
+              DateTime.tryParse('${row['next_review_at'] ?? ''}')?.toUtc();
+          return (score < 85 && practices > 0) ||
               (nextReview != null && !nextReview.isAfter(now));
         }).length;
       } catch (_) {

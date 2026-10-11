@@ -1,6 +1,5 @@
-import 'dart:math' as math;
-
 const int defaultPracticeRoundCount = 10;
+
 
 enum HanziPracticeMode {
   guidedTrace,
