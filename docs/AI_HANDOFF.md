@@ -7,14 +7,14 @@
 - Integration branch: `hieu`
 - Feature branch: `feature/pr03-completion-unlock-boss-navigation`
 - Base: `19a6118d0b2db4ce469cfbe4f16922cfb9cce677` (PR #24 / PR 02 merged into `hieu`)
-- PR03 implementation commit: pending merge
+- PR03 merge commit: `9b3965eed3c1b17389d3bdf09f547740cf0c647d` (merged into `hieu`)
 
 ## Phase / PR hiện tại
 
 - PR00 baseline/status inventory: complete.
 - PR01 `LearningProgressSyncService`: merged into `hieu` via PR #23.
 - PR02 `Skill Taxonomy & Unit Mastery`: merged into `hieu` via PR #24 (`19a6118`).
-- PR03 `Complete Learning Flow, Unlock & Boss Navigation`: code, tests, and SQL migration complete.
+- PR03 `Complete Learning Flow, Unlock & Boss Navigation`: merged into `hieu` via `9b3965e`.
 - Next dependency: PR 04 (`Authentication, Guest Progress & Cloud Migration`).
 
 ## Issue IDs đã xong
