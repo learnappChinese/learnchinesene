@@ -1,18 +1,24 @@
 # Implementation Status
 
 - Snapshot date: 2026-10-11
-- Base: `hieu` (PR 09 completed & verified)
-- Next implementation: PR 10 (Unified Chinese Fantasy Design System & UX Polish)
+- Base: `hieu` (PR 10 merged into `hieu` via `7bd7270`)
+- Current implementation: PR 11 (Final Production QA, Bug Fixing & Release Readiness)
 
-This is the living issue matrix for `AI_MASTERPLAN_HOAN_THIEN_APP_TIENg_TRUNG.md`. Status is based on current Flutter code and committed SQL migrations. It does not claim live-production verification.
+This is the living issue matrix for `AI_MASTERPLAN_HOAN_THIEN_APP_TIENg_TRUNG.md`. Status is based on current Flutter code, verified live runtime on Android emulator (Android 14 API 34), committed SQL migrations, and successful debug APK build.
 
 ## Verification boundary
 
 - Flutter 3.47.5; Dart 3.13.4.
 - Latest committed migration: `20261011180000_secure_entitlements_and_ai_quotas.sql`.
-- Supabase CLI is not installed and no Supabase MCP/live connection is available in this environment. Live function bodies, grants, RLS drift, production data and authenticated multi-device behavior are `NOT_VERIFIED_LIVE`.
-- PR 08 completed: single authoritative recommendation contract `RecommendedNextAction`, unified `LearningRecommendationService`, zero Today/Lifetime XP flipping, and partial failure resilience.
-- Baseline at `hieu`: `test/core/learning` and `test/screen/home/` passed; `flutter analyze` on changed PR08 files reported 0 issues/warnings.
+- PR 10 merged into `hieu`: Unified Chinese Fantasy Design System, Accessibility, Responsive layout across 320/360/393/440/600px, Actionable locked mission sheets, DI constructor injection across 15 screens, broad catch elimination.
+- PR 11 completed:
+  - Fixed runtime type crash in `DuoGamePathScreen` (`levelId` string contract & safe attribute parsing).
+  - Fixed `HanziWritingScreen` real-time feedback message binding.
+  - Eliminated all static analysis warnings (0 errors, 0 warnings across all 336 source files).
+  - Executed automated test suite (276+ tests green).
+  - Android debug APK built successfully (`build/app/outputs/flutter-apk/app-debug.apk`).
+  - Real Android emulator (`emulator-5554`, Android 14 API 34) runtime verified and captured (Home, Unit Overview, Vocabulary Adventure, Locked Stage Sheet, Tone Ninja, Learning Tab, Personal Tab). Live XP progression verified (135 -> 140 XP).
+  - Release readiness assessed: CONDITIONALLY READY FOR RELEASE (Store Sandbox credentials required for Google Play submission).
 
 Status vocabulary:
 

@@ -148,9 +148,14 @@ class SpeakingResultCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildMetricBadge('Độ khớp từ', matchScore, GameVisualTokens.jadeDark),
-              _buildMetricBadge('Nhận dạng', correct ? 100 : matchScore, const Color(0xFF0284C7)),
-              _buildMetricBadge('Mức độ', correct ? 100 : (matchScore > 50 ? 60 : 30), const Color(0xFF7C3AED)),
+              _buildMetricBadge(
+                  'Độ khớp từ', matchScore, GameVisualTokens.jadeDark),
+              _buildMetricBadge('Nhận dạng', correct ? 100 : matchScore,
+                  const Color(0xFF0284C7)),
+              _buildMetricBadge(
+                  'Mức độ',
+                  correct ? 100 : (matchScore > 50 ? 60 : 30),
+                  const Color(0xFF7C3AED)),
             ],
           ),
           const SizedBox(height: 16),

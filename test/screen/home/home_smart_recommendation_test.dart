@@ -137,8 +137,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets(
-        'Dashboard renders cleanly with dynamic recommendation CTA',
+    testWidgets('Dashboard renders cleanly with dynamic recommendation CTA',
         (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(390, 900);
@@ -205,7 +204,8 @@ class _ZeroTodayXpHistoryRepository implements LearningHistoryRepository {
   @override
   Future<List<Map<String, dynamic>>> fetch7DayXpActivity() async => [];
   @override
-  Future<List<Map<String, dynamic>>> fetchRecentTimeline({int limit = 10}) async =>
+  Future<List<Map<String, dynamic>>> fetchRecentTimeline(
+          {int limit = 10}) async =>
       [];
   @override
   Future<List<Map<String, dynamic>>> fetchAttemptHistory(
@@ -219,13 +219,13 @@ class _ZeroTodayXpHistoryRepository implements LearningHistoryRepository {
 
 class _FailingHistoryRepository implements LearningHistoryRepository {
   @override
-  Future<int> fetchTodayXp() async =>
-      throw StateError('History DB timeout');
+  Future<int> fetchTodayXp() async => throw StateError('History DB timeout');
   @override
   Future<List<Map<String, dynamic>>> fetch7DayXpActivity() async =>
       throw StateError('7 day XP unavailable');
   @override
-  Future<List<Map<String, dynamic>>> fetchRecentTimeline({int limit = 10}) async =>
+  Future<List<Map<String, dynamic>>> fetchRecentTimeline(
+          {int limit = 10}) async =>
       throw StateError('Timeline unavailable');
   @override
   Future<List<Map<String, dynamic>>> fetchAttemptHistory(

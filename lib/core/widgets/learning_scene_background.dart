@@ -4,12 +4,12 @@ import '../theme/game_visual_tokens.dart';
 
 enum LearningSceneTheme {
   bambooVillage, // Jade & emerald morning
-  lanternTown,   // Amber gold & festival lanterns
-  shanghaiCity,  // Sapphire blue & modern mist
-  mountainTemple,// Mystical purple & mountain clouds
-  imperialCity,  // Royal crimson & imperial gold
-  dragonRealm,   // Night obsidian & dragon fire
-  neutralCream,  // Warm parchment default
+  lanternTown, // Amber gold & festival lanterns
+  shanghaiCity, // Sapphire blue & modern mist
+  mountainTemple, // Mystical purple & mountain clouds
+  imperialCity, // Royal crimson & imperial gold
+  dragonRealm, // Night obsidian & dragon fire
+  neutralCream, // Warm parchment default
 }
 
 /// Reusable multi-layered Chinese Fantasy Adventure background
@@ -31,43 +31,71 @@ class LearningSceneBackground extends StatelessWidget {
     switch (theme) {
       case LearningSceneTheme.bambooVillage:
         return (
-          [const Color(0xFFF0FDF4), const Color(0xFFDCFCE7), const Color(0xFFBBF7D0)],
+          [
+            const Color(0xFFF0FDF4),
+            const Color(0xFFDCFCE7),
+            const Color(0xFFBBF7D0)
+          ],
           const Color(0xFF0F766E).withValues(alpha: 0.12),
           const Color(0xFF10B981).withValues(alpha: 0.08),
         );
       case LearningSceneTheme.lanternTown:
         return (
-          [const Color(0xFFFFFBEB), const Color(0xFFFEF3C7), const Color(0xFFFDE68A)],
+          [
+            const Color(0xFFFFFBEB),
+            const Color(0xFFFEF3C7),
+            const Color(0xFFFDE68A)
+          ],
           const Color(0xFFD97706).withValues(alpha: 0.12),
           const Color(0xFFEF4444).withValues(alpha: 0.08),
         );
       case LearningSceneTheme.shanghaiCity:
         return (
-          [const Color(0xFFF0F9FF), const Color(0xFFE0F2FE), const Color(0xFFBAE6FD)],
+          [
+            const Color(0xFFF0F9FF),
+            const Color(0xFFE0F2FE),
+            const Color(0xFFBAE6FD)
+          ],
           const Color(0xFF0284C7).withValues(alpha: 0.12),
           const Color(0xFF38BDF8).withValues(alpha: 0.08),
         );
       case LearningSceneTheme.mountainTemple:
         return (
-          [const Color(0xFFFAF5FF), const Color(0xFFF3E8FF), const Color(0xFFE9D5FF)],
+          [
+            const Color(0xFFFAF5FF),
+            const Color(0xFFF3E8FF),
+            const Color(0xFFE9D5FF)
+          ],
           const Color(0xFF7C3AED).withValues(alpha: 0.12),
           const Color(0xFFA855F7).withValues(alpha: 0.08),
         );
       case LearningSceneTheme.imperialCity:
         return (
-          [const Color(0xFFFFF1F2), const Color(0xFFFFE4E6), const Color(0xFFFECDD3)],
+          [
+            const Color(0xFFFFF1F2),
+            const Color(0xFFFFE4E6),
+            const Color(0xFFFECDD3)
+          ],
           const Color(0xFFBE123C).withValues(alpha: 0.12),
           const Color(0xFFF59E0B).withValues(alpha: 0.08),
         );
       case LearningSceneTheme.dragonRealm:
         return (
-          [const Color(0xFF1E1035), const Color(0xFF2D123D), const Color(0xFF180A26)],
+          [
+            const Color(0xFF1E1035),
+            const Color(0xFF2D123D),
+            const Color(0xFF180A26)
+          ],
           const Color(0xFFFF5252).withValues(alpha: 0.20),
           const Color(0xFFFF9800).withValues(alpha: 0.15),
         );
       case LearningSceneTheme.neutralCream:
         return (
-          [GameVisualTokens.cream, const Color(0xFFFFF4E0), const Color(0xFFFFECCC)],
+          [
+            GameVisualTokens.cream,
+            const Color(0xFFFFF4E0),
+            const Color(0xFFFFECCC)
+          ],
           const Color(0xFFD97706).withValues(alpha: 0.08),
           const Color(0xFF0F766E).withValues(alpha: 0.06),
         );

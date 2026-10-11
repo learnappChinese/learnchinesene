@@ -16,6 +16,7 @@ class DuoGamePathScreen extends StatefulWidget {
   final String gameCode;
   final String gameName;
   final String description;
+  final DuoGamePathController? controller;
 
   const DuoGamePathScreen({
     super.key,
@@ -23,6 +24,7 @@ class DuoGamePathScreen extends StatefulWidget {
     required this.gameCode,
     required this.gameName,
     required this.description,
+    this.controller,
   });
 
   @override
@@ -31,13 +33,29 @@ class DuoGamePathScreen extends StatefulWidget {
 
 class _DuoGamePathScreenState extends State<DuoGamePathScreen> {
   late final DuoGamePathController controller;
+  late final bool _ownsController;
 
   @override
   void initState() {
     super.initState();
-    controller = Get.put(
+    if (widget.controller != null) {
+      controller = widget.controller!;
+      _ownsController = false;
+    } else {
+      controller = Get.put(
         DuoGamePathController(gameId: widget.gameId, gameCode: widget.gameCode),
-        tag: widget.gameId.toString());
+        tag: widget.gameId.toString(),
+      );
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController) {
+      Get.delete<DuoGamePathController>(tag: widget.gameId.toString());
+    }
+    super.dispose();
   }
 
   @override
@@ -53,27 +71,27 @@ class _DuoGamePathScreenState extends State<DuoGamePathScreen> {
 
   Widget _buildLevelItem(BuildContext context, int idx) {
     final level = controller.levels[idx];
-    final levelId = level['level_id'] as String;
-    final secNum = level['section_number'] as int;
+    final levelId = (level['level_id'] ?? level['id'] ?? '').toString();
+    final secNum = (level['section_number'] as num?)?.toInt() ?? 1;
     final secTitle = LearningPresentationMapper.sectionTitle(
-      level['section_title'],
+      level['section_title']?.toString(),
       secNum,
     );
-    final unitNum = level['unit_number'] as int;
+    final unitNum = (level['unit_number'] as num?)?.toInt() ?? 1;
     final unitTitle = LearningPresentationMapper.chapterTitle(
-      level['unit_title'],
+      level['unit_title']?.toString(),
       unitNum,
     );
-    final levelIndex = level['level_index'] as int;
-    final cCount = level['challenge_count'] as int;
-    final isUnlocked = level['is_unlocked'] as int == 1;
-    final isCompleted = level['is_completed'] as int == 1;
-    final stars = level['stars'] as int;
-    final attempts = level['attempts'] as int? ?? 0;
-    final bestScore = level['best_score'] as int? ?? 0;
+    final levelIndex = (level['level_index'] as num?)?.toInt() ?? (idx + 1);
+    final cCount = (level['challenge_count'] as num?)?.toInt() ?? 0;
+    final isUnlocked = ((level['is_unlocked'] as num?)?.toInt() ?? 0) == 1;
+    final isCompleted = ((level['is_completed'] as num?)?.toInt() ?? 0) == 1;
+    final stars = (level['stars'] as num?)?.toInt() ?? 0;
+    final attempts = (level['attempts'] as num?)?.toInt() ?? 0;
+    final bestScore = (level['best_score'] as num?)?.toInt() ?? 0;
     final inProgress = level['in_progress'] == true;
-    final currentIndex = level['current_index'] as int? ?? 0;
-    final currentTotal = level['current_total'] as int? ?? cCount;
+    final currentIndex = (level['current_index'] as num?)?.toInt() ?? 0;
+    final currentTotal = (level['current_total'] as num?)?.toInt() ?? cCount;
 
     bool showSectionHeader = false;
     bool showUnitHeader = false;
@@ -148,17 +166,16 @@ class _DuoGamePathScreenState extends State<DuoGamePathScreen> {
                         (row['is_unlocked'] as num?)?.toInt() == 1 &&
                         (row['is_completed'] as num?)?.toInt() == 0)
                     .firstOrNull;
-            final activeIdx =
-                activeLevel != null ? controller.levels.indexOf(activeLevel) : -1;
+            final activeIdx = activeLevel != null
+                ? controller.levels.indexOf(activeLevel)
+                : -1;
             showLockedMissionSheet(
               context,
               title: 'Nhiệm vụ chưa mở',
               message: _lockMessage(level['lock_reason'] as String?),
-              requiredTitle: activeIdx >= 0
-                  ? 'Cần làm: Nhiệm vụ ${activeIdx + 1}'
-                  : null,
-              actionLabel:
-                  activeIdx >= 0 ? 'LÀM CỬA ${activeIdx + 1}' : null,
+              requiredTitle:
+                  activeIdx >= 0 ? 'Cần làm: Nhiệm vụ ${activeIdx + 1}' : null,
+              actionLabel: activeIdx >= 0 ? 'LÀM CỬA ${activeIdx + 1}' : null,
               onViewRequired: activeLevel != null
                   ? () => _startLevel(activeLevel, activeIdx)
                   : null,
@@ -170,7 +187,8 @@ class _DuoGamePathScreenState extends State<DuoGamePathScreen> {
   }
 
   void _startLevel(Map<String, dynamic> targetLevel, int targetIdx) {
-    final targetLevelId = (targetLevel['id'] as num?)?.toInt() ?? 0;
+    final targetLevelId =
+        (targetLevel['id'] ?? targetLevel['level_id'] ?? '').toString();
     final targetUnitNum = (targetLevel['unit_number'] as num?)?.toInt() ?? 1;
     if (widget.gameCode == 'learn_words') {
       Get.to(
@@ -247,7 +265,8 @@ class _DuoGamePathScreenState extends State<DuoGamePathScreen> {
               selectedSection: secNum,
               onSelectSection: controller.selectSection,
               onQuickPractice: () {
-                final target = controller.currentLevel ?? controller.levels.first;
+                final target =
+                    controller.currentLevel ?? controller.levels.first;
                 final levelId = target['level_id'] as String;
                 if (widget.gameCode == 'learn_words') {
                   Get.to(

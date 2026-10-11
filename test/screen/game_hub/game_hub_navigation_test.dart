@@ -139,7 +139,8 @@ void main() {
   });
 
   group('Repository stage resolution logic', () {
-    test('prioritizes inProgress over available stage of same activity', () async {
+    test('prioritizes inProgress over available stage of same activity',
+        () async {
       final inProgressHanzi = _buildTestStage(
         id: 'hanzi-2',
         title: 'Chữ Hán đang học',
@@ -250,7 +251,8 @@ void main() {
       expect(await hub.openQuickAnswerStage(), isTrue);
     });
 
-    test('falls back to Quick Practice when stage is locked or missing', () async {
+    test('falls back to Quick Practice when stage is locked or missing',
+        () async {
       final repo = StubLearningJourneyRepository(
         unitStages: [
           _buildTestStage(
@@ -277,7 +279,8 @@ void main() {
   });
 
   group('GameHub widget interaction navigation', () {
-    testWidgets('tapping cards navigates to curriculum screens when stages exist',
+    testWidgets(
+        'tapping cards navigates to curriculum screens when stages exist',
         (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(440, 956);
@@ -295,7 +298,8 @@ void main() {
         ],
       );
 
-      await tester.pumpWidget(_wrapWithApp(GameHubScreen(journeyRepository: repo)));
+      await tester
+          .pumpWidget(_wrapWithApp(GameHubScreen(journeyRepository: repo)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Xây chữ Hán'));
@@ -304,7 +308,8 @@ void main() {
       expect(find.byType(HanziWritingHomeScreen), findsOneWidget);
     });
 
-    testWidgets('tapping cards falls back to quick practice when stages missing',
+    testWidgets(
+        'tapping cards falls back to quick practice when stages missing',
         (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(440, 956);
@@ -313,7 +318,8 @@ void main() {
 
       final repo = StubLearningJourneyRepository(unitStages: const []);
 
-      await tester.pumpWidget(_wrapWithApp(GameHubScreen(journeyRepository: repo)));
+      await tester
+          .pumpWidget(_wrapWithApp(GameHubScreen(journeyRepository: repo)));
       await tester.pumpAndSettle();
 
       // Tap Radical Builder card when no curriculum stage exists

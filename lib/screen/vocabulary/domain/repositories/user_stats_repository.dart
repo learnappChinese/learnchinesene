@@ -1,4 +1,3 @@
-
 import '../../data/models/user_stats_model.dart';
 
 abstract class UserStatsRepository {

@@ -48,4 +48,3 @@ class ProgressService {
     return _dbHelper.getReviewWords();
   }
 }
-

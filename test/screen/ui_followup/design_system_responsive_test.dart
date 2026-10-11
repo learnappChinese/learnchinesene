@@ -135,7 +135,8 @@ void main() {
   });
 
   group('PR 10 Actionable Locked Stage & Mission Sheet UX', () {
-    testWidgets('displays default dismiss button when no action callback is given',
+    testWidgets(
+        'displays default dismiss button when no action callback is given',
         (tester) async {
       _setViewport(tester, const Size(393, 852));
 
@@ -173,7 +174,8 @@ void main() {
       expect(find.text('Ải 4 đang khoá'), findsNothing);
     });
 
-    testWidgets('displays actionable button and triggers onViewRequired callback',
+    testWidgets(
+        'displays actionable button and triggers onViewRequired callback',
         (tester) async {
       _setViewport(tester, const Size(393, 852));
       var actionTriggered = false;
@@ -241,7 +243,8 @@ void main() {
       expect(find.text('Hãy kiên trì luyện tập!'), findsOneWidget);
     });
 
-    testWidgets('FlashcardsScreen flips immediately without animation regression',
+    testWidgets(
+        'FlashcardsScreen flips immediately without animation regression',
         (tester) async {
       _setViewport(tester, const Size(393, 852));
       final controller = _FakeFlashcardsController(_kMockWords);

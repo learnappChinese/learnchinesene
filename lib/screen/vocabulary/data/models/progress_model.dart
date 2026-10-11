@@ -12,8 +12,7 @@ class ProgressModel extends Progress {
 
   factory ProgressModel.fromMap(Map<String, Object?> map) {
     final masteredValue = map['mastered'];
-    final lastPracticeValue =
-        map['last_practice'] ?? map['last_review_at'];
+    final lastPracticeValue = map['last_practice'] ?? map['last_review_at'];
 
     return ProgressModel(
       wordId: (map['word_id'] as num).toInt(),

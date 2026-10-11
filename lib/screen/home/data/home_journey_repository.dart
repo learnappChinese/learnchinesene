@@ -64,14 +64,14 @@ class CloudHomeJourneyRepository implements HomeJourneyRepository {
       chapterNumber: chapter.chapterNumber,
       chapterTitle: chapter.title,
       missionNumber: missionIndex < 0 ? totalMissions : missionIndex + 1,
-      missionTitle: nextAction?.title ??
-          currentMission?.title ??
-          'Sẵn sàng đánh Boss',
+      missionTitle:
+          nextAction?.title ?? currentMission?.title ?? 'Sẵn sàng đánh Boss',
       completedMissions: completed,
       totalMissions: totalMissions,
       stars: stars,
       bossProgress: chapter.progress,
-      nextRewardXp: nextAction?.xpReward ?? (20 + (missionIndex.clamp(0, 4) * 5)),
+      nextRewardXp:
+          nextAction?.xpReward ?? (20 + (missionIndex.clamp(0, 4) * 5)),
       recommendation: nextAction?.toLearningRecommendation(),
       nextAction: nextAction,
     );

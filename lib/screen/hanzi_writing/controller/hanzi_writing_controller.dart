@@ -44,12 +44,10 @@ class HanziWritingController extends GetxController {
     _activeCharacterId = characterId;
     learningResult.value = null;
 
-    final String? rewardUnitId = (sourceContext?.isCurriculum == true)
-        ? sourceContext!.duoUnitId
-        : null;
-    final String? rewardLevelId = (sourceContext?.isCurriculum == true)
-        ? sourceContext!.levelId
-        : null;
+    final String? rewardUnitId =
+        (sourceContext?.isCurriculum == true) ? sourceContext!.duoUnitId : null;
+    final String? rewardLevelId =
+        (sourceContext?.isCurriculum == true) ? sourceContext!.levelId : null;
 
     await _rewardService.startHanziAttempt(
       characterId: characterId,
@@ -75,9 +73,8 @@ class HanziWritingController extends GetxController {
       final String? rewardUnitId = (sourceContext?.isCurriculum == true)
           ? sourceContext!.duoUnitId
           : null;
-      final String? rewardLevelId = (sourceContext?.isCurriculum == true)
-          ? sourceContext!.levelId
-          : null;
+      final String? rewardLevelId =
+          (sourceContext?.isCurriculum == true) ? sourceContext!.levelId : null;
 
       learningResult.value = await _rewardService.processHanziReward(
         characterId: characterId,

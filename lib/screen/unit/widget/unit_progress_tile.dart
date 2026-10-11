@@ -73,10 +73,7 @@ class UnitProgressTile extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: isMastered
-                          ? [
-                              const Color(0xFFF59E0B),
-                              const Color(0xFFD97706)
-                            ]
+                          ? [const Color(0xFFF59E0B), const Color(0xFFD97706)]
                           : isLearning
                               ? [
                                   const Color(0xFF0F766E),
@@ -188,8 +185,7 @@ class UnitProgressTile extends StatelessWidget {
                         child: LinearProgressIndicator(
                           value: p,
                           minHeight: 5,
-                          backgroundColor:
-                              const Color(0xFFE2E8F0),
+                          backgroundColor: const Color(0xFFE2E8F0),
                           valueColor: AlwaysStoppedAnimation(
                             isMastered
                                 ? GameVisualTokens.gold
@@ -237,4 +233,3 @@ class UnitProgressTile extends StatelessWidget {
     );
   }
 }
-

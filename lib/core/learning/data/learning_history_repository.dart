@@ -88,12 +88,12 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
       days.add(today.subtract(Duration(days: i)));
     }
 
-    final startPeriod = days.first.toUtc();
     final events = await fetchFullXpLedger(limit: 200);
 
     final dayXpMap = <String, int>{};
     for (final day in days) {
-      final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+      final key =
+          '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
       dayXpMap[key] = 0;
     }
 
@@ -102,18 +102,21 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
       if (rawDate == null) continue;
       final date = DateTime.tryParse('$rawDate')?.toLocal();
       if (date == null) continue;
-      final key = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final key =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       if (dayXpMap.containsKey(key)) {
-        dayXpMap[key] = (dayXpMap[key] ?? 0) +
-            ((event['xp_amount'] as num?)?.toInt() ?? 0);
+        dayXpMap[key] =
+            (dayXpMap[key] ?? 0) + ((event['xp_amount'] as num?)?.toInt() ?? 0);
       }
     }
 
     const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
     return days.map((d) {
-      final key = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-      final isToday = d.year == now.year && d.month == now.month && d.day == now.day;
+      final key =
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      final isToday =
+          d.year == now.year && d.month == now.month && d.day == now.day;
       final weekdayIndex = (d.weekday - 1).clamp(0, 6);
       return <String, dynamic>{
         'date': d,
@@ -127,7 +130,8 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> fetchRecentTimeline({int limit = 10}) async {
+  Future<List<Map<String, dynamic>>> fetchRecentTimeline(
+      {int limit = 10}) async {
     final attempts = await _progressRepo.fetchAttemptHistory(limit: limit * 2);
     final results = <Map<String, dynamic>>[];
 
@@ -265,7 +269,8 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
       return allEvents.take(limit).toList();
     }
     return allEvents
-        .where((e) => '${e['activity_type']}'.toLowerCase() == filterType.toLowerCase())
+        .where((e) =>
+            '${e['activity_type']}'.toLowerCase() == filterType.toLowerCase())
         .take(limit)
         .toList();
   }
@@ -275,12 +280,14 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
     int limit = 50,
     String? activityType,
   }) async {
-    final allAttempts = await _progressRepo.fetchAttemptHistory(limit: limit * 2);
+    final allAttempts =
+        await _progressRepo.fetchAttemptHistory(limit: limit * 2);
     if (activityType == null || activityType.isEmpty || activityType == 'all') {
       return allAttempts.take(limit).toList();
     }
     return allAttempts
-        .where((a) => '${a['activity_type']}'.toLowerCase() == activityType.toLowerCase())
+        .where((a) =>
+            '${a['activity_type']}'.toLowerCase() == activityType.toLowerCase())
         .take(limit)
         .toList();
   }

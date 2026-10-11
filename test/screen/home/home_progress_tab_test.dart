@@ -82,8 +82,10 @@ void main() {
           await File(previewPath).writeAsBytes(bytes!.buffer.asUint8List());
           image.dispose();
         });
-        expect(tester.getBottomLeft(find.text('Lịch Sử Dịch & Hội Thoại')).dy,
-            lessThan(tester.getTopLeft(find.textContaining('Tiến độ').first).dy));
+        expect(
+            tester.getBottomLeft(find.text('Lịch Sử Dịch & Hội Thoại')).dy,
+            lessThan(
+                tester.getTopLeft(find.textContaining('Tiến độ').first).dy));
       }
 
       for (final title in [

@@ -173,12 +173,12 @@ class SpeakingController extends GetxController
 
     final String? rewardUnitId = (sourceContext?.isCurriculum == true)
         ? sourceContext!.duoUnitId
-        : (unitId != null && (sourceContext == null || !sourceContext!.isPractice)
+        : (unitId != null &&
+                (sourceContext == null || !sourceContext!.isPractice)
             ? 'unit_$unitId'
             : null);
-    final String? rewardLevelId = (sourceContext?.isCurriculum == true)
-        ? sourceContext!.levelId
-        : null;
+    final String? rewardLevelId =
+        (sourceContext?.isCurriculum == true) ? sourceContext!.levelId : null;
 
     await _rewardService.startSpeakingAttempt(
       sourceId: sourceId,

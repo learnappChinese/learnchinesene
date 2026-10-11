@@ -5,7 +5,8 @@ import 'package:flash_learn_chinese/core/learning/model/unit_mastery.dart';
 
 void main() {
   group('LearningPresentationMapper Tests', () {
-    test('converts raw technical section titles into human-friendly titles', () {
+    test('converts raw technical section titles into human-friendly titles',
+        () {
       expect(
         LearningPresentationMapper.sectionTitle('Path Section 0', 1),
         'PHẦN 1: Giao tiếp cơ bản',
@@ -34,7 +35,8 @@ void main() {
         'Gọi tên món ăn và đồ uống',
       );
       expect(
-        LearningPresentationMapper.unitFullTitle('Gọi tên món ăn và đồ uống', 1),
+        LearningPresentationMapper.unitFullTitle(
+            'Gọi tên món ăn và đồ uống', 1),
         'Bài 1: Gọi tên món ăn và đồ uống',
       );
     });
@@ -64,7 +66,9 @@ void main() {
   });
 
   group('Learning Journey Progression Models & Rules', () {
-    test('New user progression: Unit 1 unlocked, Unit 2 locked until Unit 1 complete', () {
+    test(
+        'New user progression: Unit 1 unlocked, Unit 2 locked until Unit 1 complete',
+        () {
       const unit1 = LearningUnitViewModel(
         id: 'sec_1_unit_1',
         sectionId: 'sec_1',

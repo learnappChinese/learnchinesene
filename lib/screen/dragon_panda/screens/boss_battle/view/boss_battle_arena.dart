@@ -23,8 +23,7 @@ class BossBattleArena extends StatefulWidget {
     required this.controller,
     required this.fallback,
     required this.cameraShakeOffset,
-    this.backgroundAsset =
-        'assets/images/backgrounds/boss_battle_bg.png',
+    this.backgroundAsset = 'assets/images/backgrounds/boss_battle_bg.png',
     this.riveAsset = 'assets/rive/panda_dragon_battle.riv',
   });
 

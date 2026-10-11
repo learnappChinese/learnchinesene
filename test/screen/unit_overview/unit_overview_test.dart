@@ -201,7 +201,8 @@ void main() {
     });
   }
 
-  testWidgets('UnitOverviewScreen opens and closes Boss Gate modal when boss is ready',
+  testWidgets(
+      'UnitOverviewScreen opens and closes Boss Gate modal when boss is ready',
       (tester) async {
     Get.put<UnitOverviewController>(
       UnitOverviewController(
@@ -241,7 +242,8 @@ void main() {
     expect(find.text('CỔNG KHIÊU CHIẾN BOSS'), findsNothing);
   });
 
-  testWidgets('UnitOverviewScreen displays completed banner and Next Unit CTA when finished',
+  testWidgets(
+      'UnitOverviewScreen displays completed banner and Next Unit CTA when finished',
       (tester) async {
     final completedChapter = ChapterAdventure(
       levelId: 'lvl-1',
@@ -313,7 +315,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('BÀI HỌC ĐÃ HOÀN THÀNH'), findsOneWidget);
-    expect(find.textContaining('Hỏi đường và phương tiện'), findsAtLeastNWidgets(1));
-    expect(find.text('BÀI TIẾP THEO: HỎI ĐƯỜNG VÀ PHƯƠNG TIỆN'), findsOneWidget);
+    expect(find.textContaining('Hỏi đường và phương tiện'),
+        findsAtLeastNWidgets(1));
+    expect(
+        find.text('BÀI TIẾP THEO: HỎI ĐƯỜNG VÀ PHƯƠNG TIỆN'), findsOneWidget);
   });
 }

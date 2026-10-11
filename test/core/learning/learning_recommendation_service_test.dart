@@ -10,7 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('LearningRecommendationService - Deterministic 7-Tier Priorities', () {
-    test('Priority 1: Active session outranks all suggestions and preserves index',
+    test(
+        'Priority 1: Active session outranks all suggestions and preserves index',
         () async {
       final service = SupabaseLearningRecommendationService(
         activeSessionLoader: ({userId, levelId}) async => [
@@ -33,7 +34,8 @@ void main() {
         ],
       );
 
-      final action = await service.recommend(unitId: 'unit_1', levelId: 'lvl_1');
+      final action =
+          await service.recommend(unitId: 'unit_1', levelId: 'lvl_1');
 
       expect(action, isNotNull);
       expect(action!.type, RecommendedActionType.resume);

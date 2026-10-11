@@ -50,8 +50,9 @@ void main() {
             .first);
         final first = cardRect(firstTitle);
         final gapFirst = gapNextTitle != null ? cardRect(secondTitle) : first;
-        final gapSecond =
-            gapNextTitle != null ? cardRect(gapNextTitle) : cardRect(secondTitle);
+        final gapSecond = gapNextTitle != null
+            ? cardRect(gapNextTitle)
+            : cardRect(secondTitle);
         return (
           header: tester.getRect(find.byType(TabHeader)),
           firstCard: first,

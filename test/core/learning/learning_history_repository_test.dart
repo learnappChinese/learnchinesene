@@ -20,7 +20,8 @@ class _FakeProgressRepoForHistory implements LearningProgressRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> fetchAttemptHistory({int limit = 50}) async {
+  Future<List<Map<String, dynamic>>> fetchAttemptHistory(
+      {int limit = 50}) async {
     return mockAttempts.take(limit).toList();
   }
 
@@ -30,7 +31,8 @@ class _FakeProgressRepoForHistory implements LearningProgressRepository {
   }
 
   @override
-  Future<LearningResult> completeActivity(LearningActivitySubmission submission) async {
+  Future<LearningResult> completeActivity(
+      LearningActivitySubmission submission) async {
     throw UnimplementedError();
   }
 
@@ -38,7 +40,8 @@ class _FakeProgressRepoForHistory implements LearningProgressRepository {
   Future<void> startAttempt(LearningActivitySubmission submission) async {}
 
   @override
-  Future<void> abandonAttempt(String attemptId, {Map<String, dynamic> metadata = const {}}) async {}
+  Future<void> abandonAttempt(String attemptId,
+      {Map<String, dynamic> metadata = const {}}) async {}
 
   @override
   Future<void> migrateGuestProgressToCloud() async {}
@@ -51,13 +54,26 @@ void main() {
     test('fetchTodayXp correctly sums XP for today', () async {
       final now = DateTime.now();
       final todayStr = now.toIso8601String();
-      final yesterdayStr = now.subtract(const Duration(days: 1)).toIso8601String();
+      final yesterdayStr =
+          now.subtract(const Duration(days: 1)).toIso8601String();
 
       final fakeRepo = _FakeProgressRepoForHistory(
         mockXpHistory: [
-          {'xp_amount': 25, 'created_at': todayStr, 'activity_type': 'vocabulary'},
-          {'xp_amount': 15, 'created_at': todayStr, 'activity_type': 'listening'},
-          {'xp_amount': 50, 'created_at': yesterdayStr, 'activity_type': 'quiz'},
+          {
+            'xp_amount': 25,
+            'created_at': todayStr,
+            'activity_type': 'vocabulary'
+          },
+          {
+            'xp_amount': 15,
+            'created_at': todayStr,
+            'activity_type': 'listening'
+          },
+          {
+            'xp_amount': 50,
+            'created_at': yesterdayStr,
+            'activity_type': 'quiz'
+          },
         ],
         mockAttempts: [],
       );
@@ -70,7 +86,8 @@ void main() {
       expect(todayXp, 40);
     });
 
-    test('fetch7DayXpActivity returns 7 day slots with correct weekday labels', () async {
+    test('fetch7DayXpActivity returns 7 day slots with correct weekday labels',
+        () async {
       final fakeRepo = _FakeProgressRepoForHistory(
         mockXpHistory: [],
         mockAttempts: [],
