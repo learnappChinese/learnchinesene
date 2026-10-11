@@ -5,7 +5,6 @@ import '../../../core/database/db_helper.dart';
 import '../../../core/learning/model/learning_result.dart';
 import '../../../core/learning/service/learning_reward_service.dart';
 import '../../../core/models/hanzi_character.dart';
-import '../../home/controller/home_controller.dart';
 import '../models/hanzi_practice_config.dart';
 
 class HanziWritingController extends GetxController {
@@ -63,10 +62,6 @@ class HanziWritingController extends GetxController {
         durationSeconds:
             DateTime.now().difference(_startedAt ?? DateTime.now()).inSeconds,
       );
-
-      if (Get.isRegistered<HomeController>()) {
-        Get.find<HomeController>().refreshStats();
-      }
     } catch (_) {
       // The user can retry completion with the same idempotent attempt id.
     }

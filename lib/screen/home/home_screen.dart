@@ -32,6 +32,7 @@ import '../game_hub/game_hub_screen.dart';
 import '../review/review_screen.dart';
 import '../sections/learning_sections_screen.dart';
 import '../../core/widgets/learning_scaffold.dart';
+import '../../core/learning/service/learning_progress_sync_service.dart';
 
 class HomeScreen extends StatefulWidget {
   static const routeName = '/home';
@@ -40,7 +41,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   HomeController get controller => Get.find<HomeController>();
 
   late final List<Widget> _tabs;
@@ -48,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabs = [
       _buildHomeDashboard(),
       _buildLearningTab(),
@@ -55,6 +57,20 @@ class _HomeScreenState extends State<HomeScreen> {
       _buildProgressTab(),
       _buildPersonalTab(),
     ];
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        Get.isRegistered<LearningProgressSyncService>()) {
+      Get.find<LearningProgressSyncService>().syncOnAppResume();
+    }
   }
 
   void _runIfFeatureUnlocked(String featureKey, String title, String message,
@@ -164,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
         sectionNumber: journey.worldNumber,
         unitNumber: journey.chapterNumber,
       ),
-    )?.then((_) => controller.refreshStats());
+    );
   }
 
   Widget _buildGamesTab() {

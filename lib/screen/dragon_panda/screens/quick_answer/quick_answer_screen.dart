@@ -7,16 +7,13 @@ import '../../../../core/models/speaking_practice_item.dart';
 import '../../widgets/game_screen_header.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/answer_button.dart';
-import 'package:get/get.dart';
 import '../../../../core/learning/service/learning_reward_service.dart';
 import '../../../../core/learning/model/learning_activity_submission.dart';
-import '../../../home/controller/home_controller.dart';
 
 class QuickAnswerScreen extends StatefulWidget {
   final VoidCallback onBack;
 
   const QuickAnswerScreen({super.key, required this.onBack});
-
 
   @override
   State<QuickAnswerScreen> createState() => _QuickAnswerScreenState();
@@ -117,8 +114,12 @@ class _QuickAnswerScreenState extends State<QuickAnswerScreen> {
           ..shuffle(random);
 
         if (distractors.length >= 3) {
-          final options = [target.meaning, distractors[0], distractors[1], distractors[2]]
-            ..shuffle(random);
+          final options = [
+            target.meaning,
+            distractors[0],
+            distractors[1],
+            distractors[2]
+          ]..shuffle(random);
           final correctIdx = options.indexOf(target.meaning);
 
           loaded.add(_QuickQuestion(
@@ -144,8 +145,12 @@ class _QuickAnswerScreenState extends State<QuickAnswerScreen> {
           ..shuffle(random);
 
         if (distractors.length >= 3) {
-          final options = [item['meaning']!, distractors[0], distractors[1], distractors[2]]
-            ..shuffle(random);
+          final options = [
+            item['meaning']!,
+            distractors[0],
+            distractors[1],
+            distractors[2]
+          ]..shuffle(random);
           final correctIdx = options.indexOf(item['meaning']!);
 
           loaded.add(_QuickQuestion(
@@ -285,9 +290,6 @@ class _QuickAnswerScreenState extends State<QuickAnswerScreen> {
       if (mounted) {
         setState(() => _earnedXp = result.xpEarned);
       }
-      if (Get.isRegistered<HomeController>()) {
-        Get.find<HomeController>().refreshStats();
-      }
     } catch (_) {}
 
     if (!mounted) return;
@@ -421,8 +423,7 @@ class _QuickAnswerScreenState extends State<QuickAnswerScreen> {
             child: Container(color: Colors.black.withOpacity(0.38)),
           ),
           if (_isLoading)
-            const Center(
-                child: CircularProgressIndicator(color: Colors.white))
+            const Center(child: CircularProgressIndicator(color: Colors.white))
           else if (_questions.isEmpty)
             Center(
               child: ElevatedButton(
@@ -452,7 +453,8 @@ class _QuickAnswerScreenState extends State<QuickAnswerScreen> {
               color: Colors.black.withOpacity(0.4),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: _timeLeft <= 5 ? Colors.redAccent : AppColors.primaryGold,
+                color:
+                    _timeLeft <= 5 ? Colors.redAccent : AppColors.primaryGold,
                 width: 1.5,
               ),
             ),

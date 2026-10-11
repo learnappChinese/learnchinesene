@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/database/db_helper.dart';
 import '../../../core/models/word.dart';
 import '../../../core/models/example_sentence.dart';
+import '../../../core/learning/service/learning_progress_sync_service.dart';
 import '../../../core/services/audio_service.dart';
 import '../../../core/services/progress_service.dart';
 import '../../speaking/speaking_screen.dart';
@@ -17,6 +18,11 @@ class WordDetailController extends GetxController {
 
   final learned = false.obs;
   final characterId = RxnInt();
+
+  LearningProgressSyncService? get _syncService =>
+      Get.isRegistered<LearningProgressSyncService>()
+          ? Get.find<LearningProgressSyncService>()
+          : null;
 
   @override
   void onInit() {
@@ -67,5 +73,10 @@ class WordDetailController extends GetxController {
     if (word == null) return;
     await progress.markLearned(word!.id);
     learned.value = true;
+    try {
+      await _syncService?.syncAfterLexiconChange();
+    } catch (_) {
+      // The learned state is persisted; a later sync will refresh other views.
+    }
   }
 }

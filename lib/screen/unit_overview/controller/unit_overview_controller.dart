@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../../core/learning/data/learning_journey_repository.dart';
 import '../../../core/learning/model/learning_journey_models.dart';
+import '../../../core/learning/service/learning_progress_sync_service.dart';
 import '../../chapter_adventure/model/chapter_adventure.dart';
 
 import '../../../core/learning/model/learning_stage_models.dart';
@@ -8,9 +9,19 @@ import '../../../core/learning/model/learning_stage_models.dart';
 class UnitOverviewController extends GetxController {
   UnitOverviewController({
     LearningJourneyRepository? journeyRepository,
-  }) : _journeyRepo = journeyRepository ?? SupabaseLearningJourneyRepository();
+    LearningProgressSyncService? syncService,
+  })  : _journeyRepo = journeyRepository ?? SupabaseLearningJourneyRepository(),
+        _syncService = syncService ?? _registeredSyncService();
 
   final LearningJourneyRepository _journeyRepo;
+  final LearningProgressSyncService? _syncService;
+  LearningSyncRegistration? _syncRegistration;
+  int _loadRequest = 0;
+
+  static LearningProgressSyncService? _registeredSyncService() {
+    if (!Get.isRegistered<LearningProgressSyncService>()) return null;
+    return Get.find<LearningProgressSyncService>();
+  }
 
   final isLoading = true.obs;
   final errorMessage = RxnString();
@@ -33,10 +44,27 @@ class UnitOverviewController extends GetxController {
       sectionNumber = (args['sectionNumber'] as num?)?.toInt() ?? 1;
       unitNumber = (args['unitNumber'] as num?)?.toInt() ?? 1;
     }
+    _syncRegistration = _syncService?.registerRefresher(
+      owner: 'unit-overview:$unitId',
+      domains: const <LearningDomain>{
+        LearningDomain.unitPath,
+        LearningDomain.journey,
+        LearningDomain.identity,
+      },
+      refresh: (event) async {
+        if (event.type == LearningDomainEventType.identityChanged) {
+          chapter.value = null;
+          stages.clear();
+          nextUnit.value = null;
+        }
+        await loadUnitOverview(rethrowFailure: true);
+      },
+    );
     loadUnitOverview();
   }
 
-  Future<void> loadUnitOverview() async {
+  Future<void> loadUnitOverview({bool rethrowFailure = false}) async {
+    final request = ++_loadRequest;
     isLoading.value = true;
     errorMessage.value = null;
     if (unitId.trim().isEmpty) {
@@ -52,6 +80,8 @@ class UnitOverviewController extends GetxController {
 
       final journey = results[0] as ChapterAdventure?;
       final loadedStages = results[1] as List<LearningStageViewModel>;
+
+      if (isClosed || request != _loadRequest) return;
 
       stages.assignAll(loadedStages);
 
@@ -94,16 +124,29 @@ class UnitOverviewController extends GetxController {
 
       if (isUnitCompleted) {
         try {
-          nextUnit.value = await _journeyRepo.getNextUnit(unitId);
+          final loadedNextUnit = await _journeyRepo.getNextUnit(unitId);
+          if (!isClosed && request == _loadRequest) {
+            nextUnit.value = loadedNextUnit;
+          }
         } catch (_) {}
       } else {
         nextUnit.value = null;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối khi tải bài học: $e';
+      if (!isClosed && request == _loadRequest) {
+        errorMessage.value = 'Lỗi kết nối khi tải bài học: $e';
+      }
+      if (rethrowFailure) rethrow;
     } finally {
-      isLoading.value = false;
+      if (!isClosed && request == _loadRequest) isLoading.value = false;
     }
+  }
+
+  @override
+  void onClose() {
+    _loadRequest++;
+    _syncRegistration?.dispose();
+    super.onClose();
   }
 
   bool get hasBoss =>

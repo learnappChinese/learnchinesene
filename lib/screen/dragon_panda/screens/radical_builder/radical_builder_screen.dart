@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:get/get.dart';
 import '../../../../core/database/db_helper.dart';
 import '../../../../core/learning/model/learning_activity_submission.dart';
 import '../../../../core/learning/service/learning_reward_service.dart';
 import '../../../../core/models/hanzi_character.dart';
-import '../../../home/controller/home_controller.dart';
 import 'widget/radical_builder_options.dart';
 import '../../widgets/game_screen_header.dart';
 import '../../theme/app_colors.dart';
@@ -16,7 +14,6 @@ class RadicalBuilderScreen extends StatefulWidget {
   final VoidCallback onBack;
 
   const RadicalBuilderScreen({super.key, required this.onBack});
-
 
   @override
   State<RadicalBuilderScreen> createState() => _RadicalBuilderScreenState();
@@ -52,7 +49,6 @@ class _RadicalBuilderScreenState extends State<RadicalBuilderScreen> {
   int _maxCombo = 0;
   int? _earnedXp;
 
-
   final Map<String, List<String>> _characterDecompositions = {
     '好': ['女', '子'],
     '妈': ['女', '马'],
@@ -84,9 +80,30 @@ class _RadicalBuilderScreenState extends State<RadicalBuilderScreen> {
   };
 
   final List<String> _commonRadicals = [
-    '女', '子', '亻', '木', '日', '月', '讠', '饣',
-    '口', '田', '力', '父', '门', '王', '艹', '宀',
-    '氵', '火', '心', '扌', '纟', '辶', '阝', '金',
+    '女',
+    '子',
+    '亻',
+    '木',
+    '日',
+    '月',
+    '讠',
+    '饣',
+    '口',
+    '田',
+    '力',
+    '父',
+    '门',
+    '王',
+    '艹',
+    '宀',
+    '氵',
+    '火',
+    '心',
+    '扌',
+    '纟',
+    '辶',
+    '阝',
+    '金',
   ];
 
   @override
@@ -145,7 +162,6 @@ class _RadicalBuilderScreenState extends State<RadicalBuilderScreen> {
       }
     } catch (_) {}
 
-
     // Fallback if needed
     if (loadedQuestions.length < 5) {
       final fallbackEntries = _characterDecompositions.entries.toList()
@@ -154,9 +170,10 @@ class _RadicalBuilderScreenState extends State<RadicalBuilderScreen> {
       for (final entry in fallbackEntries) {
         final char = entry.key;
         final correctRad = entry.value.first;
-        final distractors =
-            _commonRadicals.where((r) => r != correctRad).toList()
-              ..shuffle(random);
+        final distractors = _commonRadicals
+            .where((r) => r != correctRad)
+            .toList()
+          ..shuffle(random);
         final options = [correctRad, ...distractors.take(3)]..shuffle(random);
 
         loadedQuestions.add(_RadicalQuestion(
@@ -223,7 +240,6 @@ class _RadicalBuilderScreenState extends State<RadicalBuilderScreen> {
           _answered = false;
         });
         _speak(_questions[_currentIndex].character);
-
       } else {
         _showVictoryDialog();
       }
@@ -253,9 +269,6 @@ class _RadicalBuilderScreenState extends State<RadicalBuilderScreen> {
       );
       if (mounted) {
         setState(() => _earnedXp = result.xpEarned);
-      }
-      if (Get.isRegistered<HomeController>()) {
-        Get.find<HomeController>().refreshStats();
       }
     } catch (_) {}
 
@@ -312,7 +325,8 @@ class _RadicalBuilderScreenState extends State<RadicalBuilderScreen> {
             if (_earnedXp != null && _earnedXp! > 0) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
@@ -384,8 +398,7 @@ class _RadicalBuilderScreenState extends State<RadicalBuilderScreen> {
             ),
           ),
           if (_isLoading)
-            const Center(
-                child: CircularProgressIndicator(color: Colors.white))
+            const Center(child: CircularProgressIndicator(color: Colors.white))
           else if (_questions.isEmpty)
             Center(
               child: ElevatedButton(

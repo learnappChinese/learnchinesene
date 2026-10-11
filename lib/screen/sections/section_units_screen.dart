@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/learning/data/learning_journey_repository.dart';
 import '../../core/learning/model/learning_journey_models.dart';
+import '../../core/learning/service/learning_progress_sync_service.dart';
 import '../../core/responsive/responsive_layout.dart';
 import '../../core/theme/game_visual_tokens.dart';
 import '../../core/widgets/learning_scaffold.dart';
@@ -29,33 +30,62 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<LearningUnitViewModel> _units = const [];
+  LearningSyncRegistration? _syncRegistration;
+  int _loadRequest = 0;
 
   @override
   void initState() {
     super.initState();
+    if (Get.isRegistered<LearningProgressSyncService>()) {
+      _syncRegistration =
+          Get.find<LearningProgressSyncService>().registerRefresher(
+        owner: 'section-units:${widget.section.id}',
+        domains: const <LearningDomain>{
+          LearningDomain.journey,
+          LearningDomain.unitPath,
+          LearningDomain.identity,
+        },
+        refresh: (event) async {
+          if (event.type == LearningDomainEventType.identityChanged &&
+              mounted) {
+            setState(() => _units = const []);
+          }
+          await _loadUnits(rethrowFailure: true);
+        },
+      );
+    }
     _loadUnits();
   }
 
-  Future<void> _loadUnits() async {
+  @override
+  void dispose() {
+    _loadRequest++;
+    _syncRegistration?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadUnits({bool rethrowFailure = false}) async {
+    final request = ++_loadRequest;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     try {
       final list = await _journeyRepo.getUnits(widget.section.id);
-      if (mounted) {
+      if (mounted && request == _loadRequest) {
         setState(() {
           _units = list;
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && request == _loadRequest) {
         setState(() {
           _errorMessage = 'Không thể tải danh sách bài học: $e';
           _isLoading = false;
         });
       }
+      if (rethrowFailure) rethrow;
     }
   }
 
@@ -94,7 +124,8 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: _loadUnits,
-                style: FilledButton.styleFrom(backgroundColor: GameVisualTokens.jade),
+                style: FilledButton.styleFrom(
+                    backgroundColor: GameVisualTokens.jade),
                 child: const Text('Thử lại'),
               ),
             ],
@@ -145,7 +176,7 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
                     sectionNumber: unit.sectionNumber,
                     unitNumber: unit.unitNumber,
                   ),
-                )?.then((_) => _loadUnits());
+                );
               },
             );
           },
@@ -211,12 +242,17 @@ class _UnitCard extends StatelessWidget {
                             ? Colors.grey.shade200
                             : isCompleted
                                 ? GameVisualTokens.jade.withValues(alpha: 0.15)
-                                : GameVisualTokens.imperialGold.withValues(alpha: 0.15),
+                                : GameVisualTokens.imperialGold
+                                    .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        isLocked ? '🔒' : isCompleted ? '⭐' : '📜',
+                        isLocked
+                            ? '🔒'
+                            : isCompleted
+                                ? '⭐'
+                                : '📜',
                         style: const TextStyle(fontSize: 22),
                       ),
                     ),

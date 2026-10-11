@@ -9,7 +9,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
 import '../../core/learning/service/learning_reward_service.dart';
-import '../home/controller/home_controller.dart';
 import 'model/boss_battle_stage.dart';
 import '../dragon_panda/screens/boss_battle/widgets/boss_battle_gameplay_widgets.dart';
 import '../unit_overview/page/unit_complete_screen.dart';
@@ -465,10 +464,6 @@ class _BossBattleScreenState extends State<BossBattleScreen>
       durationSeconds: DateTime.now().difference(_startedAt).inSeconds,
     );
     _attemptCompleted = true;
-
-    if (Get.isRegistered<HomeController>()) {
-      Get.find<HomeController>().refreshStats();
-    }
 
     Get.off(
       () => BossBattleVictoryScreen(

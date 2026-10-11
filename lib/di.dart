@@ -9,10 +9,15 @@ import 'core/services/gemini_service.dart';
 import 'core/services/history_service.dart';
 import 'core/backend/supabase_service.dart';
 import 'core/services/iap_service.dart';
+import 'core/learning/service/learning_progress_sync_service.dart';
 import 'screen/subscription/controller/subscription_controller.dart';
 
 void initDI() {
   Get.lazyPut<SupabaseClient>(() => Supabase.instance.client, fenix: true);
+  Get.lazyPut<LearningProgressSyncService>(
+    () => LearningProgressSyncService(client: Get.find<SupabaseClient>()),
+    fenix: true,
+  );
   Get.lazyPut(() => SupabaseService(Get.find<SupabaseClient>()), fenix: true);
   Get.lazyPut(() => http.Client(), fenix: true);
   Get.lazyPut(() => GeminiService(client: Get.find<http.Client>()),
@@ -24,6 +29,7 @@ void initDI() {
   Get.lazyPut(
     () => HomeController(
       journeyRepository: Get.find<HomeJourneyRepository>(),
+      syncService: Get.find<LearningProgressSyncService>(),
     ),
     fenix: true,
   );

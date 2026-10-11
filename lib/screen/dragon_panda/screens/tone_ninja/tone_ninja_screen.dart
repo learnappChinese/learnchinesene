@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:get/get.dart';
 import '../../../../core/database/db_helper.dart';
 import '../../../../core/learning/model/learning_activity_submission.dart';
 import '../../../../core/learning/service/learning_reward_service.dart';
 import '../../../../core/models/speaking_practice_item.dart';
-import '../../../home/controller/home_controller.dart';
 import 'widget/tone_ninja_options.dart';
 import '../../widgets/game_screen_header.dart';
 import '../../theme/app_colors.dart';
@@ -16,7 +14,6 @@ class ToneNinjaScreen extends StatefulWidget {
   final VoidCallback onBack;
 
   const ToneNinjaScreen({super.key, required this.onBack});
-
 
   @override
   State<ToneNinjaScreen> createState() => _ToneNinjaScreenState();
@@ -222,7 +219,8 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
     final totalAnswers = _correctCount + _wrongCount;
     if (totalAnswers == 0) return;
 
-    final accuracyPct = ((_correctCount / totalAnswers) * 100).clamp(0.0, 100.0);
+    final accuracyPct =
+        ((_correctCount / totalAnswers) * 100).clamp(0.0, 100.0);
     final attemptId = 'tn_${DateTime.now().millisecondsSinceEpoch}';
 
     try {
@@ -241,9 +239,6 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
       );
       if (mounted) {
         setState(() => _earnedXp = result.xpEarned);
-      }
-      if (Get.isRegistered<HomeController>()) {
-        Get.find<HomeController>().refreshStats();
       }
     } catch (_) {}
   }
@@ -331,7 +326,8 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
             if (_earnedXp != null && _earnedXp! > 0) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.amber.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(12),
@@ -431,7 +427,8 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
             if (_earnedXp != null && _earnedXp! > 0) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.amber.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(12),
@@ -506,8 +503,7 @@ class _ToneNinjaScreenState extends State<ToneNinjaScreen> {
             child: Container(color: Colors.black.withOpacity(0.35)),
           ),
           if (_isLoading)
-            const Center(
-                child: CircularProgressIndicator(color: Colors.white))
+            const Center(child: CircularProgressIndicator(color: Colors.white))
           else if (_questions.isEmpty)
             Center(
               child: ElevatedButton(

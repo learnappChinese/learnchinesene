@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/database/db_helper.dart';
-import '../home/controller/home_controller.dart';
+import '../../core/learning/service/learning_progress_sync_service.dart';
 import '../vocabulary/data/models/user_stats_model.dart';
 import 'widget/profile_achievements.dart';
 
@@ -12,41 +12,40 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
+class _ProfilePageState extends State<ProfilePage> {
   late Future<UserStats> _userStatsFuture;
+  LearningSyncRegistration? _syncRegistration;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    if (Get.isRegistered<LearningProgressSyncService>()) {
+      _syncRegistration =
+          Get.find<LearningProgressSyncService>().registerRefresher(
+        owner: 'profile',
+        domains: const <LearningDomain>{
+          LearningDomain.profile,
+          LearningDomain.stats,
+          LearningDomain.identity,
+        },
+        refresh: (_) => _refreshStats(),
+      );
+    }
     _refreshStats();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    _syncRegistration?.dispose();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _refreshStats();
-    }
   }
 
   Future<UserStats> _loadStats() async {
     final dbStats = await DbHelper.instance.getStats();
-    int exp = dbStats['totalExp']?.toInt() ?? 0;
-    int streak = dbStats['streak']?.toInt() ?? 0;
+    final exp = dbStats['totalExp']?.toInt() ?? 0;
+    final streak = dbStats['streak']?.toInt() ?? 0;
     final mastered = dbStats['mastered']?.toInt() ?? 0;
     final favorites = dbStats['favorites']?.toInt() ?? 0;
-
-    if (Get.isRegistered<HomeController>()) {
-      final home = Get.find<HomeController>();
-      if (home.lifetimeXp.value > 0) exp = home.lifetimeXp.value;
-      if (home.streak.value > 0) streak = home.streak.value;
-    }
 
     return UserStats(
       id: 1,
@@ -58,10 +57,12 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
     );
   }
 
-  void _refreshStats() {
+  Future<void> _refreshStats() async {
+    final next = _loadStats();
     setState(() {
-      _userStatsFuture = _loadStats();
+      _userStatsFuture = next;
     });
+    await next;
   }
 
   @override

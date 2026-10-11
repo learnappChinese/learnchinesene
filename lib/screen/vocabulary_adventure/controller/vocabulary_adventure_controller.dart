@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:get/get.dart';
 
 import '../../../core/learning/model/learning_result.dart';
-import '../../home/controller/home_controller.dart';
 import '../data/vocabulary_adventure_repository.dart';
 import '../model/vocabulary_adventure.dart';
 import '../service/vocabulary_audio_service.dart';
@@ -238,7 +237,6 @@ class VocabularyAdventureController extends GetxController {
   Future<void> _finishMission() async {
     if (isFinishing.value || isCompleted.value) return;
     isFinishing.value = true;
-    var saved = false;
     try {
       await Future.wait(List<Future<void>>.from(_pendingWrites));
       final res = await _repository.completeMission(
@@ -258,24 +256,12 @@ class VocabularyAdventureController extends GetxController {
         xpEarned.value = res.xpEarned;
       }
       isCompleted.value = true;
-      saved = true;
     } catch (_) {
       if (!isClosed) {
         syncWarning.value = 'Kết quả chưa đồng bộ được. Hãy thử hoàn tất lại.';
       }
     } finally {
       if (!isClosed) isFinishing.value = false;
-    }
-
-    if (saved && !isClosed && Get.isRegistered<HomeController>()) {
-      try {
-        await Get.find<HomeController>().refreshStats();
-      } catch (_) {
-        if (!isClosed) {
-          syncWarning.value =
-              'Thống kê Home sẽ được cập nhật ở lần tải tiếp theo.';
-        }
-      }
     }
   }
 
