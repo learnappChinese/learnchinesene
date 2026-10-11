@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
+import '../../../core/ai/model/ai_gateway_exception.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/services/history_service.dart';
 
@@ -63,9 +64,12 @@ class ConversationsController extends GetxController {
         ),
       );
     } catch (e) {
+      final msg = e is AiGatewayException
+          ? e.message
+          : 'Không thể tạo hội thoại từ AI. Vui lòng thử lại.';
       Get.snackbar(
         'Lỗi',
-        'Không thể tạo hội thoại từ AI. Vui lòng thử lại.',
+        msg,
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
@@ -88,9 +92,12 @@ class ConversationsController extends GetxController {
           res.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       lines.addAll(newLines);
     } catch (e) {
+      final msg = e is AiGatewayException
+          ? e.message
+          : 'Không thể tải thêm dòng hội thoại tiếp theo.';
       Get.snackbar(
         'Thông báo',
-        'Không thể tải thêm dòng hội thoại tiếp theo.',
+        msg,
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {

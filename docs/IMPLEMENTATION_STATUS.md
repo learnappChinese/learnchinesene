@@ -28,7 +28,7 @@ Status vocabulary:
 | P0-01 | DONE_CODE | `LearningProgressSyncService` is registered in DI; reward success emits typed scoped invalidation; direct gameplay calls to `HomeController.refreshStats()` are removed; rapid events coalesce and serialize; failed owners retry once | PR01 live/device acceptance |
 | P0-02 | DONE_CODE | Standardized 11 Duo game codes via `LearningSkillTaxonomy` to canonical activity types (`vocabulary`, `listening`, `speaking`, `dialogue`) and 4 skill buckets. Migration `20261011150000_unify_skill_taxonomy_and_unit_mastery.sql` resolves legacy attempts into proper skills and updates `private.unit_mastery_for_user` & `unit_mastery_v2`. Guest mode computes real local mastery in `SupabaseLearningProgressRepository._fetchLocalUnitMastery` | PR02 live/device acceptance |
 | P0-03 | DONE_CODE | Home/Progress/Game, Unit, Sections/Units, Review, Stats, XP History and Profile register lifecycle-owned refreshers; app resume revalidates all mounted owners | PR01 authenticated/guest runtime matrix |
-| P0-04 | OPEN | Entitlement remains client purchase-stream/SharedPreferences based; duplicate IAP DI registrations remain; no server receipt verification | PR05 security work |
+| P0-04 | DONE_CODE | Server-verified entitlement (`app_user_entitlements`), RPC `verify_app_store_purchase` with anti-replay fraud check, `PremiumAccessService` policy, and `SubscriptionController` refactor | PR05 live store verification |
 | P0-05 | DONE_CODE | Comprehensive Auth & Identity Lifecycle implemented: Guest mode, Sign In, Sign Up, Sign Out, session restore, password recovery, guest-to-cloud migration (`GuestProgressMigrationService`), and account switching with scoped cache invalidation | PR04 live/device acceptance |
 | P1-01 | DONE_CODE | `LearningResult` parses `boss_ready`, `unit_completed`, and `next_unit_id` from JSON & attempt metadata; migration `20261011160000_complete_learning_activity_result_contract.sql` returns these fields explicitly in RPC payload | PR03 live/device acceptance |
 | P1-02 | DONE_CODE | Removed hardcoded XP (`50` in `UnitCompleteScreen` and `+100 XP` in `BossVictoryContent`); displays authoritative XP and stars from `LearningResult` | PR03 |
@@ -40,7 +40,7 @@ Status vocabulary:
 | P1-08 | DONE_CODE | review completion, flashcard rating and mark-learned actions invalidate Review/Stats/Mastery/Profile/Path scopes | PR01 |
 | P1-09 | OPEN | loaders still contain broad Unit pools and random/hard-coded fallbacks | PR07 |
 | P1-10 | OPEN | HSK Quiz and Exam remain outside the canonical durable learning result policy | PR09 |
-| P1-11 | OPEN | Gemini key remains a client build-time value and requests go directly from the app | PR09/backend blocker |
+| P1-11 | DONE_CODE | Removed client `geminiApiKey` and direct API calls; all queries routed through secure Supabase Edge Function `gemini-ai-gateway` with token auth and quota enforcement | PR05 |
 | P1-12 | OPEN | multiple independent `FlutterTts` instances remain | PR08 |
 | P1-13 | OPEN | integer lexicon IDs and text Duo IDs still rely on implicit bridges | PR07 |
 | P1-14 | OPEN | Supabase learning history and local `history_logs.json` remain separate/overloaded in product terminology | PR06/PR09 |

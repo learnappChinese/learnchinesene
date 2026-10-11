@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
+import '../../../core/ai/model/ai_gateway_exception.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/services/history_service.dart';
 
@@ -65,14 +67,14 @@ class HskExamController extends GetxController {
 
       userAnswers.assignAll(List<String?>.filled(questions.length, null));
       examState.value = 'started';
-    } catch (e, stack) {
-      print('=== ERROR GENERATING EXAM ===');
-      print(e);
-      print(stack);
+    } catch (e) {
+      debugPrint('Error generating exam: $e');
       examState.value = 'notStarted';
+      final msg =
+          e is AiGatewayException ? e.message : 'Không thể tạo đề thi thử: $e';
       Get.snackbar(
         'Lỗi',
-        'Không thể tạo đề thi thử: $e',
+        msg,
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -105,6 +107,7 @@ class HskExamController extends GetxController {
     analysisLoading.value = true;
     examState.value = 'submitted';
 
+    Map<String, dynamic>? analysis;
     try {
       final formattedQnA = <Map<String, dynamic>>[];
       for (int i = 0; i < questions.length; i++) {
@@ -116,7 +119,7 @@ class HskExamController extends GetxController {
         });
       }
 
-      final analysis = await _gemini.analyzeHskExamPerformance(
+      analysis = await _gemini.analyzeHskExamPerformance(
         level: selectedLevel.value,
         questionsAndAnswers: formattedQnA,
         score: score.value,
@@ -134,8 +137,21 @@ class HskExamController extends GetxController {
           analysis['study_suggestions'] as List<dynamic>? ?? [];
       studySuggestions
           .assignAll(rawSuggestions.map((e) => e.toString()).toList());
+    } catch (e) {
+      final msg = e is AiGatewayException
+          ? e.message
+          : 'Đã chấm điểm thành công, nhưng không thể tải phân tích chi tiết từ AI.';
+      Get.snackbar(
+        'Thông báo',
+        msg,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      analysisLoading.value = false;
+    }
 
-      // Save to History
+    // Always preserve raw exam score and record in history!
+    try {
       await _history.saveHistory(
         HistoryItem(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -147,20 +163,14 @@ class HskExamController extends GetxController {
             'level': selectedLevel.value,
             'score': score.value,
             'total': questions.length,
-            'analysis': analysis,
+            if (analysis != null) 'analysis': analysis,
             'questions': questions,
             'userAnswers': userAnswers,
           },
         ),
       );
     } catch (e) {
-      Get.snackbar(
-        'Thông báo',
-        'Đã chấm điểm thành công, nhưng không thể tải phân tích chi tiết từ AI.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } finally {
-      analysisLoading.value = false;
+      debugPrint('Failed to save exam history: $e');
     }
   }
 
