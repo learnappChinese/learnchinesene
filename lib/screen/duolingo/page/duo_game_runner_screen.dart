@@ -10,6 +10,7 @@ import '../widget/duo_word_connect_widget.dart';
 import '../widget/duo_speaking_widget.dart';
 import '../widget/duo_sentence_builder_widget.dart';
 import '../widget/duo_multiple_choice_widget.dart';
+import '../../../core/learning/model/learning_navigation_outcome.dart';
 import '../../../core/widgets/learning_scaffold.dart';
 import '../../../core/widgets/learning_scene_background.dart';
 import '../../../core/widgets/mission_progress_header.dart';
@@ -184,9 +185,37 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
         return Center(
           child: MissionCompleteOverlay(
             result: result,
-            onNextMission:
-                result.passed ? () => Get.back(result: true) : controller.retrySession,
-            onBackToMap: () => Get.back(result: result.passed),
+            onNextMission: () {
+              if (!result.passed) {
+                controller.retrySession();
+              } else if (result.unitCompleted) {
+                Get.back(
+                  result: LearningNavigationOutcome.nextUnit(
+                    result: result,
+                    nextUnitId: result.nextUnitId,
+                  ),
+                );
+              } else if (result.bossReady) {
+                Get.back(
+                  result: LearningNavigationOutcome.fightBoss(
+                    result: result,
+                    bossStageId: result.nextNodeId,
+                  ),
+                );
+              } else {
+                Get.back(
+                  result: LearningNavigationOutcome.nextMission(
+                    result: result,
+                    nextNodeId: result.nextNodeId,
+                  ),
+                );
+              }
+            },
+            onBackToMap: () => Get.back(
+              result: result.passed
+                  ? LearningNavigationOutcome.completed(result: result)
+                  : LearningNavigationOutcome.failed(result: result),
+            ),
           ),
         );
       }

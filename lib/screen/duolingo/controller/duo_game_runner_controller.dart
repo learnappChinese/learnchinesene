@@ -247,7 +247,7 @@ class DuoGameRunnerController extends GetxController {
           reward.passed,
         );
 
-        if (reward.passed) await _unlockNextGuestLevel();
+        if (reward.passed) await _unlockNextGuestLevel(reward);
       }
 
       // Xử lý logic Unlock Level kế tiếp nếu thi đỗ
@@ -259,8 +259,20 @@ class DuoGameRunnerController extends GetxController {
     }
   }
 
-  // Phương thức tìm và unlock level kế tiếp (bỏ qua các level bị Empty)
-  Future<void> _unlockNextGuestLevel() async {
+  // Phương thức tìm và unlock level kế tiếp theo server contract hoặc path
+  Future<void> _unlockNextGuestLevel(LearningResult reward) async {
+    if (reward.nextNodeId != null && reward.nextNodeId!.isNotEmpty) {
+      final parts = reward.nextNodeId!.split(':');
+      if (parts.length == 2) {
+        final nextGameId = int.tryParse(parts[0]);
+        final nextLevelId = parts[1];
+        if (nextGameId != null && nextLevelId.isNotEmpty) {
+          await DuoDbHelper.instance.unlockLevel(nextGameId, nextLevelId);
+          return;
+        }
+      }
+    }
+
     final levels = await DuoDbHelper.instance.getGamePath(gameId, gameCode);
     bool foundCurrent = false;
 

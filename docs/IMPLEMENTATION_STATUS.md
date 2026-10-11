@@ -1,18 +1,18 @@
 # Implementation Status
 
 - Snapshot date: 2026-10-11
-- Base: `hieu` at `6658d662811ad8178cef224d9d1986121a5937c6` (PR #23 merged)
-- Implementation branch: `feature/pr02-skill-taxonomy-unit-mastery`
+- Base: `hieu` at `19a6118d0b2db4ce469cfbe4f16922cfb9cce677` (PR #24 / PR02 merged)
+- Implementation branch: `feature/pr03-completion-unlock-boss-navigation`
 
-This is the PR00 baseline and living issue matrix for `AI_MASTERPLAN_HOAN_THIEN_APP_TIENg_TRUNG.md`. Status is based on current Flutter code and committed SQL migrations. It does not claim live-production verification.
+This is the living issue matrix for `AI_MASTERPLAN_HOAN_THIEN_APP_TIENg_TRUNG.md`. Status is based on current Flutter code and committed SQL migrations. It does not claim live-production verification.
 
 ## Verification boundary
 
 - Flutter 3.47.5; Dart 3.13.4.
-- Latest committed migration: `20261011150000_unify_skill_taxonomy_and_unit_mastery.sql`.
+- Latest committed migration: `20261011160000_complete_learning_activity_result_contract.sql`.
 - Supabase CLI is not installed and no Supabase MCP/live connection is available in this environment. Live function bodies, grants, RLS drift, production data and authenticated multi-device behavior are `NOT_VERIFIED_LIVE`.
-- Migration `20261011150000_unify_skill_taxonomy_and_unit_mastery.sql` unifies skill buckets and normalizes historical `game_mission` attempts safely.
-- Baseline at `hieu`: `test/core/learning` passed 63 tests; `flutter analyze` on changed PR02 files reported 0 issues.
+- Migration `20261011160000_complete_learning_activity_result_contract.sql` standardizes the `complete_learning_activity_v2` result contract with `boss_ready`, `unit_completed`, and `next_unit_id`.
+- Baseline at `hieu`: `test/core/learning` passed 74 tests; `flutter analyze` on changed PR03 files reported 0 issues/warnings.
 
 Status vocabulary:
 
@@ -26,14 +26,14 @@ Status vocabulary:
 | ID | Status | Current evidence | Next owner/PR |
 | --- | --- | --- | --- |
 | P0-01 | DONE_CODE | `LearningProgressSyncService` is registered in DI; reward success emits typed scoped invalidation; direct gameplay calls to `HomeController.refreshStats()` are removed; rapid events coalesce and serialize; failed owners retry once | PR01 live/device acceptance |
-| P0-02 | DONE_CODE | Standardized 11 Duo game codes via `LearningSkillTaxonomy` to canonical activity types (`vocabulary`, `listening`, `speaking`, `dialogue`) and 4 skill buckets. Migration `20261011150000_unify_skill_taxonomy_and_unit_mastery.sql` resolves legacy attempts into proper skills and updates `private.unit_mastery_for_user` & `unit_mastery_v2`. Guest mode computes real local mastery in `SupabaseLearningProgressRepository._fetchLocalUnitMastery` | PR02 live/device acceptance & PR03 Boss/Unit navigation |
+| P0-02 | DONE_CODE | Standardized 11 Duo game codes via `LearningSkillTaxonomy` to canonical activity types (`vocabulary`, `listening`, `speaking`, `dialogue`) and 4 skill buckets. Migration `20261011150000_unify_skill_taxonomy_and_unit_mastery.sql` resolves legacy attempts into proper skills and updates `private.unit_mastery_for_user` & `unit_mastery_v2`. Guest mode computes real local mastery in `SupabaseLearningProgressRepository._fetchLocalUnitMastery` | PR02 live/device acceptance |
 | P0-03 | DONE_CODE | Home/Progress/Game, Unit, Sections/Units, Review, Stats, XP History and Profile register lifecycle-owned refreshers; app resume revalidates all mounted owners | PR01 authenticated/guest runtime matrix |
 | P0-04 | OPEN | Entitlement remains client purchase-stream/SharedPreferences based; duplicate IAP DI registrations remain; no server receipt verification | PR04/PR05 security work |
 | P0-05 | PARTIAL | Auth identity changes clear/reload registered learning snapshots, but no explicit login/account/guest-migration product flow exists | PR04 identity lifecycle |
-| P1-01 | PARTIAL / NOT_VERIFIED_LIVE | Dart fixture covers reward/unlock/next-unit parsing and RPC idempotency context; committed migration response still needs direct live RPC comparison | PR03 + live Supabase |
-| P1-02 | OPEN | `BossBattleScreen` still passes hard-coded `xpEarned: 50` to Unit Complete | PR03 |
-| P1-03 | OPEN | Boss victory/defeat/Unit Complete still chain `Get.off`; typed navigation outcome is not implemented | PR03 |
-| P1-04 | OPEN | guest `_unlockNextGuestLevel()` still infers the next non-empty level linearly | PR03/PR04 |
+| P1-01 | DONE_CODE | `LearningResult` parses `boss_ready`, `unit_completed`, and `next_unit_id` from JSON & attempt metadata; migration `20261011160000_complete_learning_activity_result_contract.sql` returns these fields explicitly in RPC payload | PR03 live/device acceptance |
+| P1-02 | DONE_CODE | Removed hardcoded XP (`50` in `UnitCompleteScreen` and `+100 XP` in `BossVictoryContent`); displays authoritative XP and stars from `LearningResult` | PR03 |
+| P1-03 | DONE_CODE | Implemented typed `LearningNavigationOutcome` with actions (`completed`, `failed`, `paused`, `abandoned`, `cancelled`, `retry`, `nextMission`, `fightBoss`, `nextUnit`) replacing loose `Get.off` chains | PR03 |
+| P1-04 | DONE_CODE | Guest level progression (`_unlockNextGuestLevel`) in `DuoGameRunnerController` unlocks `reward.nextNodeId` directly based on path dependencies instead of guessing linearly | PR03 |
 | P1-05 | DONE_CODE | Home loads seven slices independently, preserves successful values, exposes partial error state and rejects stale requests | PR01 |
 | P1-06 | PARTIAL | Profile now observes canonical invalidation and no longer overwrites fresh DB stats from a racing Home snapshot; `lastStudyDate` is still `DateTime.now()` | PR06 |
 | P1-07 | OPEN | Hanzi/Speaking context remains optional/inconsistent for several entry paths | PR03/PR07 |

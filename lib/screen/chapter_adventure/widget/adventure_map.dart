@@ -125,6 +125,8 @@ class AdventureMap extends StatelessWidget {
         if (mission.currentTotal <= 0) return 'Đang học';
         final answered = mission.currentIndex.clamp(0, mission.currentTotal);
         return '$answered / ${mission.currentTotal} câu';
+      case AdventureNodeState.paused:
+        return 'Tạm dừng • Tiếp tục';
       case AdventureNodeState.failed:
         return '${mission.bestScore}% • Cần 70%';
       case AdventureNodeState.locked:
@@ -142,6 +144,7 @@ class AdventureMap extends StatelessWidget {
       case AdventureNodeState.available:
         return 'BẮT ĐẦU';
       case AdventureNodeState.inProgress:
+      case AdventureNodeState.paused:
         return 'TIẾP TỤC';
       case AdventureNodeState.failed:
         return 'THỬ LẠI';

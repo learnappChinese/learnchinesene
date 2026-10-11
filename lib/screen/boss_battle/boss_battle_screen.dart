@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
+import '../../core/learning/model/learning_navigation_outcome.dart';
 import '../../core/learning/service/learning_reward_service.dart';
 import 'model/boss_battle_stage.dart';
 import '../dragon_panda/screens/boss_battle/widgets/boss_battle_gameplay_widgets.dart';
@@ -452,7 +453,7 @@ class _BossBattleScreenState extends State<BossBattleScreen>
 
   Future<void> _onVictory() async {
     final stageId = widget.stage?.id ?? 0;
-    await _rewardService.processBossReward(
+    final reward = await _rewardService.processBossReward(
       stageId: stageId,
       attemptId: _attemptId,
       score: score,
@@ -467,6 +468,8 @@ class _BossBattleScreenState extends State<BossBattleScreen>
 
     Get.off(
       () => BossBattleVictoryScreen(
+        xpEarned: reward.xpEarned,
+        stars: reward.stars,
         onContinue: () {
           Get.off(
             () => UnitCompleteScreen(
@@ -475,12 +478,19 @@ class _BossBattleScreenState extends State<BossBattleScreen>
               sectionNumber: widget.stage?.sectionNumber ?? 1,
               unitNumber: widget.stage?.unitNumber ?? 1,
               bossName: widget.stage?.bossName,
-              xpEarned: 50,
+              xpEarned: reward.xpEarned,
+              starsEarned: reward.stars,
             ),
           );
         },
         onBackToHub: () {
-          Get.back(result: true);
+          Get.back(
+            result: LearningNavigationOutcome.completed(
+              result: reward,
+              nextNodeId: reward.nextNodeId,
+              nextUnitId: reward.nextUnitId,
+            ),
+          );
         },
       ),
     );
@@ -488,7 +498,7 @@ class _BossBattleScreenState extends State<BossBattleScreen>
 
   Future<void> _onDefeat() async {
     final stageId = widget.stage?.id ?? 0;
-    await _rewardService.processBossReward(
+    final reward = await _rewardService.processBossReward(
       stageId: stageId,
       attemptId: _attemptId,
       score: score,
@@ -507,7 +517,11 @@ class _BossBattleScreenState extends State<BossBattleScreen>
           Get.off(() => BossBattleScreen(stage: widget.stage));
         },
         onBackToHub: () {
-          Get.back(result: false);
+          Get.back(
+            result: LearningNavigationOutcome.failed(
+              result: reward,
+            ),
+          );
         },
       ),
     );

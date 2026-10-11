@@ -8,12 +8,16 @@ import 'package:flash_learn_chinese/core/widgets/centered_scroll_view.dart';
 class BossBattleVictoryScreen extends StatelessWidget {
   final VoidCallback onContinue;
   final VoidCallback onBackToHub;
+  final int xpEarned;
+  final int stars;
 
   const BossBattleVictoryScreen({
-    Key? key,
+    super.key,
     required this.onContinue,
     required this.onBackToHub,
-  }) : super(key: key);
+    this.xpEarned = 0,
+    this.stars = 3,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +70,11 @@ class BossBattleVictoryScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: CenteredScrollView(
             child: BossVictoryContent(
-                onContinue: onContinue, onBackToHub: onBackToHub)),
+          onContinue: onContinue,
+          onBackToHub: onBackToHub,
+          xpEarned: xpEarned,
+          stars: stars,
+        )),
       ),
     );
   }
