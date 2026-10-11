@@ -33,21 +33,13 @@ class DuoGameRepository {
 
     final wordsList = wordsSet.toList();
     if (wordsList.isEmpty) {
-      // Fallback: Lấy 10 từ ngẫu nhiên từ flashcards
-      return await DuoDbHelper.instance.getRandomFlashcards(limit: 10);
+      return <DuoFlashcard>[];
     }
 
     // 2. Query thông tin chi tiết của các từ này từ flashcards
     final flashcards =
         await DuoDbHelper.instance.getFlashcardsForWords(wordsList);
-    if (flashcards.length < 10) {
-      // Điền thêm nếu thiếu
-      final additional = await DuoDbHelper.instance
-          .getRandomFlashcards(limit: 10 - flashcards.length);
-      flashcards.addAll(additional);
-    }
 
-    flashcards.shuffle();
     return flashcards.take(10).toList();
   }
 
@@ -68,13 +60,7 @@ class DuoGameRepository {
 
     final wordsList = chineseWords.toList();
     if (wordsList.isEmpty) {
-      return [
-        {'zh': '你好', 'vi': 'chào bạn'},
-        {'zh': '谢谢', 'vi': 'cám ơn'},
-        {'zh': '茶', 'vi': 'trà'},
-        {'zh': '水', 'vi': 'nước'},
-        {'zh': '咖啡', 'vi': 'cà phê'},
-      ];
+      return <Map<String, String>>[];
     }
 
     final flashcards =
@@ -86,17 +72,7 @@ class DuoGameRepository {
       }
     }
 
-    if (pairs.length < 5) {
-      // Fallback
-      final additional = await DuoDbHelper.instance
-          .getRandomFlashcards(limit: 5 - pairs.length);
-      for (var f in additional) {
-        pairs.add({'zh': f.word, 'vi': f.meaning ?? 'Nghĩa'});
-      }
-    }
-
-    pairs.shuffle();
-    return pairs.take(6).toList(); // Lấy 6 cặp để nối
+    return pairs.take(6).toList(); // Bounded 6 cặp để nối
   }
 
   // --- TRẮC NGHIỆM / CHỌN ĐÁP ÁN (GAME 3) ---

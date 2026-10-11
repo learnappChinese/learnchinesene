@@ -42,7 +42,7 @@ Status vocabulary:
 | P1-10 | OPEN | HSK Quiz and Exam remain outside the canonical durable learning result policy | PR09 |
 | P1-11 | DONE_CODE | Removed client `geminiApiKey` and direct API calls; all queries routed through secure Supabase Edge Function `gemini-ai-gateway` with token auth and quota enforcement | PR05 |
 | P1-12 | OPEN | multiple independent `FlutterTts` instances remain | PR08 |
-| P1-13 | OPEN | integer lexicon IDs and text Duo IDs still rely on implicit bridges | PR07 |
+| P1-13 | DONE_CODE | `UnitBridgeResolver` resolves bidirectional mappings between text `duo_unit_id` and integer `lexicon_unit_id`; `LearningSourceContext` carries canonical provenance across activities | PR06 |
 | P1-14 | OPEN | Supabase learning history and local `history_logs.json` remain separate/overloaded in product terminology | PR06/PR09 |
 | P2-01 | OPEN | legacy HSK/Unit, journey v2, chapter adventure and Game Center remain overlapping navigation/progression surfaces | PR06 |
 | P2-02 | OPEN | session selection is not yet mastery/history-adaptive | PR07 |

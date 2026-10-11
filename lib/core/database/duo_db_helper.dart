@@ -312,7 +312,17 @@ class DuoDbHelper {
             .eq('status', 'active')
             .limit(1),
       );
-      return rows.isEmpty ? null : rows.first;
+      if (rows.isNotEmpty) {
+        final row = Map<String, dynamic>.from(rows.first);
+        final prefs = await SharedPreferences.getInstance();
+        final cachedIds = prefs.getStringList(
+            '${_sessionKey(gameId, levelId)}_challenge_ids');
+        if (cachedIds != null && cachedIds.isNotEmpty) {
+          row['challenge_ids'] = cachedIds;
+        }
+        return row;
+      }
+      return null;
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -330,8 +340,9 @@ class DuoDbHelper {
     int score,
     int correct,
     int wrong,
-    String attemptId,
-  ) async {
+    String attemptId, {
+    List<String>? challengeIds,
+  }) async {
     final userId = _userId;
     if (userId != null) {
       final now = DateTime.now().toUtc().toIso8601String();
@@ -350,6 +361,12 @@ class DuoDbHelper {
         },
         onConflict: 'user_id,game_id,level_id',
       );
+      // Also cache challenge IDs locally so resume preserves exact question order
+      if (challengeIds != null && challengeIds.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList(
+            '${_sessionKey(gameId, levelId)}_challenge_ids', challengeIds);
+      }
       return;
     }
 
@@ -367,6 +384,7 @@ class DuoDbHelper {
         'correct_count': correct,
         'wrong_count': wrong,
         'attempt_id': attemptId,
+        'challenge_ids': challengeIds ?? existing['challenge_ids'],
         'started_at':
             existing['started_at'] ?? DateTime.now().toUtc().toIso8601String(),
         'status': 'active',

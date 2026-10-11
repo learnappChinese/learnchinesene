@@ -2,7 +2,11 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 import '../../../core/learning/model/learning_result.dart';
+import '../../../core/learning/model/learning_source_context.dart';
 import '../../../core/learning/service/learning_reward_service.dart';
+import '../../../core/learning/service/learning_session_composer.dart';
+import '../../../core/models/duo_challenge.dart';
+import '../../../core/models/duo_flashcard.dart';
 import 'duo_game_repository.dart';
 import '../../../core/database/duo_db_helper.dart';
 import '../../../core/services/speech_service.dart';
@@ -11,14 +15,22 @@ class DuoGameRunnerController extends GetxController {
   final int gameId;
   final String gameCode;
   final String levelId;
+  final String? unitId;
   final LearningRewardService _rewardService;
+  final LearningSessionComposer _sessionComposer;
 
   DuoGameRunnerController({
     required this.gameId,
     required this.gameCode,
     required this.levelId,
+    this.unitId,
     LearningRewardService? rewardService,
-  }) : _rewardService = rewardService ?? LearningRewardService();
+    LearningSessionComposer? sessionComposer,
+  })  : _rewardService = rewardService ?? LearningRewardService(),
+        _sessionComposer = sessionComposer ??
+            (Get.isRegistered<LearningSessionComposer>()
+                ? Get.find<LearningSessionComposer>()
+                : LearningSessionComposer());
 
   final isLoading = true.obs;
   final errorMessage = RxnString();
@@ -62,59 +74,41 @@ class DuoGameRunnerController extends GetxController {
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      // 1. Kiểm tra xem có session làm dở dang không
-      final active =
-          await DuoDbHelper.instance.getActiveSession(gameId, levelId);
+      final resolvedUnitId = (unitId != null && unitId!.isNotEmpty)
+          ? unitId!
+          : (levelId.contains('_') ? levelId.split('_').first : levelId);
 
-      // Load questions tương ứng
-      List<dynamic> list = [];
-      if (gameCode == 'learn_words') {
-        list = await DuoGameRepository.instance.getLearnWordsQuestions(levelId);
-      } else if (gameCode == 'word_connect') {
-        list =
-            await DuoGameRepository.instance.getWordConnectQuestions(levelId);
-      } else if (gameCode == 'select_answer') {
-        list = await DuoGameRepository.instance.getSelectQuestions(levelId);
-      } else if (gameCode == 'listen_select') {
-        list = await DuoGameRepository.instance.getListenQuestions(levelId);
-      } else if (gameCode == 'translate') {
-        list = await DuoGameRepository.instance.getTranslateQuestions(levelId);
-      } else if (gameCode == 'gap_fill') {
-        list = await DuoGameRepository.instance.getGapFillQuestions(levelId);
-      } else if (gameCode == 'tap_complete') {
-        list =
-            await DuoGameRepository.instance.getTapCompleteQuestions(levelId);
-      } else if (gameCode == 'dialogue') {
-        list = await DuoGameRepository.instance.getDialogueQuestions(levelId);
-      } else if (gameCode == 'sentence_order') {
-        list =
-            await DuoGameRepository.instance.getSentenceOrderQuestions(levelId);
-      } else if (gameCode == 'speaking') {
-        list = await DuoGameRepository.instance.getSpeakingQuestions(levelId);
-      }
+      final sourceContext = LearningSourceContext(
+        courseId: 'duo_chinese',
+        duoUnitId: resolvedUnitId,
+        levelId: levelId,
+        gameCode: gameCode,
+        mode: LearningMode.duoMission,
+      );
 
-      challenges.assignAll(list);
+      final session = await _sessionComposer.composeSession(
+        sourceContext: sourceContext,
+        gameId: gameId,
+      );
 
-      if (active != null) {
+      challenges.assignAll(session.items.map((i) => i.payload).toList());
+
+      if (session.isResumed) {
         showMissionIntro.value = false;
-        // Khôi phục session cũ
-        currentIndex.value = active['current_index'] as int;
-        score.value = active['score'] as int;
-        correctCount.value = active['correct_count'] as int;
-        wrongCount.value = active['wrong_count'] as int;
-        _attemptId = '${active['attempt_id'] ?? ''}'.trim();
-        if (_attemptId.isEmpty) _attemptId = _newAttemptId();
-        _startedAt =
-            DateTime.tryParse('${active['started_at'] ?? ''}')?.toLocal() ??
-                DateTime.now();
+        currentIndex.value = session.currentIndex;
+        score.value = session.score;
+        correctCount.value = session.correctCount;
+        wrongCount.value = session.wrongCount;
+        _attemptId = session.sessionId;
+        _startedAt = session.startedAt;
       } else {
         showMissionIntro.value = true;
         currentIndex.value = 0;
         correctCount.value = 0;
         wrongCount.value = 0;
         score.value = 0;
-        _attemptId = _newAttemptId();
-        _startedAt = DateTime.now();
+        _attemptId = session.sessionId;
+        _startedAt = session.startedAt;
       }
 
       currentCombo.value = 0;
@@ -136,6 +130,8 @@ class DuoGameRunnerController extends GetxController {
 
       isCompleted.value = false;
       _resetTurn();
+    } on ContentUnavailableException catch (e) {
+      errorMessage.value = e.message;
     } catch (e) {
       errorMessage.value = 'Không thể tải nhiệm vụ. Vui lòng thử lại.';
     } finally {
@@ -291,18 +287,28 @@ class DuoGameRunnerController extends GetxController {
     }
   }
 
-  Future<void> _saveSession() => DuoDbHelper.instance.saveActiveSession(
-        gameId,
-        levelId,
-        currentIndex.value,
-        score.value,
-        correctCount.value,
-        wrongCount.value,
-        _attemptId,
-      );
+  Future<void> _saveSession() {
+    final challengeIds = challenges
+        .map((c) {
+          if (c is DuoChallenge) return c.id;
+          if (c is DuoFlashcard) return '${c.id}';
+          if (c is Map && c['id'] != null) return '${c['id']}';
+          return null;
+        })
+        .whereType<String>()
+        .toList();
 
-  String _newAttemptId() =>
-      'duo_${gameId}_${levelId}_${DateTime.now().microsecondsSinceEpoch}';
+    return DuoDbHelper.instance.saveActiveSession(
+      gameId,
+      levelId,
+      currentIndex.value,
+      score.value,
+      correctCount.value,
+      wrongCount.value,
+      _attemptId,
+      challengeIds: challengeIds.isNotEmpty ? challengeIds : null,
+    );
+  }
 
   double? _average(List<double> values) => values.isEmpty
       ? null
