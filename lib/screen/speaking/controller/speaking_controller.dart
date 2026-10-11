@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/database/db_helper.dart';
+import '../../../core/learning/service/learning_reward_service.dart';
 import '../../../core/models/speaking_practice_item.dart';
 import '../../../core/services/speech_service.dart';
 import '../../../core/services/vocabulary_service.dart';
 import '../../../core/services/audio_service.dart';
 import '../../../core/helper/permission_helper.dart';
+import '../../home/controller/home_controller.dart';
 
 class SpeakingController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -152,6 +154,26 @@ class SpeakingController extends GetxController
         score: result.score,
         isCorrect: result.isCorrect,
       );
+
+      // Unified learning reward & streak sync
+      try {
+        final rewardService = LearningRewardService();
+        final sid = 'spk_${currentItem.wordId ?? currentItem.exampleId ?? 0}';
+        final attId = 'spk_${DateTime.now().millisecondsSinceEpoch}';
+        await rewardService.processSpeakingReward(
+          sourceId: sid,
+          attemptId: attId,
+          accuracyScore: result.score,
+          pronunciationScore: result.score,
+          toneScore: result.isCorrect ? result.score : (result.score * 0.8),
+          fluencyScore: result.score,
+          recognizedText: result.recognizedText,
+        );
+
+        if (Get.isRegistered<HomeController>()) {
+          Get.find<HomeController>().refreshStats();
+        }
+      } catch (_) {}
     }
 
     if (currentItem.wordId != null) {

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flash_learn_chinese/core/learning/model/learning_result.dart';
 import 'package:flash_learn_chinese/core/models/duo_challenge.dart';
 import 'package:flash_learn_chinese/core/models/example_sentence.dart';
 import 'package:flash_learn_chinese/core/models/word.dart';
@@ -324,13 +325,34 @@ class _FakeRepository implements VocabularyAdventureRepository {
   }
 
   @override
-  Future<void> completeMission({
+  Future<LearningResult?> completeMission({
     required String levelId,
     required int gameId,
     required int score,
     required int stars,
+    int correctCount = 0,
+    int wrongCount = 0,
+    int maxCombo = 0,
   }) async {
     completions++;
+    return LearningResult(
+      activityType: 'vocabulary',
+      sourceId: levelId,
+      attemptId: 'test_attempt',
+      passed: true,
+      stars: stars,
+      score: score.toDouble(),
+      accuracy: 1.0,
+      correctCount: correctCount,
+      wrongCount: wrongCount,
+      xpEarned: score,
+      baseXp: 20,
+      bonusXp: 10,
+      newTotalXp: 100,
+      newStreak: 1,
+      isFirstClear: true,
+      isPerfect: true,
+    );
   }
 }
 

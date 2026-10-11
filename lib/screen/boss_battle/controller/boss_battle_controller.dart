@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:get/get.dart';
 
+import '../../../core/learning/model/learning_result.dart';
+import '../../../core/learning/service/learning_reward_service.dart';
 import '../data/boss_battle_repository.dart';
 import '../domain/boss_battle_question_generator.dart';
 import '../domain/boss_battle_rules.dart';
@@ -28,13 +30,15 @@ class BossBattleController extends GetxController {
     required BossBattleQuestionSource source,
     BossBattleQuestionGenerator? generator,
     BossBattleRules? rules,
+    LearningRewardService? rewardService,
     this.stage,
     this.resolveDelay = const Duration(milliseconds: 220),
     this.attackDelay = const Duration(milliseconds: 560),
     this.transitionDelay = const Duration(milliseconds: 460),
   })  : _source = source,
         _generator = generator ?? BossBattleQuestionGenerator(),
-        _rules = rules ?? const BossBattleRules();
+        _rules = rules ?? const BossBattleRules(),
+        _rewardService = rewardService ?? LearningRewardService();
 
   static const int maxBossHp = 100;
   static const int maxPlayerHp = 100;
@@ -42,6 +46,7 @@ class BossBattleController extends GetxController {
   final BossBattleQuestionSource _source;
   final BossBattleQuestionGenerator _generator;
   final BossBattleRules _rules;
+  final LearningRewardService _rewardService;
   final BossBattleStage? stage;
 
   final Duration resolveDelay;
@@ -65,6 +70,7 @@ class BossBattleController extends GetxController {
   final sessionId = ''.obs;
   final lastBossDamage = 0.obs;
   final lastPlayerDamage = 0.obs;
+  final rewardResult = Rxn<LearningResult>();
 
   int _flowToken = 0;
 
@@ -268,6 +274,34 @@ class BossBattleController extends GetxController {
 
     isInputLocked.value = true;
     phase.value = won ? BossBattlePhase.won : BossBattlePhase.lost;
+
+    final stageId = stage?.id ?? 0;
+    final attemptId =
+        'boss_${stageId}_${DateTime.now().millisecondsSinceEpoch}';
+
+    try {
+      final result = await _rewardService.processBossReward(
+        stageId: stageId,
+        attemptId: attemptId,
+        won: won,
+        score: score.value,
+        bestCombo: maxCombo.value,
+        playerHp: playerHp.value,
+        bossHp: bossHp.value,
+        isFirstClear: true,
+      );
+      rewardResult.value = result;
+
+      if (stage != null && stage!.id > 0) {
+        await _source.recordBossProgress(
+          stageId: stage!.id,
+          score: score.value,
+          stars: result.stars,
+          bestCombo: maxCombo.value,
+          won: won,
+        );
+      }
+    } catch (_) {}
 
     if (!await _wait(attackDelay, token)) return;
 

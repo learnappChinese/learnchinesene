@@ -8,6 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/learning/service/learning_reward_service.dart';
+import '../home/controller/home_controller.dart';
 import 'model/boss_battle_stage.dart';
 import '../dragon_panda/screens/boss_battle/widgets/boss_battle_gameplay_widgets.dart';
 
@@ -437,7 +440,40 @@ class _BossBattleScreenState extends State<BossBattleScreen>
     });
   }
 
-  void _onVictory() {
+  Future<void> _onVictory() async {
+    final stageId = widget.stage?.id ?? 0;
+    final attemptId =
+        'boss_screen_${stageId}_${DateTime.now().millisecondsSinceEpoch}';
+    final reward = await LearningRewardService().processBossReward(
+      stageId: stageId,
+      attemptId: attemptId,
+      won: true,
+      score: score,
+      bestCombo: maxCombo,
+      playerHp: playerHp,
+      bossHp: bossHp,
+      isFirstClear: true,
+    );
+
+    if (stageId > 0) {
+      try {
+        final client = Supabase.instance.client;
+        if (client.auth.currentUser != null) {
+          await client.rpc('record_boss_progress', params: {
+            'p_stage_id': stageId,
+            'p_score': score,
+            'p_stars': reward.stars,
+            'p_best_combo': maxCombo,
+            'p_won': true,
+          });
+        }
+      } catch (_) {}
+    }
+
+    if (Get.isRegistered<HomeController>()) {
+      Get.find<HomeController>().refreshStats();
+    }
+
     Get.off(
       () => BossBattleVictoryScreen(
         onContinue: () {
@@ -450,7 +486,20 @@ class _BossBattleScreenState extends State<BossBattleScreen>
     );
   }
 
-  void _onDefeat() {
+  Future<void> _onDefeat() async {
+    final stageId = widget.stage?.id ?? 0;
+    final attemptId =
+        'boss_screen_${stageId}_${DateTime.now().millisecondsSinceEpoch}';
+    await LearningRewardService().processBossReward(
+      stageId: stageId,
+      attemptId: attemptId,
+      won: false,
+      score: score,
+      bestCombo: maxCombo,
+      playerHp: playerHp,
+      bossHp: bossHp,
+    );
+
     Get.off(
       () => BossBattleDefeatScreen(
         onRetry: () {

@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import '../../../core/learning/model/learning_result.dart';
+import '../../../core/learning/service/learning_reward_service.dart';
 import 'duo_game_repository.dart';
 import '../../../core/database/duo_db_helper.dart';
 import '../../home/controller/home_controller.dart';
@@ -7,12 +9,14 @@ class DuoGameRunnerController extends GetxController {
   final int gameId;
   final String gameCode;
   final String levelId;
+  final LearningRewardService _rewardService;
 
   DuoGameRunnerController({
     required this.gameId,
     required this.gameCode,
     required this.levelId,
-  });
+    LearningRewardService? rewardService,
+  }) : _rewardService = rewardService ?? LearningRewardService();
 
   final isLoading = true.obs;
 
@@ -32,6 +36,7 @@ class DuoGameRunnerController extends GetxController {
   final isCompleted = false.obs;
   final calculatedStars = 0.obs;
   final finalScore = 0.obs;
+  final rewardResult = Rxn<LearningResult>();
 
   @override
   void onInit() {
@@ -154,24 +159,23 @@ class DuoGameRunnerController extends GetxController {
   }
 
   Future<void> _finishSession() async {
-    final total = correctCount.value + wrongCount.value;
-    final ratio = total > 0 ? (correctCount.value / total) : 1.0;
+    final attemptId =
+        'duo_${gameId}_${levelId}_${DateTime.now().millisecondsSinceEpoch}';
+    final reward = await _rewardService.processDuoGameReward(
+      gameId: gameId,
+      gameCode: gameCode,
+      levelId: levelId,
+      attemptId: attemptId,
+      correctCount: correctCount.value,
+      wrongCount: wrongCount.value,
+      score: score.value,
+      maxCombo: correctCount.value,
+      isFirstClear: true,
+    );
 
-    int stars = 1;
-    if (ratio >= 1.0) {
-      stars = 3;
-    } else if (ratio >= 0.8) {
-      stars = 2;
-    } else if (ratio >= 0.7) {
-      stars = 1;
-    } else {
-      stars = 0;
-    }
-
-    final bool passed = ratio >= 0.7; // Đạt trên 70% là qua môn
-
-    calculatedStars.value = stars;
-    finalScore.value = score.value;
+    rewardResult.value = reward;
+    calculatedStars.value = reward.stars;
+    finalScore.value = reward.score.toInt();
     isCompleted.value = true;
 
     // Xóa session dở dang vì đã hoàn thành
@@ -181,9 +185,9 @@ class DuoGameRunnerController extends GetxController {
     await DuoGameRepository.instance.saveProgress(
       gameId,
       levelId,
-      score.value,
-      stars,
-      passed,
+      reward.score.toInt(),
+      reward.stars,
+      reward.passed,
     );
 
     if (Get.isRegistered<HomeController>()) {
@@ -191,7 +195,7 @@ class DuoGameRunnerController extends GetxController {
     }
 
     // Xử lý logic Unlock Level kế tiếp nếu thi đỗ
-    if (passed) {
+    if (reward.passed) {
       await _unlockNextAvailableLevel();
     }
   }

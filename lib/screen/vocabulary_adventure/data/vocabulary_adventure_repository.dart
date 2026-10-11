@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/database/duo_db_helper.dart';
+import '../../../core/learning/model/learning_result.dart';
+import '../../../core/learning/service/learning_reward_service.dart';
 import '../../../core/models/duo_challenge.dart';
 import '../../../core/models/example_sentence.dart';
 import '../../../core/models/word.dart';
@@ -31,11 +33,14 @@ abstract interface class VocabularyAdventureRepository {
     required int masteryLevel,
   });
 
-  Future<void> completeMission({
+  Future<LearningResult?> completeMission({
     required String levelId,
     required int gameId,
     required int score,
     required int stars,
+    int correctCount = 0,
+    int wrongCount = 0,
+    int maxCombo = 0,
   });
 }
 
@@ -44,13 +49,16 @@ class SupabaseVocabularyAdventureRepository
   SupabaseVocabularyAdventureRepository({
     SupabaseClient? client,
     DuoDbHelper? duoDatabase,
+    LearningRewardService? rewardService,
     VocabularyEventBuilder eventBuilder = const VocabularyEventBuilder(),
   })  : _client = client ?? Supabase.instance.client,
         _duoDatabase = duoDatabase ?? DuoDbHelper.instance,
+        _rewardService = rewardService ?? LearningRewardService(),
         _eventBuilder = eventBuilder;
 
   final SupabaseClient _client;
   final DuoDbHelper _duoDatabase;
+  final LearningRewardService _rewardService;
   final VocabularyEventBuilder _eventBuilder;
 
   @override
@@ -298,15 +306,39 @@ class SupabaseVocabularyAdventureRepository
   }
 
   @override
-  Future<void> completeMission({
+  Future<LearningResult?> completeMission({
     required String levelId,
     required int gameId,
     required int score,
     required int stars,
+    int correctCount = 0,
+    int wrongCount = 0,
+    int maxCombo = 0,
   }) async {
-    await _duoDatabase.saveLevelProgress(gameId, levelId, score, stars, true);
-    await _unlockNextPlayableLevel(gameId, levelId);
+    final attemptId =
+        'vocab_${levelId}_${DateTime.now().millisecondsSinceEpoch}';
+    final reward = await _rewardService.processVocabularyReward(
+      levelId: levelId,
+      attemptId: attemptId,
+      correctCount: correctCount,
+      wrongCount: wrongCount,
+      maxCombo: maxCombo,
+      isFirstClear: true,
+    );
+
+    await _duoDatabase.saveLevelProgress(
+      gameId,
+      levelId,
+      reward.score.toInt(),
+      reward.stars,
+      reward.passed,
+    );
+
+    if (reward.passed) {
+      await _unlockNextPlayableLevel(gameId, levelId);
+    }
     await _duoDatabase.clearActiveSession(gameId, levelId);
+    return reward;
   }
 
   Future<void> _unlockNextPlayableLevel(int gameId, String levelId) async {

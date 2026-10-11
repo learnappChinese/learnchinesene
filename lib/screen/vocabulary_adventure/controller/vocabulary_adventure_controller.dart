@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 
+import '../../../core/learning/learning_rules_config.dart';
+import '../../../core/learning/model/learning_result.dart';
 import '../../home/controller/home_controller.dart';
 import '../data/vocabulary_adventure_repository.dart';
 import '../model/vocabulary_adventure.dart';
@@ -42,6 +44,7 @@ class VocabularyAdventureController extends GetxController {
   final masteredWords = 0.obs;
 
   final Set<int> _newlyMasteredWordIds = {};
+  final learningResult = Rxn<LearningResult>();
   final List<Future<void>> _pendingWrites = [];
   var _requestId = 0;
 
@@ -60,11 +63,9 @@ class VocabularyAdventureController extends GetxController {
     return total == 0 ? 100 : ((correctCount.value / total) * 100).round();
   }
 
-  int get stars => accuracy >= 90
-      ? 3
-      : accuracy >= 75
-          ? 2
-          : 1;
+  int get stars =>
+      learningResult.value?.stars ??
+      LearningRulesConfig.evaluateStars(accuracy / 100.0);
 
   @override
   void onInit() {
@@ -228,13 +229,20 @@ class VocabularyAdventureController extends GetxController {
     var saved = false;
     try {
       await Future.wait(List<Future<void>>.from(_pendingWrites));
-      await _repository.completeMission(
+      final res = await _repository.completeMission(
         levelId: levelId,
         gameId: gameId,
         score: score.value,
         stars: stars,
+        correctCount: correctCount.value,
+        wrongCount: wrongCount.value,
+        maxCombo: combo.value,
       );
       if (isClosed) return;
+      learningResult.value = res;
+      if (res != null && res.xpEarned > 0) {
+        xpEarned.value = res.xpEarned;
+      }
       isCompleted.value = true;
       saved = true;
     } catch (_) {
