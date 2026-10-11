@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:get/get.dart';
@@ -73,6 +74,8 @@ class BossBattleController extends GetxController {
   final rewardResult = Rxn<LearningResult>();
 
   int _flowToken = 0;
+  DateTime? _startedAt;
+  bool _attemptStarted = false;
 
   BossBattleQuestion? get currentQuestion {
     final index = currentIndex.value;
@@ -144,6 +147,7 @@ class BossBattleController extends GetxController {
     final token = ++_flowToken;
     _resetState();
     sessionId.value = 'boss_${DateTime.now().microsecondsSinceEpoch}';
+    _startedAt = DateTime.now();
     phase.value = BossBattlePhase.loading;
 
     try {
@@ -164,6 +168,16 @@ class BossBattleController extends GetxController {
       }
 
       questions.assignAll(built);
+      try {
+        await _rewardService.startBossAttempt(
+          stageId: stage?.id ?? 0,
+          attemptId: sessionId.value,
+        );
+        _attemptStarted = true;
+      } catch (_) {
+        // Gameplay can start offline; completion retains the same attempt id.
+      }
+      if (token != _flowToken) return;
       phase.value = BossBattlePhase.intro;
       isInputLocked.value = true;
     } catch (_) {
@@ -253,7 +267,7 @@ class BossBattleController extends GetxController {
     final nextIndex = currentIndex.value + 1;
     if (nextIndex >= questions.length) {
       await _finish(
-        won: bossHp.value < playerHp.value,
+        won: bossHp.value <= 0 && playerHp.value > 0,
         token: token,
       );
       return;
@@ -276,36 +290,26 @@ class BossBattleController extends GetxController {
     phase.value = won ? BossBattlePhase.won : BossBattlePhase.lost;
 
     final stageId = stage?.id ?? 0;
-    final attemptId =
-        'boss_${stageId}_${DateTime.now().millisecondsSinceEpoch}';
 
     try {
       final result = await _rewardService.processBossReward(
         stageId: stageId,
-        attemptId: attemptId,
-        won: won,
+        attemptId: sessionId.value,
         score: score.value,
+        correctCount: correctCount.value,
+        wrongCount: wrongCount.value,
         bestCombo: maxCombo.value,
         playerHp: playerHp.value,
         bossHp: bossHp.value,
-        isFirstClear: true,
+        durationSeconds:
+            DateTime.now().difference(_startedAt ?? DateTime.now()).inSeconds,
       );
       rewardResult.value = result;
-
-      if (stage != null && stage!.id > 0) {
-        await _source.recordBossProgress(
-          stageId: stage!.id,
-          score: score.value,
-          stars: result.stars,
-          bestCombo: maxCombo.value,
-          won: won,
-        );
-      }
     } catch (_) {}
 
     if (!await _wait(attackDelay, token)) return;
 
-    if (won) {
+    if (rewardResult.value?.passed ?? won) {
       phase.value = BossBattlePhase.reward;
       if (!await _wait(transitionDelay, token)) return;
     }
@@ -341,6 +345,14 @@ class BossBattleController extends GetxController {
   @override
   void onClose() {
     _flowToken += 1;
+    if (_attemptStarted && rewardResult.value == null) {
+      unawaited(
+        _rewardService.abandonAttempt(
+          sessionId.value,
+          metadata: const <String, dynamic>{'reason': 'boss_closed'},
+        ),
+      );
+    }
     _source.close();
     super.onClose();
   }

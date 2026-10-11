@@ -14,6 +14,11 @@ class DuoPathItem extends StatelessWidget {
       required this.cCount,
       required this.isUnlocked,
       required this.stars,
+      required this.missionTitle,
+      required this.attempts,
+      required this.bestScore,
+      required this.currentIndex,
+      required this.currentTotal,
       required this.showSectionHeader,
       required this.showUnitHeader,
       required this.offset,
@@ -29,6 +34,11 @@ class DuoPathItem extends StatelessWidget {
   final int cCount;
   final bool isUnlocked;
   final int stars;
+  final String missionTitle;
+  final int attempts;
+  final int bestScore;
+  final int currentIndex;
+  final int currentTotal;
   final bool showSectionHeader;
   final bool showUnitHeader;
   final double offset;
@@ -48,14 +58,14 @@ class DuoPathItem extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [
-                  GameVisualTokens.crimsonDark,
-                  GameVisualTokens.crimson,
-                  GameVisualTokens.crimsonDark,
+                  GameVisualTokens.jadeDark,
+                  GameVisualTokens.jade,
+                  GameVisualTokens.jadeDark,
                 ],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: GameVisualTokens.crimsonDark.withValues(alpha: 0.3),
+                  color: GameVisualTokens.jadeDark.withValues(alpha: 0.24),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -115,7 +125,7 @@ class DuoPathItem extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Chương $unitNum: $unitTitle',
+                    'Bài $unitNum: $unitTitle',
                     style: const TextStyle(
                       color: GameVisualTokens.templeWood,
                       fontSize: 16,
@@ -143,10 +153,13 @@ class DuoPathItem extends StatelessWidget {
             offset: Offset(offset, 0),
             child: DuoStageNode(
               stageNumber: levelIndex + 1,
-              nameVi: cCount == 0 ? 'Trống' : 'Cấp độ ${levelIndex + 1}',
+              nameVi: cCount == 0 ? 'Chưa có nội dung' : missionTitle,
               icon: icon,
               status: status,
               stars: stars,
+              score: bestScore,
+              currentIndex: currentIndex,
+              currentTotal: currentTotal,
               onTap: onTap,
             ),
           ),
@@ -157,25 +170,51 @@ class DuoPathItem extends StatelessWidget {
 }
 
 class DuoPathHeader extends StatelessWidget {
-  const DuoPathHeader(
-      {super.key,
-      required this.gameName,
-      required this.description,
-      required this.icon,
-      required this.levelCount});
+  const DuoPathHeader({
+    super.key,
+    required this.gameName,
+    required this.description,
+    required this.icon,
+    this.sectionNumber = 1,
+    this.sectionTitle = '',
+    this.unitNumber = 1,
+    this.unitTitle = '',
+    this.missionTitle,
+    required this.completedCount,
+    required this.missionCount,
+    this.availableSections = const [1],
+    this.selectedSection = 1,
+    this.onSelectSection,
+    this.onQuickPractice,
+    // backward compatibility
+    int? chapterNumber,
+    String? chapterTitle,
+  });
+
   final String gameName;
   final String description;
   final IconData icon;
-  final int levelCount;
+  final int sectionNumber;
+  final String sectionTitle;
+  final int unitNumber;
+  final String unitTitle;
+  final String? missionTitle;
+  final int completedCount;
+  final int missionCount;
+  final List<int> availableSections;
+  final int selectedSection;
+  final ValueChanged<int>? onSelectSection;
+  final VoidCallback? onQuickPractice;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24, bottom: 16),
+      padding: const EdgeInsets.only(top: 20, bottom: 12),
       child: Column(
         children: [
+          // 1. Icon & Name
           Container(
-            padding: const EdgeInsets.all(22),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: RadialGradient(
                 colors: [
@@ -198,10 +237,10 @@ class DuoPathHeader extends StatelessWidget {
             child: Icon(
               icon,
               color: GameVisualTokens.imperialGold,
-              size: 56,
+              size: 52,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             gameName.toUpperCase(),
             style: const TextStyle(
@@ -211,38 +250,162 @@ class DuoPathHeader extends StatelessWidget {
               color: GameVisualTokens.templeWood,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40.0),
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: Text(
               description,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
               textAlign: TextAlign.center,
             ),
           ),
           const SizedBox(height: 16),
+
+          // 2. Current Context Card (Requirement 27)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: GameVisualTokens.jade.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: GameVisualTokens.jade.withValues(alpha: 0.3),
+                color: GameVisualTokens.imperialGold.withValues(alpha: 0.6),
+                width: 1.5,
               ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x33000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
-            child: Text(
-              'TỔNG SỐ: $levelCount MÀN CHƠI',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: GameVisualTokens.jadeDark,
-                letterSpacing: 1.2,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: GameVisualTokens.imperialGold,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'PHẦN $sectionNumber: $sectionTitle'.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF451A03),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '$completedCount / $missionCount',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: GameVisualTokens.goldLight,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Bài $unitNumber: ${unitTitle.isNotEmpty ? unitTitle : 'Bài học hiện tại'}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+                if (missionTitle != null && missionTitle!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Nhiệm vụ: $missionTitle',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFFCBD5E1),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 14),
+
+          // 3. Quick Practice CTA Button
+          if (onQuickPractice != null) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: FilledButton.icon(
+                  onPressed: onQuickPractice,
+                  icon: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
+                  label: const Text(
+                    'LUYỆN TẬP NHANH (QUICK PRACTICE)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                      fontSize: 13,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: GameVisualTokens.crimson,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
+
+          // 4. Section Selector Chips
+          if (availableSections.length > 1) ...[
+            SizedBox(
+              height: 38,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: availableSections.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, i) {
+                  final sec = availableSections[i];
+                  final isSel = sec == selectedSection;
+                  return ChoiceChip(
+                    label: Text('Phần $sec'),
+                    selected: isSel,
+                    onSelected: (_) => onSelectSection?.call(sec),
+                    selectedColor: GameVisualTokens.jade,
+                    labelStyle: TextStyle(
+                      color: isSel ? Colors.white : GameVisualTokens.templeWood,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(
+                        color: isSel
+                            ? GameVisualTokens.jade
+                            : const Color(0xFFCBD5E1),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
         ],
       ),
     );
   }
 }
+

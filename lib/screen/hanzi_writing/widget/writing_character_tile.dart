@@ -15,6 +15,15 @@ class WritingCharacterTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasStrokeData = char.strokeCount > 0;
+    final (stateLabel, stateColor) = switch (char.learningState) {
+      HanziLearningState.fresh => ('NEW', GameVisualTokens.blue),
+      HanziLearningState.learning => (
+          '${char.bestScore.round()}%',
+          GameVisualTokens.imperialGold,
+        ),
+      HanziLearningState.needsReview => ('REVIEW', const Color(0xFFF97316)),
+      HanziLearningState.mastered => ('MASTERED', GameVisualTokens.jade),
+    };
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -103,6 +112,22 @@ class WritingCharacterTile extends StatelessWidget {
                   ),
                 ),
               ],
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: stateColor.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  stateLabel,
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: stateColor,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
             ],
           ),
           subtitle: Padding(

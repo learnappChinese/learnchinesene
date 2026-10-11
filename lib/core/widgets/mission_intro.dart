@@ -10,12 +10,16 @@ class MissionIntro extends StatelessWidget {
     required this.objective,
     required this.rewardText,
     required this.onStart,
+    this.eyebrow = 'NHIỆM VỤ HỌC TẬP',
+    this.coachText = 'Sẵn sàng cho thử thách tiếp theo chứ?',
   });
 
   final String title;
   final String objective;
   final String rewardText;
   final VoidCallback onStart;
+  final String eyebrow;
+  final String coachText;
 
   @override
   Widget build(BuildContext context) => Center(
@@ -37,9 +41,9 @@ class MissionIntro extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'NHIỆM VỤ TỪ VỰNG',
-                    style: TextStyle(
+                  Text(
+                    eyebrow,
+                    style: const TextStyle(
                       color: GameVisualTokens.crimsonDark,
                       fontSize: 13,
                       fontWeight: FontWeight.w900,
@@ -67,10 +71,10 @@ class MissionIntro extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const PandaCompanion(
+                  PandaCompanion(
                     mood: PandaMood.encourage,
                     size: 122,
-                    speechText: 'Khám phá, nhớ lại rồi dùng từ trong câu nhé!',
+                    speechText: coachText,
                   ),
                   const SizedBox(height: 12),
                   Container(

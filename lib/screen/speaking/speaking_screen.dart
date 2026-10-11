@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/responsive/responsive_layout.dart';
 import '../../core/widgets/learning_scene_background.dart';
+import '../../core/widgets/learning_scaffold.dart';
 import 'controller/speaking_controller.dart';
 
 class SpeakingScreen extends StatefulWidget {
@@ -82,13 +83,8 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Luyện phát âm',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ),
+    return LearningScaffold(
+      title: 'Luyện phát âm',
       body: Obx(() => _buildContent(context)),
     );
   }

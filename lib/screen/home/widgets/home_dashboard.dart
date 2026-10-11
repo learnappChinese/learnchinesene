@@ -258,7 +258,8 @@ class _JourneyHero extends StatelessWidget {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'Phần thưởng tiếp theo: +${journey.nextRewardXp} XP',
+                          'Phần thưởng tiếp theo: '
+                          '${journey.recommendation?.rewardPreview ?? '+${journey.nextRewardXp} XP'}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(

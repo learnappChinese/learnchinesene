@@ -472,27 +472,6 @@ class DbHelper {
         .toList();
   }
 
-  Future<void> saveSpeakingPractice({
-    required int wordId,
-    int? exampleId,
-    required String targetText,
-    required String recognizedText,
-    required double score,
-    required bool isCorrect,
-  }) async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) return;
-    await _client.from('lexicon_speaking_practice').insert({
-      'user_id': userId,
-      'word_id': wordId,
-      'example_id': exampleId,
-      'target_text': targetText,
-      'recognized_text': recognizedText,
-      'accuracy_score': score,
-      'pronunciation_score': score,
-    });
-  }
-
   Future<List<HanziCharacter>> getCharactersForWriting({
     String? keyword,
     int? hskLevel,
@@ -507,6 +486,22 @@ class DbHelper {
           .range(0, 999),
     );
     final words = await _fetchWordCatalog();
+    final userId = _client.auth.currentUser?.id;
+    final progressRows = userId == null
+        ? const <Map<String, dynamic>>[]
+        : List<Map<String, dynamic>>.from(
+            await _client
+                .from('lexicon_hanzi_progress')
+                .select(
+                  'character_id, practice_count, best_score, last_score, next_review_at',
+                )
+                .eq('user_id', userId),
+          );
+    final progressByCharacter = <int, Map<String, dynamic>>{
+      for (final row in progressRows)
+        if (row['character_id'] is num)
+          (row['character_id'] as num).toInt(): row,
+    };
 
     final byCharacter = <String, Map<String, dynamic>>{};
     final byMain = <int, Map<String, dynamic>>{};
@@ -528,6 +523,7 @@ class DbHelper {
       final pinyin = '${word?['pinyin'] ?? ''}';
       final meaning = '${word?['meaning_vi'] ?? ''}';
       final level = (word?['hsk_level_id'] as num?)?.toInt();
+      final progress = progressByCharacter[id];
 
       if (hskLevel != null && level != hskLevel) continue;
       if (filter != null &&
@@ -547,6 +543,10 @@ class DbHelper {
           'pinyin': pinyin,
           'meaning': meaning,
           'hsk_level_id': level,
+          'practice_count': progress?['practice_count'],
+          'best_score': progress?['best_score'],
+          'last_score': progress?['last_score'],
+          'next_review_at': progress?['next_review_at'],
         }),
       );
     }
@@ -617,22 +617,6 @@ class DbHelper {
     return await lookup(charStr) ?? await lookup(charStr.substring(0, 1));
   }
 
-  Future<void> saveHanziWritingProgress({
-    required int characterId,
-    required double score,
-    required int attempts,
-  }) async {
-    if (_client.auth.currentUser == null) return;
-    await _client.rpc(
-      'record_hanzi_progress',
-      params: {
-        'p_character_id': characterId,
-        'p_score': score,
-        'p_attempts': attempts,
-      },
-    );
-  }
-
   Future<List<Map<String, dynamic>>> _fetchWordCatalog() async {
     final out = <Map<String, dynamic>>[];
     var from = 0;
@@ -685,4 +669,3 @@ class DbHelper {
     };
   }
 }
-

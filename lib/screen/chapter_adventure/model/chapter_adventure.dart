@@ -10,6 +10,11 @@ class ChapterAdventure {
     required this.title,
     required this.objective,
     required this.missions,
+    this.overallMastery = 0,
+    this.bossUnlocked = false,
+    this.bossLockReason,
+    this.bossRequiredNodeId,
+    this.bossRequiredMastery,
     this.boss,
   });
 
@@ -20,6 +25,11 @@ class ChapterAdventure {
   final String title;
   final String objective;
   final List<ChapterMission> missions;
+  final double overallMastery;
+  final bool bossUnlocked;
+  final String? bossLockReason;
+  final String? bossRequiredNodeId;
+  final double? bossRequiredMastery;
   final BossBattleStage? boss;
 
   int get completedMissions =>
@@ -30,9 +40,6 @@ class ChapterAdventure {
 
   double get progress =>
       missions.isEmpty ? 0 : completedMissions / missions.length;
-
-  bool get bossUnlocked =>
-      missions.isNotEmpty && completedMissions == missions.length;
 }
 
 class ChapterMission {
@@ -44,6 +51,13 @@ class ChapterMission {
     required this.type,
     required this.state,
     required this.stars,
+    this.attempts = 0,
+    this.bestScore = 0,
+    this.currentIndex = 0,
+    this.currentTotal = 0,
+    this.lockReason,
+    this.requiredNodeId,
+    this.requiredMastery,
   });
 
   final int gameId;
@@ -53,6 +67,13 @@ class ChapterMission {
   final AdventureNodeType type;
   final AdventureNodeState state;
   final int stars;
+  final int attempts;
+  final int bestScore;
+  final int currentIndex;
+  final int currentTotal;
+  final String? lockReason;
+  final String? requiredNodeId;
+  final double? requiredMastery;
 
   bool get isCompleted =>
       state == AdventureNodeState.completed ||

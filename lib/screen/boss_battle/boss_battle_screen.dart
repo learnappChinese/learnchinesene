@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/learning/service/learning_reward_service.dart';
 import '../home/controller/home_controller.dart';
 import 'model/boss_battle_stage.dart';
@@ -58,6 +57,7 @@ class _BossBattleScreenState extends State<BossBattleScreen>
   int maxCombo = 3;
   int score = 0;
   int correctCount = 0;
+  int wrongCount = 0;
   int currentQuestionIndex = 0;
 
   bool isAnimating = false;
@@ -88,12 +88,25 @@ class _BossBattleScreenState extends State<BossBattleScreen>
   bool _assetsLoaded = false;
 
   final FlutterTts _tts = FlutterTts();
+  final LearningRewardService _rewardService = LearningRewardService();
+  late final String _attemptId;
+  late final DateTime _startedAt;
+  bool _attemptCompleted = false;
 
   late List<_BattleQuestion> _questions;
 
   @override
   void initState() {
     super.initState();
+    _attemptId =
+        'boss_screen_${widget.stage?.id ?? 0}_${DateTime.now().microsecondsSinceEpoch}';
+    _startedAt = DateTime.now();
+    unawaited(
+      _rewardService.startBossAttempt(
+        stageId: widget.stage?.id ?? 0,
+        attemptId: _attemptId,
+      ),
+    );
     _initQuestions();
     maxBossHp = widget.stage != null ? widget.stage!.bossHp : 500;
     bossHp = widget.stage != null ? (widget.stage!.bossHp * 0.64).toInt() : 320;
@@ -304,6 +317,7 @@ class _BossBattleScreenState extends State<BossBattleScreen>
       // DRAGON BREATHES FIRE TO PANDA (-30)
       setState(() {
         combo = 0;
+        wrongCount += 1;
         feedbackText = 'Sai rồi!';
         dragonMouthGlow = 0.8;
       });
@@ -442,33 +456,18 @@ class _BossBattleScreenState extends State<BossBattleScreen>
 
   Future<void> _onVictory() async {
     final stageId = widget.stage?.id ?? 0;
-    final attemptId =
-        'boss_screen_${stageId}_${DateTime.now().millisecondsSinceEpoch}';
-    final reward = await LearningRewardService().processBossReward(
+    await _rewardService.processBossReward(
       stageId: stageId,
-      attemptId: attemptId,
-      won: true,
+      attemptId: _attemptId,
       score: score,
+      correctCount: correctCount,
+      wrongCount: wrongCount,
       bestCombo: maxCombo,
       playerHp: playerHp,
       bossHp: bossHp,
-      isFirstClear: true,
+      durationSeconds: DateTime.now().difference(_startedAt).inSeconds,
     );
-
-    if (stageId > 0) {
-      try {
-        final client = Supabase.instance.client;
-        if (client.auth.currentUser != null) {
-          await client.rpc('record_boss_progress', params: {
-            'p_stage_id': stageId,
-            'p_score': score,
-            'p_stars': reward.stars,
-            'p_best_combo': maxCombo,
-            'p_won': true,
-          });
-        }
-      } catch (_) {}
-    }
+    _attemptCompleted = true;
 
     if (Get.isRegistered<HomeController>()) {
       Get.find<HomeController>().refreshStats();
@@ -488,17 +487,18 @@ class _BossBattleScreenState extends State<BossBattleScreen>
 
   Future<void> _onDefeat() async {
     final stageId = widget.stage?.id ?? 0;
-    final attemptId =
-        'boss_screen_${stageId}_${DateTime.now().millisecondsSinceEpoch}';
-    await LearningRewardService().processBossReward(
+    await _rewardService.processBossReward(
       stageId: stageId,
-      attemptId: attemptId,
-      won: false,
+      attemptId: _attemptId,
       score: score,
+      correctCount: correctCount,
+      wrongCount: wrongCount,
       bestCombo: maxCombo,
       playerHp: playerHp,
       bossHp: bossHp,
+      durationSeconds: DateTime.now().difference(_startedAt).inSeconds,
     );
+    _attemptCompleted = true;
 
     Get.off(
       () => BossBattleDefeatScreen(
@@ -514,6 +514,14 @@ class _BossBattleScreenState extends State<BossBattleScreen>
 
   @override
   void dispose() {
+    if (!_attemptCompleted) {
+      unawaited(
+        _rewardService.abandonAttempt(
+          _attemptId,
+          metadata: const <String, dynamic>{'reason': 'boss_screen_closed'},
+        ),
+      );
+    }
     battleTimer?.cancel();
     _damageTimer?.cancel();
     _ticker.dispose();

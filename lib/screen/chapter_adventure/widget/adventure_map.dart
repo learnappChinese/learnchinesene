@@ -17,11 +17,12 @@ class AdventureMap extends StatelessWidget {
   final bool bossUnlocked;
   final ValueChanged<ChapterMission> onMissionTap;
   final VoidCallback onBossTap;
+  static const double _rowHeight = 178;
 
   @override
   Widget build(BuildContext context) {
     final rows = _layoutRows(missions.length);
-    final height = rows * 154.0 + 135;
+    final height = rows * _rowHeight + 155;
     return LayoutBuilder(builder: (context, constraints) {
       final width = constraints.maxWidth;
       final points = <Offset>[];
@@ -33,7 +34,7 @@ class AdventureMap extends StatelessWidget {
       }
       final bossPosition = _MapPosition(
         left: (width - 150) / 2,
-        top: rows * 154.0 + 8,
+        top: rows * _rowHeight + 8,
       );
       points.add(Offset(bossPosition.left + 75, bossPosition.top + 43));
 
@@ -53,7 +54,8 @@ class AdventureMap extends StatelessWidget {
             final mission = missions[index];
             final position = positions[index];
             final active = mission.state == AdventureNodeState.available ||
-                mission.state == AdventureNodeState.inProgress;
+                mission.state == AdventureNodeState.inProgress ||
+                mission.state == AdventureNodeState.failed;
             return Positioned(
               left: position.left,
               top: position.top,
@@ -66,10 +68,13 @@ class AdventureMap extends StatelessWidget {
                 isActive: active &&
                     !missions.take(index).any((item) =>
                         item.state == AdventureNodeState.available ||
-                        item.state == AdventureNodeState.inProgress),
+                        item.state == AdventureNodeState.inProgress ||
+                        item.state == AdventureNodeState.failed),
                 rewardPreview: mission.state == AdventureNodeState.locked
                     ? null
                     : 'XP • ⭐',
+                progressLabel: _progressLabel(mission),
+                ctaLabel: _ctaLabel(mission.state),
                 onTap: () => onMissionTap(mission),
               ),
             );
@@ -83,8 +88,12 @@ class AdventureMap extends StatelessWidget {
               state: bossUnlocked
                   ? AdventureNodeState.available
                   : AdventureNodeState.locked,
-              title: 'Chapter Boss',
+              title: 'Boss Chương',
               rewardPreview: bossUnlocked ? 'Rương • ⭐⭐⭐' : null,
+              progressLabel: bossUnlocked
+                  ? 'Sẵn sàng chiến đấu'
+                  : 'Hoàn thành các nhiệm vụ',
+              ctaLabel: bossUnlocked ? 'CHIẾN ĐẤU' : 'XEM ĐIỀU KIỆN',
               onTap: onBossTap,
             ),
           ),
@@ -110,6 +119,53 @@ class AdventureMap extends StatelessWidget {
     return 1 + ((count - 1) / 2).ceil();
   }
 
+  String? _progressLabel(ChapterMission mission) {
+    switch (mission.state) {
+      case AdventureNodeState.inProgress:
+        if (mission.currentTotal <= 0) return 'Đang học';
+        final answered = mission.currentIndex.clamp(0, mission.currentTotal);
+        return '$answered / ${mission.currentTotal} câu';
+      case AdventureNodeState.failed:
+        return '${mission.bestScore}% • Cần 70%';
+      case AdventureNodeState.locked:
+        return _lockCopy(mission.lockReason);
+      case AdventureNodeState.available:
+        return mission.attempts > 0 ? 'Sẵn sàng thử lại' : 'Nhiệm vụ mới';
+      case AdventureNodeState.completed:
+      case AdventureNodeState.perfect:
+        return 'Đã hoàn thành';
+    }
+  }
+
+  String? _ctaLabel(AdventureNodeState state) {
+    switch (state) {
+      case AdventureNodeState.available:
+        return 'BẮT ĐẦU';
+      case AdventureNodeState.inProgress:
+        return 'TIẾP TỤC';
+      case AdventureNodeState.failed:
+        return 'THỬ LẠI';
+      case AdventureNodeState.locked:
+        return 'XEM ĐIỀU KIỆN';
+      case AdventureNodeState.completed:
+      case AdventureNodeState.perfect:
+        return 'CHƠI LẠI';
+    }
+  }
+
+  String _lockCopy(String? reason) {
+    switch (reason) {
+      case 'mastery_too_low':
+        return 'Cần nâng mastery';
+      case 'boss_required':
+        return 'Cần thắng Boss';
+      case 'chapter_locked':
+        return 'Chương chưa mở';
+      default:
+        return 'Hoàn thành nhiệm vụ trước';
+    }
+  }
+
   _MapPosition _positionFor(int index, double width) {
     if (index == 0) return _MapPosition(left: (width - 150) / 2, top: 8);
     final adjusted = index - 1;
@@ -118,7 +174,7 @@ class AdventureMap extends StatelessWidget {
     final edge = width < 360 ? 0.0 : 12.0;
     return _MapPosition(
       left: leftLane ? edge : width - 150 - edge,
-      top: row * 154.0,
+      top: row * _rowHeight,
     );
   }
 }

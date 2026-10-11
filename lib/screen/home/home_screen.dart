@@ -26,11 +26,11 @@ import '../system/profile_page.dart';
 import '../subscription/page/subscription_page.dart';
 import '../subscription/controller/subscription_controller.dart';
 import '../../core/helper/upgrade_dialog_helper.dart';
-import '../duolingo/duo_game_center_screen.dart';
-import '../chapter_adventure/binding/chapter_adventure_binding.dart';
-import '../chapter_adventure/page/chapter_adventure_screen.dart';
+import '../unit_overview/binding/unit_overview_binding.dart';
+import '../unit_overview/page/unit_overview_screen.dart';
 import '../game_hub/game_hub_screen.dart';
 import '../review/review_screen.dart';
+import '../../core/widgets/learning_scaffold.dart';
 
 class HomeScreen extends StatefulWidget {
   static const routeName = '/home';
@@ -141,8 +141,13 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     Get.to(
-      () => const ChapterAdventureScreen(),
-      binding: ChapterAdventureBinding(levelId: journey.levelId),
+      () => const UnitOverviewScreen(),
+      binding: UnitOverviewBinding(
+        unitId: journey.unitId ?? journey.levelId,
+        unitTitle: journey.chapterTitle,
+        sectionNumber: journey.worldNumber,
+        unitNumber: journey.chapterNumber,
+      ),
     )?.then((_) => controller.refreshStats());
   }
 
@@ -219,17 +224,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPracticePage() {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Luyện tập')),
-      body: SafeArea(
-          child: HomePracticeTab(
-              onReview: () => Get.to(() => const ReviewScreen()),
-              onSpeaking: () => Get.to(() => const SpeakingScreen(),
-                  arguments: const {'standalone': true}),
-              onWriting: () => Get.to(() => const HanziWritingHomeScreen()),
-              onFlashcards: () => Get.to(() => const FlashcardsScreen()),
-              onLearningPath: () => Get.to(() => const DuoGameCenterScreen()),
-              onQuiz: () => Get.to(() => const HskQuizScreen()))),
+    return LearningScaffold(
+      title: 'Học tập & Luyện tập',
+      body: Obx(
+        () => HomePracticeTab(
+          journey: controller.journey.value,
+          reviewSummary: controller.reviewSummary.value,
+          isLoading: controller.isJourneyLoading.value,
+          onReview: () => Get.to(() => const ReviewScreen()),
+          onSpeaking: () => Get.to(() => const SpeakingScreen(),
+              arguments: const {'standalone': true}),
+          onWriting: () => Get.to(() => const HanziWritingHomeScreen()),
+          onFlashcards: () => Get.to(() => const FlashcardsScreen()),
+          onLearningPath: _openCurrentJourney,
+          onQuiz: () => Get.to(() => const HskQuizScreen()),
+        ),
+      ),
     );
   }
 }

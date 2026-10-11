@@ -5,18 +5,26 @@ import '../../../core/theme/app_colors.dart';
 import '../controller/duo_game_runner_controller.dart';
 import 'package:flash_learn_chinese/core/models/duo_challenge.dart';
 import '../../../core/models/duo_flashcard.dart';
-import '../duo_game_completion_dialog.dart';
 import '../widget/duo_flashcard_widget.dart';
 import '../widget/duo_word_connect_widget.dart';
 import '../widget/duo_speaking_widget.dart';
 import '../widget/duo_sentence_builder_widget.dart';
 import '../widget/duo_multiple_choice_widget.dart';
+import '../../../core/widgets/learning_scaffold.dart';
+import '../../../core/widgets/learning_scene_background.dart';
+import '../../../core/widgets/mission_progress_header.dart';
+import '../../../core/widgets/mission_complete_overlay.dart';
+import '../../../core/widgets/panda_companion.dart';
+import '../../../core/widgets/mission_intro.dart';
 
 class DuoGameRunnerScreen extends StatefulWidget {
   final int gameId;
   final String gameCode;
   final String levelId;
   final String gameName;
+  final int chapterNumber;
+  final int missionNumber;
+  final int missionCount;
 
   const DuoGameRunnerScreen({
     super.key,
@@ -24,6 +32,9 @@ class DuoGameRunnerScreen extends StatefulWidget {
     required this.gameCode,
     required this.levelId,
     required this.gameName,
+    this.chapterNumber = 1,
+    this.missionNumber = 1,
+    this.missionCount = 1,
   });
 
   @override
@@ -49,23 +60,32 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.gameName),
-        actions: [
-          Obx(() => Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: Text(
-                    'Điểm: ${controller.score.value}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+    return LearningScaffold(
+      title: widget.gameName,
+      actions: [
+        Obx(() => Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Text(
+                  'Điểm: ${controller.score.value}',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-              )),
-        ],
+              ),
+            )),
+      ],
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.neutralCream,
+        showMountains: false,
+        child: Column(children: [
+          MissionProgressHeader(
+            chapterNumber: widget.chapterNumber,
+            current: widget.missionNumber,
+            total: widget.missionCount,
+          ),
+          Expanded(child: _buildChallengeContent(context)),
+        ]),
       ),
-      body: _buildChallengeContent(context),
     );
   }
 
@@ -89,7 +109,7 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
         key: ValueKey((challenge as DuoChallenge).id),
         challenge: challenge,
         isAnswered: controller.isAnsweredCorrectly.value != null,
-        onCheck: controller.submitAnswer,
+        onCheck: controller.submitSpeakingResult,
       );
     } else if (widget.gameCode == 'translate' ||
         widget.gameCode == 'listen_select' ||
@@ -118,16 +138,56 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
         return const Center(child: CircularProgressIndicator());
       }
 
+      if (controller.errorMessage.value != null) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const PandaCompanion(size: 88, mood: PandaMood.encourage),
+                const SizedBox(height: 12),
+                Text(
+                  controller.errorMessage.value!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15, height: 1.4),
+                ),
+                const SizedBox(height: 20),
+                LearningPrimaryButton(
+                  label: 'THỬ LẠI',
+                  icon: Icons.refresh_rounded,
+                  onPressed: controller.initSession,
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      if (controller.showMissionIntro.value &&
+          controller.challenges.isNotEmpty) {
+        return MissionIntro(
+          title: widget.gameName,
+          objective:
+              'Hoàn thành ${controller.challenges.length} thử thách • Cần 70% để qua màn',
+          rewardText: 'Phần thưởng: XP + Mastery',
+          onStart: controller.startMission,
+        );
+      }
+
       // 1. Khi hoàn thành -> Show Completion Screen
       if (controller.isCompleted.value) {
-        return DuoGameCompletionDialog(
-          stars: controller.calculatedStars.value,
-          score: controller.finalScore.value,
-          correctCount: controller.correctCount.value,
-          wrongCount: controller.wrongCount.value,
-          onContinue: () {
-            Get.back();
-          },
+        final result = controller.rewardResult.value;
+        if (result == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return Center(
+          child: MissionCompleteOverlay(
+            result: result,
+            onNextMission:
+                result.passed ? () => Get.back() : controller.retrySession,
+            onBackToMap: () => Get.back(),
+          ),
         );
       }
 

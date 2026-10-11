@@ -5,6 +5,7 @@ import '../../core/responsive/responsive_layout.dart';
 import '../../core/theme/game_visual_tokens.dart';
 import '../../core/widgets/learning_scene_background.dart';
 import '../../core/widgets/panda_companion.dart';
+import '../../core/widgets/learning_scaffold.dart';
 import 'controller/review_controller.dart';
 import 'model/review_item.dart';
 
@@ -28,35 +29,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: GameVisualTokens.night,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon:
-              const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.of(context).maybePop(),
+    return LearningScaffold(
+      title: 'Trung tâm Ôn luyện',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh_rounded, color: GameVisualTokens.jade),
+          tooltip: 'Làm mới',
+          onPressed: controller.loadInitialData,
         ),
-        title: const Text(
-          'Trung Tâm Ôn Luyện',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-            letterSpacing: 0.5,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded,
-                color: GameVisualTokens.imperialGold),
-            tooltip: 'Làm mới',
-            onPressed: controller.loadInitialData,
-          ),
-        ],
-      ),
+      ],
       body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: SafeArea(
@@ -88,7 +69,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         Expanded(
                           child: RefreshIndicator(
                             color: GameVisualTokens.jade,
-                            backgroundColor: GameVisualTokens.night,
+                            backgroundColor: GameVisualTokens.cream,
                             onRefresh: controller.loadInitialData,
                             child: ListView(
                               padding: EdgeInsets.fromLTRB(

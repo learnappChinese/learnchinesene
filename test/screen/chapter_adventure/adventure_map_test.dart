@@ -96,7 +96,7 @@ void main() {
 
       expect(find.text('Khám phá từ mới'), findsOneWidget);
       expect(find.text('Săn âm thanh'), findsOneWidget);
-      expect(find.text('Chapter Boss'), findsOneWidget);
+      expect(find.text('Boss Chương'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.extension_rounded).first);
       expect(tapped, [2]);
       expect(tester.takeException(), isNull);

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../review/review_screen.dart';
 import 'controller/quiz_controller.dart';
+import '../../core/widgets/learning_scaffold.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key});
@@ -26,15 +27,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Obx(() => Text(
-              controller.complete.value
-                  ? 'Hoàn thành bài học'
-                  : 'Luyện tập nhanh',
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            )),
-      ),
+    return LearningScaffold(
+      title: 'Luyện tập nhanh',
       body: _buildQuizContent(context),
     );
   }
@@ -51,10 +45,12 @@ class _QuizScreenState extends State<QuizScreen> {
           message: 'Hoạt động này cần ít nhất bốn đáp án khác nhau.',
         );
       }
+      if (controller.isCompleting.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
       if (controller.complete.value) {
         return QuizResultView(
-            score: controller.score.value,
-            questionCount: controller.questions.length,
+            result: controller.learningResult.value!,
             onRetry: controller.load,
             onReview: () => Get.off(() => const ReviewScreen()));
       }

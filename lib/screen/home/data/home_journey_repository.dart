@@ -1,3 +1,5 @@
+import '../../../core/learning/model/learning_recommendation.dart';
+import '../../../core/learning/service/learning_recommendation_service.dart';
 import '../../chapter_adventure/data/chapter_adventure_repository.dart';
 import '../../duolingo/controller/duo_game_repository.dart';
 import '../model/home_journey.dart';
@@ -10,12 +12,16 @@ class CloudHomeJourneyRepository implements HomeJourneyRepository {
   CloudHomeJourneyRepository({
     DuoGameRepository? gameRepository,
     ChapterAdventureRepository? chapterRepository,
+    LearningRecommendationService? recommendationService,
   })  : _gameRepository = gameRepository ?? DuoGameRepository.instance,
         _chapterRepository =
-            chapterRepository ?? SupabaseChapterAdventureRepository();
+            chapterRepository ?? SupabaseChapterAdventureRepository(),
+        _recommendationService =
+            recommendationService ?? SupabaseLearningRecommendationService();
 
   final DuoGameRepository _gameRepository;
   final ChapterAdventureRepository _chapterRepository;
+  final LearningRecommendationService _recommendationService;
 
   @override
   Future<HomeJourney?> loadJourney() async {
@@ -45,6 +51,18 @@ class CloudHomeJourneyRepository implements HomeJourneyRepository {
         chapter == null || chapter.missions.isEmpty || missionIndex < 0
             ? null
             : chapter.missions[missionIndex];
+    LearningRecommendation? recommendation;
+    if (chapter != null) {
+      try {
+        recommendation = await _recommendationService.recommend(
+          unitId: chapter.unitId,
+          levelId: levelId,
+        );
+      } catch (_) {
+        // The journey remains usable if an optional recommendation source is
+        // temporarily unavailable.
+      }
+    }
 
     return HomeJourney(
       gameId: gameId,
@@ -52,18 +70,22 @@ class CloudHomeJourneyRepository implements HomeJourneyRepository {
       gameName: '${game['name_vi'] ?? 'Hành trình tiếng Trung'}',
       gameDescription: '${game['description_vi'] ?? ''}',
       levelId: levelId,
+      unitId: chapter?.unitId ?? active['unit_id']?.toString(),
       worldNumber: (active['section_number'] as num?)?.toInt() ?? 1,
       chapterNumber: chapter?.chapterNumber ??
           (active['unit_number'] as num?)?.toInt() ??
           1,
       chapterTitle: chapter?.title ?? '${active['unit_title'] ?? 'Chương mới'}',
       missionNumber: missionIndex < 0 ? totalMissions : missionIndex + 1,
-      missionTitle: currentMission?.title ?? 'Sẵn sàng đánh Boss',
+      missionTitle: recommendation?.title ??
+          currentMission?.title ??
+          'Sẵn sàng đánh Boss',
       completedMissions: completed,
       totalMissions: totalMissions,
       stars: stars,
       bossProgress: chapter?.progress ?? 0,
       nextRewardXp: 20 + (missionIndex.clamp(0, 4) * 5),
+      recommendation: recommendation,
     );
   }
 

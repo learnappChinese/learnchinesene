@@ -64,6 +64,10 @@ void main() {
                 onRestaurant: () => actions.add('restaurant'),
                 onQuickAnswer: () => actions.add('quick'),
                 onStageMap: () => actions.add('map'),
+                chapterNumber: 1,
+                completedMissions: 3,
+                totalMissions: 7,
+                stars: 2,
               ),
               bottomNavigationBar: HomeBottomNavigation(
                   currentIndex: 2, onSelected: destinations.add),
@@ -73,6 +77,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+      expect(find.text('CHAPTER 1  •  3 / 7 nhiệm vụ'), findsNWidgets(5));
       expect(tester.getTopLeft(find.text('Trò chơi').first).dy,
           greaterThanOrEqualTo(47));
       final heading = tester.getRect(find.text('Trò chơi').first);

@@ -1,320 +1,329 @@
-import 'dart:math' as math;
-
 import '../data/learning_progress_repository.dart';
-import '../learning_rules_config.dart';
+import '../model/learning_activity_submission.dart';
 import '../model/learning_result.dart';
 
+/// Coordinates raw learning submissions.
+///
+/// Signed-in results are evaluated by `complete_learning_activity_v2`.
+/// Guest results use the same rule contract through the local repository.
 class LearningRewardService {
   LearningRewardService({LearningProgressRepository? repository})
       : _repository = repository ?? SupabaseLearningProgressRepository();
 
   final LearningProgressRepository _repository;
 
-  /// 1. Process Vocabulary Session Reward
+  Future<void> startAttempt(LearningActivitySubmission submission) =>
+      _repository.startAttempt(submission);
+
+  Future<void> abandonAttempt(
+    String attemptId, {
+    Map<String, dynamic> metadata = const <String, dynamic>{},
+  }) =>
+      _repository.abandonAttempt(attemptId, metadata: metadata);
+
+  Future<LearningResult> completeActivity(
+    LearningActivitySubmission submission,
+  ) =>
+      _repository.completeActivity(submission);
+
   Future<LearningResult> processVocabularyReward({
     required String levelId,
     required String attemptId,
     required int correctCount,
     required int wrongCount,
     required int maxCombo,
-    required bool isFirstClear,
+    int? gameId,
+    String? unitId,
     int? totalQuestions,
-  }) async {
-    final total = correctCount + wrongCount;
-    final accuracy = total > 0 ? (correctCount / total) : 0.0;
-    final passed = accuracy >= LearningRulesConfig.vocabularyPassAccuracy &&
-        (totalQuestions == null || total >= totalQuestions);
-
-    final stars = passed ? LearningRulesConfig.evaluateStars(accuracy) : 0;
-    final score = accuracy * 100.0;
-
-    int baseXp = 0;
-    int bonusXp = 0;
-
-    if (passed) {
-      baseXp = LearningRulesConfig.vocabularyBaseXp;
-      if (accuracy >= 1.0) bonusXp += LearningRulesConfig.perfectBonusXp;
-      if (accuracy >= 0.85) bonusXp += LearningRulesConfig.highAccuracyBonusXp;
-      if (maxCombo >= 5) bonusXp += LearningRulesConfig.comboBonusXp;
-      if (isFirstClear) bonusXp += LearningRulesConfig.firstClearBonusXp;
-    } else {
-      baseXp = LearningRulesConfig.practiceEffortXp;
-    }
-
-    return _repository.recordReward(
-      activityType: 'vocabulary',
-      sourceType: 'level',
-      sourceId: levelId,
-      attemptId: attemptId,
-      score: score,
-      accuracy: accuracy,
-      correctCount: correctCount,
-      wrongCount: wrongCount,
-      stars: stars,
-      passed: passed,
-      baseXp: baseXp,
-      bonusXp: bonusXp,
-      idempotencyKey: 'vocab:$levelId:$attemptId',
-      metadata: {
-        'max_combo': maxCombo,
-        'total_questions': total,
-      },
+    int durationSeconds = 0,
+  }) {
+    return completeActivity(
+      LearningActivitySubmission(
+        activityType: 'vocabulary',
+        sourceType: gameId == null ? 'level' : 'duo_level',
+        sourceId: gameId == null ? levelId : '$gameId:$levelId',
+        attemptId: attemptId,
+        unitId: unitId,
+        levelId: levelId,
+        score: _accuracyPercent(correctCount, wrongCount),
+        correctCount: correctCount,
+        wrongCount: wrongCount,
+        durationSeconds: durationSeconds,
+        bestCombo: maxCombo,
+        metadata: <String, dynamic>{
+          if (gameId != null) 'game_id': gameId,
+          'game_code': 'learn_words',
+          if (totalQuestions != null) 'required_questions': totalQuestions,
+        },
+      ),
     );
   }
 
-  /// 2. Process Listening Session Reward
   Future<LearningResult> processListeningReward({
     required String sourceId,
     required String attemptId,
     required int correctCount,
     required int wrongCount,
     required int maxCombo,
-    bool isFirstClear = false,
-  }) async {
-    final total = correctCount + wrongCount;
-    final accuracy = total > 0 ? (correctCount / total) : 0.0;
-    final passed = accuracy >= LearningRulesConfig.listeningPassAccuracy;
-    final stars = passed ? LearningRulesConfig.evaluateStars(accuracy) : 0;
-    final score = accuracy * 100.0;
-
-    int baseXp = 0;
-    int bonusXp = 0;
-
-    if (passed) {
-      baseXp = LearningRulesConfig.listeningBaseXp;
-      if (accuracy >= 1.0) bonusXp += LearningRulesConfig.perfectBonusXp;
-      if (accuracy >= 0.85) bonusXp += LearningRulesConfig.highAccuracyBonusXp;
-      if (maxCombo >= 5) bonusXp += LearningRulesConfig.comboBonusXp;
-      if (isFirstClear) bonusXp += LearningRulesConfig.firstClearBonusXp;
-    } else {
-      baseXp = LearningRulesConfig.practiceEffortXp;
-    }
-
-    return _repository.recordReward(
-      activityType: 'listening',
-      sourceType: 'listening_challenge',
-      sourceId: sourceId,
-      attemptId: attemptId,
-      score: score,
-      accuracy: accuracy,
-      correctCount: correctCount,
-      wrongCount: wrongCount,
-      stars: stars,
-      passed: passed,
-      baseXp: baseXp,
-      bonusXp: bonusXp,
-      idempotencyKey: 'listen:$sourceId:$attemptId',
-      metadata: {'max_combo': maxCombo},
+    String? unitId,
+    String? levelId,
+    int replayCount = 0,
+    int slowAudioCount = 0,
+    int durationSeconds = 0,
+    Map<String, dynamic> metadata = const <String, dynamic>{},
+  }) {
+    return completeActivity(
+      LearningActivitySubmission(
+        activityType: 'listening',
+        sourceType: 'listening_challenge',
+        sourceId: sourceId,
+        attemptId: attemptId,
+        unitId: unitId,
+        levelId: levelId,
+        score: _accuracyPercent(correctCount, wrongCount),
+        correctCount: correctCount,
+        wrongCount: wrongCount,
+        durationSeconds: durationSeconds,
+        bestCombo: maxCombo,
+        metadata: <String, dynamic>{
+          ...metadata,
+          'replay_count': replayCount,
+          'slow_audio_count': slowAudioCount,
+        },
+      ),
     );
   }
 
-  /// 3. Process Speaking Session Reward (Weighted calculation)
   Future<LearningResult> processSpeakingReward({
     required String sourceId,
     required String attemptId,
     required double accuracyScore,
-    required double pronunciationScore,
-    required double toneScore,
-    required double fluencyScore,
+    required double? pronunciationScore,
+    required double? toneScore,
+    required double? fluencyScore,
     String? recognizedText,
-  }) async {
-    final overallScore = LearningRulesConfig.calculateSpeakingOverall(
-      accuracy: accuracyScore,
-      pronunciation: pronunciationScore,
-      tone: toneScore,
-      fluency: fluencyScore,
-    );
-
-    // Pass rule: overall >= 65 and tone >= 50
-    final passed =
-        overallScore >= (LearningRulesConfig.speakingPassOverall * 100.0) &&
-            toneScore >= (LearningRulesConfig.speakingPassTone * 100.0);
-
-    final ratio = overallScore / 100.0;
-    final stars = passed ? LearningRulesConfig.evaluateStars(ratio) : 0;
-
-    int baseXp = 0;
-    int bonusXp = 0;
-
-    if (passed) {
-      baseXp = LearningRulesConfig.speakingBaseXp;
-      if (ratio >= 0.95) bonusXp += LearningRulesConfig.perfectBonusXp;
-      if (ratio >= 0.85) bonusXp += LearningRulesConfig.highAccuracyBonusXp;
-    } else {
-      baseXp = LearningRulesConfig.practiceEffortXp;
-    }
-
-    return _repository.recordReward(
-      activityType: 'speaking',
-      sourceType: 'speaking_practice',
-      sourceId: sourceId,
-      attemptId: attemptId,
-      score: overallScore,
-      accuracy: ratio,
-      correctCount: passed ? 1 : 0,
-      wrongCount: passed ? 0 : 1,
-      stars: stars,
-      passed: passed,
-      baseXp: baseXp,
-      bonusXp: bonusXp,
-      idempotencyKey: 'speak:$sourceId:$attemptId',
-      metadata: {
-        'accuracy_score': accuracyScore,
-        'pronunciation_score': pronunciationScore,
-        'tone_score': toneScore,
-        'fluency_score': fluencyScore,
-        'recognized_text': recognizedText,
-      },
+    int? wordId,
+    int? exampleId,
+    String? targetText,
+    String? unitId,
+    String? levelId,
+    int durationSeconds = 0,
+  }) {
+    return completeActivity(
+      LearningActivitySubmission(
+        activityType: 'speaking',
+        sourceType: 'speaking_practice',
+        sourceId: sourceId,
+        attemptId: attemptId,
+        unitId: unitId,
+        levelId: levelId,
+        score: accuracyScore,
+        accuracy: (accuracyScore / 100).clamp(0.0, 1.0),
+        pronunciation: pronunciationScore,
+        tone: toneScore,
+        fluency: fluencyScore,
+        durationSeconds: durationSeconds,
+        metadata: <String, dynamic>{
+          'recognized_text': recognizedText,
+          'target_text': targetText,
+          if (wordId != null) 'word_id': wordId,
+          if (exampleId != null) 'example_id': exampleId,
+        },
+      ),
     );
   }
 
-  /// 4. Process Hanzi Writing Reward
+  Future<void> startSpeakingAttempt({
+    required String sourceId,
+    required String attemptId,
+    int? wordId,
+    int? exampleId,
+    String? targetText,
+    String? unitId,
+    String? levelId,
+  }) {
+    return startAttempt(
+      LearningActivitySubmission(
+        activityType: 'speaking',
+        sourceType: 'speaking_practice',
+        sourceId: sourceId,
+        attemptId: attemptId,
+        unitId: unitId,
+        levelId: levelId,
+        metadata: <String, dynamic>{
+          'target_text': targetText,
+          if (wordId != null) 'word_id': wordId,
+          if (exampleId != null) 'example_id': exampleId,
+        },
+      ),
+    );
+  }
+
   Future<LearningResult> processHanziReward({
     required int characterId,
     required String attemptId,
     required double bestScore,
     required int attempts,
-  }) async {
-    final passed = bestScore >= (LearningRulesConfig.hanziPassScore * 100.0);
-    final ratio = (bestScore / 100.0).clamp(0.0, 1.0);
-    final stars = passed ? LearningRulesConfig.evaluateStars(ratio) : 0;
-
-    int baseXp = 0;
-    int bonusXp = 0;
-
-    if (passed) {
-      baseXp = LearningRulesConfig.hanziBaseXp;
-      if (bestScore >= 95.0) bonusXp += LearningRulesConfig.perfectBonusXp;
-      if (bestScore >= 85.0) bonusXp += LearningRulesConfig.highAccuracyBonusXp;
-    } else {
-      baseXp = LearningRulesConfig.practiceEffortXp;
-    }
-
-    return _repository.recordReward(
-      activityType: 'hanzi',
-      sourceType: 'character',
-      sourceId: '$characterId',
-      attemptId: attemptId,
-      score: bestScore,
-      accuracy: ratio,
-      correctCount: passed ? 1 : 0,
-      wrongCount: passed ? 0 : 1,
-      stars: stars,
-      passed: passed,
-      baseXp: baseXp,
-      bonusXp: bonusXp,
-      idempotencyKey: 'hanzi:$characterId:$attemptId',
-      metadata: {
-        'practice_attempts': attempts,
-      },
+    String? unitId,
+    String? levelId,
+    int durationSeconds = 0,
+  }) {
+    return completeActivity(
+      LearningActivitySubmission(
+        activityType: 'hanzi',
+        sourceType: 'character',
+        sourceId: '$characterId',
+        attemptId: attemptId,
+        unitId: unitId,
+        levelId: levelId,
+        score: bestScore,
+        hanziScore: bestScore,
+        durationSeconds: durationSeconds,
+        metadata: <String, dynamic>{
+          'character_id': characterId,
+          'practice_attempts': attempts,
+        },
+      ),
     );
   }
 
-  /// 5. Process Boss Battle Reward
+  Future<void> startHanziAttempt({
+    required int characterId,
+    required String attemptId,
+    String? unitId,
+    String? levelId,
+  }) {
+    return startAttempt(
+      LearningActivitySubmission(
+        activityType: 'hanzi',
+        sourceType: 'character',
+        sourceId: '$characterId',
+        attemptId: attemptId,
+        unitId: unitId,
+        levelId: levelId,
+        metadata: <String, dynamic>{'character_id': characterId},
+      ),
+    );
+  }
+
   Future<LearningResult> processBossReward({
     required int stageId,
     required String attemptId,
-    required bool won,
     required int score,
+    required int correctCount,
+    required int wrongCount,
     required int bestCombo,
     required int playerHp,
     required int bossHp,
-    bool isFirstClear = false,
-  }) async {
-    final passed = won && bossHp <= 0 && playerHp > 0;
-    final accuracy =
-        passed ? 1.0 : (bossHp < 100 ? (100 - bossHp) / 100.0 : 0.0);
-    final stars = passed ? (playerHp >= 80 ? 3 : (playerHp >= 50 ? 2 : 1)) : 0;
-
-    int baseXp = 0;
-    int bonusXp = 0;
-
-    if (passed) {
-      baseXp = LearningRulesConfig.bossBaseXp;
-      if (isFirstClear) bonusXp += LearningRulesConfig.bossFirstClearBonusXp;
-      if (playerHp >= 80) bonusXp += LearningRulesConfig.perfectBonusXp;
-      if (bestCombo >= 5) bonusXp += LearningRulesConfig.comboBonusXp;
-    } else {
-      baseXp = math.min(15, (100 - bossHp) ~/ 10);
-    }
-
-    return _repository.recordReward(
-      activityType: 'boss',
-      sourceType: 'boss_stage',
-      sourceId: '$stageId',
-      attemptId: attemptId,
-      score: score.toDouble(),
-      accuracy: accuracy,
-      correctCount: passed ? 1 : 0,
-      wrongCount: passed ? 0 : 1,
-      stars: stars,
-      passed: passed,
-      baseXp: baseXp,
-      bonusXp: bonusXp,
-      idempotencyKey: 'boss:$stageId:$attemptId',
-      metadata: {
-        'player_hp': playerHp,
-        'boss_hp': bossHp,
-        'best_combo': bestCombo,
-      },
+    int durationSeconds = 0,
+  }) {
+    return completeActivity(
+      LearningActivitySubmission(
+        activityType: 'boss',
+        sourceType: stageId > 0 ? 'boss_stage' : 'boss_practice',
+        sourceId: stageId > 0 ? '$stageId' : 'free_battle',
+        attemptId: attemptId,
+        score: score.toDouble(),
+        correctCount: correctCount,
+        wrongCount: wrongCount,
+        durationSeconds: durationSeconds,
+        bestCombo: bestCombo,
+        bossHp: bossHp,
+        playerHp: playerHp,
+        metadata: <String, dynamic>{'stage_id': stageId},
+      ),
     );
   }
 
-  /// 6. Process Dialogue & Roleplay Reward
+  Future<void> startBossAttempt({
+    required int stageId,
+    required String attemptId,
+  }) {
+    return startAttempt(
+      LearningActivitySubmission(
+        activityType: 'boss',
+        sourceType: stageId > 0 ? 'boss_stage' : 'boss_practice',
+        sourceId: stageId > 0 ? '$stageId' : 'free_battle',
+        attemptId: attemptId,
+        metadata: <String, dynamic>{
+          if (stageId > 0) 'stage_id': stageId,
+        },
+      ),
+    );
+  }
+
   Future<LearningResult> processDialogueReward({
     required String dialogueId,
     required String attemptId,
     required int completedObjectives,
     required int totalObjectives,
     int maxCombo = 0,
-    bool isFirstClear = false,
-  }) async {
-    final completionRatio = totalObjectives > 0
+    String? unitId,
+    String? levelId,
+    int durationSeconds = 0,
+  }) {
+    final completion = totalObjectives > 0
         ? (completedObjectives / totalObjectives).clamp(0.0, 1.0)
-        : 1.0;
-    final passed =
-        completionRatio >= LearningRulesConfig.dialoguePassCompletion;
-    final stars =
-        passed ? LearningRulesConfig.evaluateStars(completionRatio) : 0;
-    final score = completionRatio * 100.0;
-
-    int baseXp = 0;
-    int bonusXp = 0;
-
-    if (passed) {
-      baseXp = LearningRulesConfig.dialogueBaseXp;
-      if (completionRatio >= 1.0) bonusXp += LearningRulesConfig.perfectBonusXp;
-      if (completionRatio >= 0.85) {
-        bonusXp += LearningRulesConfig.highAccuracyBonusXp;
-      }
-      if (isFirstClear) bonusXp += LearningRulesConfig.firstClearBonusXp;
-    } else {
-      baseXp = LearningRulesConfig.practiceEffortXp;
-    }
-
-    return _repository.recordReward(
-      activityType: 'dialogue',
-      sourceType: 'dialogue_practice',
-      sourceId: dialogueId,
-      attemptId: attemptId,
-      score: score,
-      accuracy: completionRatio,
-      correctCount: completedObjectives,
-      wrongCount: math.max(0, totalObjectives - completedObjectives),
-      stars: stars,
-      passed: passed,
-      baseXp: baseXp,
-      bonusXp: bonusXp,
-      idempotencyKey: 'dialogue:$dialogueId:$attemptId',
-      metadata: {
-        'total_objectives': totalObjectives,
-        'completed_objectives': completedObjectives,
-        'max_combo': maxCombo,
-      },
+        : 0.0;
+    return completeActivity(
+      LearningActivitySubmission(
+        activityType: 'dialogue',
+        sourceType: 'dialogue_practice',
+        sourceId: dialogueId,
+        attemptId: attemptId,
+        unitId: unitId,
+        levelId: levelId,
+        score: completion * 100,
+        correctCount: completedObjectives,
+        wrongCount: totalObjectives - completedObjectives,
+        durationSeconds: durationSeconds,
+        bestCombo: maxCombo,
+        objectiveCompletion: completion,
+        metadata: <String, dynamic>{
+          'total_objectives': totalObjectives,
+          'completed_objectives': completedObjectives,
+        },
+      ),
     );
   }
 
-  /// 7. Process Central Duo Game Session Reward
+  Future<LearningResult> processReviewReward({
+    required String sourceId,
+    required String attemptId,
+    required int correctCount,
+    required int wrongCount,
+    int bestCombo = 0,
+    int durationSeconds = 0,
+  }) {
+    return completeActivity(
+      LearningActivitySubmission(
+        activityType: 'review',
+        sourceType: 'review_session',
+        sourceId: sourceId,
+        attemptId: attemptId,
+        score: _accuracyPercent(correctCount, wrongCount),
+        correctCount: correctCount,
+        wrongCount: wrongCount,
+        durationSeconds: durationSeconds,
+        bestCombo: bestCombo,
+      ),
+    );
+  }
+
+  Future<void> startReviewAttempt({
+    required String sourceId,
+    required String attemptId,
+  }) {
+    return startAttempt(
+      LearningActivitySubmission(
+        activityType: 'review',
+        sourceType: 'review_session',
+        sourceId: sourceId,
+        attemptId: attemptId,
+      ),
+    );
+  }
+
   Future<LearningResult> processDuoGameReward({
     required int gameId,
     required String gameCode,
@@ -324,70 +333,68 @@ class LearningRewardService {
     required int wrongCount,
     required int score,
     int maxCombo = 0,
-    bool isFirstClear = false,
-  }) async {
-    final total = correctCount + wrongCount;
-    final accuracy = total > 0
-        ? (correctCount / total).clamp(0.0, 1.0)
-        : (score > 0 ? 1.0 : 0.0);
-
-    final double requiredPassAccuracy = switch (gameCode) {
-      'speaking' => LearningRulesConfig.speakingPassOverall,
-      'dialogue' => LearningRulesConfig.dialoguePassCompletion,
-      'listen_select' => LearningRulesConfig.listeningPassAccuracy,
-      _ => LearningRulesConfig.vocabularyPassAccuracy,
-    };
-
-    final passed = accuracy >= requiredPassAccuracy;
-    final stars = passed ? LearningRulesConfig.evaluateStars(accuracy) : 0;
-
-    int baseXp = 0;
-    int bonusXp = 0;
-
-    if (passed) {
-      baseXp = switch (gameCode) {
-        'speaking' => LearningRulesConfig.speakingBaseXp,
-        'dialogue' => LearningRulesConfig.dialogueBaseXp,
-        'listen_select' => LearningRulesConfig.listeningBaseXp,
-        'learn_words' => LearningRulesConfig.vocabularyBaseXp,
-        _ => LearningRulesConfig.missionBaseXp,
-      };
-      if (accuracy >= 1.0) bonusXp += LearningRulesConfig.perfectBonusXp;
-      if (accuracy >= 0.85) bonusXp += LearningRulesConfig.highAccuracyBonusXp;
-      if (maxCombo >= 5) bonusXp += LearningRulesConfig.comboBonusXp;
-      if (isFirstClear) bonusXp += LearningRulesConfig.firstClearBonusXp;
-    } else {
-      baseXp = LearningRulesConfig.practiceEffortXp;
-    }
-
-    final activityType = switch (gameCode) {
-      'speaking' => 'speaking',
-      'dialogue' => 'dialogue',
-      'listen_select' => 'listening',
-      'learn_words' => 'vocabulary',
-      _ => 'game_mission',
-    };
-
-    return _repository.recordReward(
-      activityType: activityType,
-      sourceType: 'duo_level',
-      sourceId: '$gameId:$levelId',
-      attemptId: attemptId,
-      score: score.toDouble(),
-      accuracy: accuracy,
-      correctCount: correctCount,
-      wrongCount: wrongCount,
-      stars: stars,
-      passed: passed,
-      baseXp: baseXp,
-      bonusXp: bonusXp,
-      idempotencyKey: 'duo:$gameId:$levelId:$attemptId',
-      metadata: {
-        'game_code': gameCode,
-        'game_id': gameId,
-        'level_id': levelId,
-        'max_combo': maxCombo,
-      },
+    int durationSeconds = 0,
+    double? pronunciationScore,
+    double? toneScore,
+    double? fluencyScore,
+  }) {
+    final activityType = _duoActivityType(gameCode);
+    return completeActivity(
+      LearningActivitySubmission(
+        activityType: activityType,
+        sourceType: 'duo_level',
+        sourceId: '$gameId:$levelId',
+        attemptId: attemptId,
+        levelId: levelId,
+        score: score.toDouble(),
+        correctCount: correctCount,
+        wrongCount: wrongCount,
+        durationSeconds: durationSeconds,
+        bestCombo: maxCombo,
+        pronunciation: pronunciationScore,
+        tone: toneScore,
+        fluency: fluencyScore,
+        metadata: <String, dynamic>{
+          'game_code': gameCode,
+          'game_id': gameId,
+          'level_id': levelId,
+        },
+      ),
     );
+  }
+
+  Future<void> startDuoGameAttempt({
+    required int gameId,
+    required String gameCode,
+    required String levelId,
+    required String attemptId,
+  }) {
+    return startAttempt(
+      LearningActivitySubmission(
+        activityType: _duoActivityType(gameCode),
+        sourceType: 'duo_level',
+        sourceId: '$gameId:$levelId',
+        attemptId: attemptId,
+        levelId: levelId,
+        metadata: <String, dynamic>{
+          'game_code': gameCode,
+          'game_id': gameId,
+          'level_id': levelId,
+        },
+      ),
+    );
+  }
+
+  static String _duoActivityType(String gameCode) => switch (gameCode) {
+        'speaking' => 'speaking',
+        'dialogue' => 'dialogue',
+        'listen_select' => 'listening',
+        'learn_words' => 'vocabulary',
+        _ => 'game_mission',
+      };
+
+  static double _accuracyPercent(int correct, int wrong) {
+    final total = correct + wrong;
+    return total == 0 ? 0 : (correct / total) * 100;
   }
 }

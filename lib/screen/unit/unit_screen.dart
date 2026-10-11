@@ -7,6 +7,7 @@ import '../learning_overview/learning_overview_screen.dart';
 import 'controller/unit_controller.dart';
 import '../../core/models/unit_model.dart';
 import '../../core/widgets/learning_scene_background.dart';
+import '../../core/widgets/learning_scaffold.dart';
 
 class UnitScreen extends StatefulWidget {
   const UnitScreen({super.key});
@@ -29,11 +30,8 @@ class _UnitScreenState extends State<UnitScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(controller.title,
-            style: const TextStyle(fontWeight: FontWeight.w800)),
-      ),
+    return LearningScaffold(
+      title: controller.title,
       body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: _buildUnitCatalog(context),
