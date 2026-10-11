@@ -38,13 +38,21 @@ class BossBattleGameplayScreen extends StatefulWidget {
   final VoidCallback onVictory;
   final VoidCallback onDefeat;
   final VoidCallback onExit;
+  final int stageLevel;
+  final String stageTitle;
+  final String bossName;
+  final int? hskLevel;
 
   const BossBattleGameplayScreen({
-    Key? key,
+    super.key,
     required this.onVictory,
     required this.onDefeat,
     required this.onExit,
-  }) : super(key: key);
+    this.stageLevel = 1,
+    this.stageTitle = 'Cấp độ 1',
+    this.bossName = 'Hỏa Long',
+    this.hskLevel,
+  });
 
   @override
   State<BossBattleGameplayScreen> createState() =>
@@ -53,12 +61,13 @@ class BossBattleGameplayScreen extends StatefulWidget {
 
 class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
     with SingleTickerProviderStateMixin {
-  int bossHp = 320;
-  final int maxBossHp = 500;
-  int playerHp = 180;
+  late int maxBossHp;
+  late int bossHp;
   final int maxPlayerHp = 200;
-  int combo = 3;
+  late int playerHp;
+  int combo = 0;
   int questionIndex = 0;
+
 
   bool isAnimating = false;
   String? feedbackText;
@@ -158,6 +167,11 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
   @override
   void initState() {
     super.initState();
+    maxBossHp = 250 + (widget.stageLevel * 60);
+    bossHp = maxBossHp;
+    playerHp = maxPlayerHp;
+    combo = 0;
+
     _initTts();
     _loadImages();
     _loadQuestionsFromDb();
@@ -172,6 +186,7 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
       });
     _ticker.repeat();
   }
+
 
   Future<void> _loadQuestionsFromDb() async {
     try {
@@ -311,15 +326,17 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
           currentStep++;
           if (currentStep >= steps) {
             timer.cancel();
+            final damage = (90 + (combo * 15)).clamp(80, 220);
             setState(() {
               arrowProgress = 1.0;
               isArrowActive = false;
               pandaState = _ActorState.idle;
               dragonState = _ActorState.hurt;
               cameraShakeOffset = const Offset(5, -4);
-              bossHp = (bossHp - 120).clamp(0, maxBossHp);
-              _addFloatingDamage('-120', const Color(0xFFFFD54F), true);
+              bossHp = (bossHp - damage).clamp(0, maxBossHp);
+              _addFloatingDamage('-$damage', const Color(0xFFFFD54F), true);
             });
+
 
             _runCameraShake(7.0, 200);
 
@@ -379,14 +396,16 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
           currentStep++;
           if (currentStep >= steps) {
             timer.cancel();
+            final dragonDmg = (25 + (widget.stageLevel * 5)).clamp(25, 60);
             setState(() {
               fireProgress = 1.0;
               isFireActive = false;
               dragonState = _ActorState.idle;
               pandaState = _ActorState.hurt;
-              playerHp = (playerHp - 30).clamp(0, maxPlayerHp);
-              _addFloatingDamage('-30', const Color(0xFFFF5252), false);
+              playerHp = (playerHp - dragonDmg).clamp(0, maxPlayerHp);
+              _addFloatingDamage('-$dragonDmg', const Color(0xFFFF5252), false);
             });
+
 
             _runCameraShake(11.0, 220);
 
@@ -598,6 +617,8 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
         BossBattleTopBar(
           bossHp: bossHp,
           maxBossHp: maxBossHp,
+          level: widget.stageLevel,
+          bossName: widget.bossName,
           onExit: widget.onExit,
           onSpeak: () => _speak(q['hanziPrompt'] as String),
         ),
@@ -609,6 +630,7 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
       ],
     );
   }
+
 }
 
 class _BattleArenaCanvasPainter extends CustomPainter {
