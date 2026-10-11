@@ -1,26 +1,25 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/game_visual_tokens.dart';
+
 import '../../../core/models/hsk_level.dart';
+import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/widgets/panda_companion.dart';
 
 class HskWorldMeta {
-  final String worldName;
-  final String vietnameseName;
-  final String emoji;
-  final PandaMood pandaMood;
-  final List<Color> gradientColors;
-  final Color accentColor;
-  final Color borderColor;
-
   const HskWorldMeta({
-    required this.worldName,
+    required this.name,
     required this.vietnameseName,
-    required this.emoji,
+    required this.landmark,
     required this.pandaMood,
-    required this.gradientColors,
-    required this.accentColor,
-    required this.borderColor,
+    required this.colors,
+    required this.accent,
   });
+
+  final String name;
+  final String vietnameseName;
+  final IconData landmark;
+  final PandaMood pandaMood;
+  final List<Color> colors;
+  final Color accent;
 }
 
 class HskLevelCard extends StatelessWidget {
@@ -41,299 +40,199 @@ class HskLevelCard extends StatelessWidget {
   final bool isUnlocked;
   final VoidCallback onTap;
 
-  static const Map<int, HskWorldMeta> _worldConfig = {
+  static const worlds = <int, HskWorldMeta>{
     1: HskWorldMeta(
-      worldName: 'Bamboo Village',
-      vietnameseName: 'Thôn Trúc Xanh',
-      emoji: '🌿',
-      pandaMood: PandaMood.happy,
-      gradientColors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7), Color(0xFFE8F5E9)],
-      accentColor: GameVisualTokens.jadeDark,
-      borderColor: Color(0xFF86EFAC),
-    ),
+        name: 'Bamboo Village',
+        vietnameseName: 'Làng Trúc Xanh',
+        landmark: Icons.park_rounded,
+        pandaMood: PandaMood.happy,
+        colors: [Color(0xFFDBF4D5), Color(0xFF74B98B)],
+        accent: Color(0xFF176B52)),
     2: HskWorldMeta(
-      worldName: 'Lantern Town',
-      vietnameseName: 'Trấn Đèn Lồng',
-      emoji: '🏮',
-      pandaMood: PandaMood.chef,
-      gradientColors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7), Color(0xFFFFF3E0)],
-      accentColor: Color(0xFFB45309),
-      borderColor: Color(0xFFFCD34D),
-    ),
+        name: 'Lantern Town',
+        vietnameseName: 'Trấn Đèn Lồng',
+        landmark: Icons.festival_rounded,
+        pandaMood: PandaMood.chef,
+        colors: [Color(0xFFFFE6A7), Color(0xFFE99745)],
+        accent: Color(0xFF9A3E24)),
     3: HskWorldMeta(
-      worldName: 'Shanghai City',
-      vietnameseName: 'Thành Phố Thượng Hải',
-      emoji: '🏙',
-      pandaMood: PandaMood.thinking,
-      gradientColors: [Color(0xFFF0F9FF), Color(0xFFE0F2FE), Color(0xFFE1F5FE)],
-      accentColor: Color(0xFF0369A1),
-      borderColor: Color(0xFF7DD3FC),
-    ),
+        name: 'Shanghai',
+        vietnameseName: 'Thượng Hải',
+        landmark: Icons.location_city_rounded,
+        pandaMood: PandaMood.thinking,
+        colors: [Color(0xFFD7EDFA), Color(0xFF78A9CA)],
+        accent: Color(0xFF195A83)),
     4: HskWorldMeta(
-      worldName: 'Mountain Temple',
-      vietnameseName: 'Cổ Tự Mây Ngàn',
-      emoji: '⛰',
-      pandaMood: PandaMood.ninja,
-      gradientColors: [Color(0xFFFAF5FF), Color(0xFFF3E8FF), Color(0xFFEDE7F6)],
-      accentColor: Color(0xFF6D28D9),
-      borderColor: Color(0xFFD8B4FE),
-    ),
+        name: 'Mountain Temple',
+        vietnameseName: 'Cổ Tự Mây Ngàn',
+        landmark: Icons.temple_buddhist_rounded,
+        pandaMood: PandaMood.ninja,
+        colors: [Color(0xFFE9DCF5), Color(0xFF9276B5)],
+        accent: Color(0xFF513377)),
     5: HskWorldMeta(
-      worldName: 'Imperial City',
-      vietnameseName: 'Hoàng Thành Thâm Nghiêm',
-      emoji: '🏯',
-      pandaMood: PandaMood.archer,
-      gradientColors: [Color(0xFFFFF1F2), Color(0xFFFFE4E6), Color(0xFFFFEBEE)],
-      accentColor: GameVisualTokens.crimsonDark,
-      borderColor: Color(0xFFFDA4AF),
-    ),
+        name: 'Imperial City',
+        vietnameseName: 'Hoàng Thành',
+        landmark: Icons.account_balance_rounded,
+        pandaMood: PandaMood.archer,
+        colors: [Color(0xFFF8D5CB), Color(0xFFC6554F)],
+        accent: Color(0xFF872B2B)),
     6: HskWorldMeta(
-      worldName: 'Dragon Realm',
-      vietnameseName: 'Long Uy Cảnh Giới',
-      emoji: '🐉',
-      pandaMood: PandaMood.victory,
-      gradientColors: [Color(0xFF241432), Color(0xFF381B4B), Color(0xFF1E0E2E)],
-      accentColor: GameVisualTokens.imperialGold,
-      borderColor: Color(0xFFF59E0B),
-    ),
+        name: 'Dragon Realm',
+        vietnameseName: 'Long Giới',
+        landmark: Icons.local_fire_department_rounded,
+        pandaMood: PandaMood.victory,
+        colors: [Color(0xFF423052), Color(0xFF1E152B)],
+        accent: GameVisualTokens.imperialGold),
   };
 
-  HskWorldMeta _getMeta(int order) {
-    return _worldConfig[order] ??
-        HskWorldMeta(
-          worldName: 'HSK $order World',
-          vietnameseName: 'Vùng Đất HSK $order',
-          emoji: '✨',
-          pandaMood: PandaMood.idle,
-          gradientColors: const [Color(0xFFFFFDF5), Color(0xFFF9F6EB)],
-          accentColor: GameVisualTokens.templeWood,
-          borderColor: GameVisualTokens.gold,
-        );
-  }
+  HskWorldMeta get meta =>
+      worlds[level.order] ??
+      HskWorldMeta(
+        name: 'Chinese Frontier',
+        vietnameseName: 'Vùng đất HSK ${level.order}',
+        landmark: Icons.explore_rounded,
+        pandaMood: PandaMood.idle,
+        colors: const [Color(0xFFF3E8CF), Color(0xFFB89C70)],
+        accent: GameVisualTokens.templeWood,
+      );
 
-  int _calculateStars(double progress) {
-    if (progress >= 0.95) return 3;
-    if (progress >= 0.50) return 2;
-    if (progress >= 0.15) return 1;
-    return 0;
-  }
+  int get stars => progress >= .95
+      ? 3
+      : progress >= .5
+          ? 2
+          : progress > 0
+              ? 1
+              : 0;
 
   @override
   Widget build(BuildContext context) {
-    final meta = _getMeta(level.order);
-    final isDarkWorld = level.order == 6;
-    final stars = _calculateStars(progress);
+    final world = meta;
+    final dark = level.order == 6;
+    final foreground = dark ? Colors.white : GameVisualTokens.ink;
+    final completed = (count * progress.clamp(0, 1)).round();
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: meta.accentColor.withValues(alpha: isDarkWorld ? 0.35 : 0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+    return Semantics(
+      button: true,
+      enabled: isUnlocked,
+      label: '${world.name}, $completed trên $count chương hoàn thành',
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(26),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          borderRadius: BorderRadius.circular(22),
           onTap: onTap,
-          child: Container(
+          child: Ink(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: isUnlocked
-                    ? meta.gradientColors
-                    : [
-                        const Color(0xFFE2E8F0),
-                        const Color(0xFFCBD5E1),
-                        const Color(0xFF94A3B8),
-                      ],
+                    ? world.colors
+                    : const [Color(0xFFD9D6CF), Color(0xFFA9A49B)],
               ),
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(26),
               border: Border.all(
-                color: isUnlocked
-                    ? meta.borderColor
-                    : const Color(0xFF94A3B8),
-                width: 1.5,
-              ),
+                  color: isUnlocked
+                      ? world.accent.withValues(alpha: .45)
+                      : Colors.black26,
+                  width: 1.5),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                // World Seal Badge
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isUnlocked
-                          ? [
-                              meta.accentColor,
-                              meta.accentColor.withValues(alpha: 0.8),
-                            ]
-                          : [Colors.grey.shade600, Colors.grey.shade700],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isUnlocked ? GameVisualTokens.gold : Colors.white60,
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: meta.accentColor.withValues(alpha: 0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        meta.emoji,
-                        style: const TextStyle(fontSize: 16, height: 1),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'HSK ${level.order}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // World details
-                Expanded(
-                  child: Column(
+            child: Stack(children: [
+              Positioned(
+                  right: -24,
+                  top: -32,
+                  child: Icon(world.landmark,
+                      size: 170, color: Colors.white.withValues(alpha: .18))),
+              Positioned(
+                  left: -20,
+                  bottom: -42,
+                  child: Container(
+                      width: 190,
+                      height: 90,
+                      decoration: BoxDecoration(
+                          color: world.accent.withValues(alpha: .12),
+                          borderRadius: const BorderRadius.all(
+                              Radius.elliptical(190, 90))))),
+              Positioned(
+                  right: 10,
+                  bottom: -4,
+                  child: Opacity(
+                      opacity: isUnlocked ? 1 : .45,
+                      child: PandaCompanion(
+                          mood: world.pandaMood, size: 92, animate: false))),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 16, 112, 16),
+                child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      Row(children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 9, vertical: 5),
+                          decoration: BoxDecoration(
+                              color: world.accent,
+                              borderRadius: BorderRadius.circular(20)),
+                          child: Text('WORLD ${level.order}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: .8)),
+                        ),
+                        const Spacer(),
+                        if (!isUnlocked)
+                          const Icon(Icons.lock_rounded,
+                              size: 20, color: GameVisualTokens.crimsonDark),
+                      ]),
+                      const Spacer(),
+                      Text(world.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: foreground,
+                              fontSize: 21,
+                              fontWeight: FontWeight.w900)),
+                      Text(world.vietnameseName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: foreground.withValues(alpha: .72),
+                              fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 9),
                       Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${meta.worldName} • ${meta.vietnameseName}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w900,
-                                color: isDarkWorld && isUnlocked
-                                    ? Colors.white
-                                    : GameVisualTokens.ink,
-                              ),
-                            ),
-                          ),
-                          // Stars
-                          if (isUnlocked)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: List.generate(3, (starIdx) {
-                                final isLit = starIdx < stars;
-                                return Icon(
-                                  isLit
+                          children: List.generate(
+                              3,
+                              (i) => Icon(
+                                  i < stars
                                       ? Icons.star_rounded
                                       : Icons.star_outline_rounded,
-                                  color: isLit
-                                      ? GameVisualTokens.gold
-                                      : (isDarkWorld
-                                          ? Colors.white38
-                                          : Colors.black26),
-                                  size: 15,
-                                );
-                              }),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '$count bài • hoàn thành ${(progress * 100).round()}%',
-                        style: TextStyle(
-                          color: isDarkWorld && isUnlocked
-                              ? Colors.white70
-                              : const Color(0xFF64748B),
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                                  size: 18,
+                                  color: i < stars
+                                      ? GameVisualTokens.imperialGold
+                                      : foreground.withValues(alpha: .28)))),
                       const SizedBox(height: 7),
-                      // RPG Progress bar
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 7,
-                          backgroundColor: isDarkWorld
-                              ? Colors.white12
-                              : Colors.black.withValues(alpha: 0.08),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            isUnlocked
-                                ? (progress >= 1.0
-                                    ? GameVisualTokens.gold
-                                    : meta.accentColor)
-                                : Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-
-                // Panda Companion & Lock state
-                if (isUnlocked)
-                  PandaCompanion(
-                    mood: meta.pandaMood,
-                    size: 46,
-                    animate: false,
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.grey.shade400),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(
-                          Icons.lock_rounded,
-                          color: GameVisualTokens.crimsonDark,
-                          size: 18,
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Khóa',
+                      Text('$completed/$count chương hoàn thành',
                           style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: GameVisualTokens.crimsonDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+                              color: foreground.withValues(alpha: .78),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 5),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                            value: progress.clamp(0, 1),
+                            minHeight: 8,
+                            backgroundColor: Colors.black12,
+                            color: isUnlocked
+                                ? world.accent
+                                : Colors.grey.shade600),
+                      ),
+                    ]),
+              ),
+            ]),
           ),
         ),
       ),
     );
   }
 }
-

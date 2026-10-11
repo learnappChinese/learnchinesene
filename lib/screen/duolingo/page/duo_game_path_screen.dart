@@ -4,6 +4,8 @@ import '../widget/duo_path_content.dart';
 import '../duo_game_visuals.dart';
 import 'package:get/get.dart';
 import '../controller/duo_game_path_controller.dart';
+import '../../vocabulary_adventure/binding/vocabulary_adventure_binding.dart';
+import '../../vocabulary_adventure/page/vocabulary_adventure_screen.dart';
 import 'duo_game_runner_screen.dart';
 
 class DuoGamePathScreen extends StatefulWidget {
@@ -118,12 +120,25 @@ class _DuoGamePathScreenState extends State<DuoGamePathScreen> {
             Get.snackbar('Khóa', 'Bạn cần vượt qua các cấp độ trước.');
             return;
           }
-          Get.to(() => DuoGameRunnerScreen(
-                gameId: widget.gameId,
-                gameCode: widget.gameCode,
+          if (widget.gameCode == 'learn_words') {
+            Get.to(
+              () => const VocabularyAdventureScreen(),
+              binding: VocabularyAdventureBinding(
                 levelId: levelId,
+                gameId: widget.gameId,
                 gameName: widget.gameName,
-              ))?.then((_) => controller.loadLevels());
+              ),
+            )?.then((_) => controller.loadLevels());
+            return;
+          }
+          Get.to(
+            () => DuoGameRunnerScreen(
+              gameId: widget.gameId,
+              gameCode: widget.gameCode,
+              levelId: levelId,
+              gameName: widget.gameName,
+            ),
+          )?.then((_) => controller.loadLevels());
         });
   }
 

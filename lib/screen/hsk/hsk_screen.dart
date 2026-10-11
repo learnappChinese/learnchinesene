@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'widget/hsk_level_card.dart';
 import 'package:get/get.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../../core/responsive/responsive_layout.dart';
 import '../unit/unit_screen.dart';
@@ -35,7 +34,7 @@ class _HskScreenState extends State<HskScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Chọn cấp độ HSK',
+          'Bản đồ thế giới',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
@@ -86,13 +85,11 @@ class _HskScreenState extends State<HskScreen> {
   Widget _buildLevelCatalog(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const _WorldLoadingState();
       }
       if (controller.hasError.value) {
-        return const EmptyStateWidget(
-          icon: Icons.cloud_off_rounded,
-          title: 'Không thể tải cấp độ',
-          message: 'Không thể mở dữ liệu bài học ngoại tuyến.',
+        return _WorldErrorState(
+          onRetry: controller.loadLevels,
         );
       }
       final levels = controller.levels;
@@ -114,13 +111,10 @@ class _HskScreenState extends State<HskScreen> {
             ),
             child: CustomScrollView(
               slivers: [
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.only(bottom: 20),
-                    child: Text(
-                      'Học theo lộ trình HSK với tốc độ của riêng bạn. Mọi bài học đều dùng được ngoại tuyến.',
-                      style: TextStyle(color: AppColors.muted, height: 1.5),
-                    ),
+                    child: _WorldHeader(worldCount: levels.length),
                   ),
                 ),
                 SliverGrid(
@@ -128,7 +122,7 @@ class _HskScreenState extends State<HskScreen> {
                     maxCrossAxisExtent: 450,
                     mainAxisSpacing: 16,
                     crossAxisSpacing: 16,
-                    mainAxisExtent: 125,
+                    mainAxisExtent: 218,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => Obx(() {
@@ -149,4 +143,92 @@ class _HskScreenState extends State<HskScreen> {
       );
     });
   }
+}
+
+class _WorldHeader extends StatelessWidget {
+  const _WorldHeader({required this.worldCount});
+
+  final int worldCount;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .82),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFFFD98B)),
+        ),
+        child: Row(children: [
+          const Icon(Icons.map_rounded, size: 42, color: Color(0xFF0F766E)),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('CHỌN ĐIỂM ĐẾN',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 17,
+                        letterSpacing: .4)),
+                const SizedBox(height: 3),
+                Text(
+                  '$worldCount thế giới đang chờ Panda và bạn khám phá.',
+                  style: const TextStyle(color: Color(0xFF776A67), height: 1.3),
+                ),
+              ],
+            ),
+          ),
+        ]),
+      );
+}
+
+class _WorldLoadingState extends StatelessWidget {
+  const _WorldLoadingState();
+
+  @override
+  Widget build(BuildContext context) => ListView.separated(
+        padding: const EdgeInsets.all(20),
+        itemCount: 3,
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        itemBuilder: (_, __) => Container(
+          height: 218,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: .55),
+            borderRadius: BorderRadius.circular(26),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(color: Color(0xFF0F766E)),
+          ),
+        ),
+      );
+}
+
+class _WorldErrorState extends StatelessWidget {
+  const _WorldErrorState({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.cloud_off_rounded,
+                size: 54, color: Color(0xFF991B1B)),
+            const SizedBox(height: 12),
+            const Text('Không thể mở bản đồ thế giới',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 6),
+            const Text('Kiểm tra kết nối rồi thử lại.',
+                style: TextStyle(color: Color(0xFF776A67))),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('THỬ LẠI'),
+            ),
+          ]),
+        ),
+      );
 }
