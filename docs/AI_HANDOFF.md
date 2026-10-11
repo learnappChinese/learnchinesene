@@ -6,12 +6,13 @@
 - Repo: `D:\Projects\Flutter_Project\learnchinesene`
 - Integration branch: `hieu`
 - Feature branch: `feature/pr01-learning-progress-sync`
-- Base/working HEAD before PR01 commit: `a6186408c1fdc526409a09dae360a0e89ff3b1ef`
+- Base: `a6186408c1fdc526409a09dae360a0e89ff3b1ef`
+- PR01 implementation commit: `d990e5e155b3549eb2718090f91e7809ed0b9ac6`
 
 ## Phase / PR hiện tại
 
 - PR00 baseline/status inventory: complete.
-- PR01 `LearningProgressSyncService`: code and local automated acceptance complete; commit/push/PR metadata is recorded below.
+- PR01 `LearningProgressSyncService`: code, local automated acceptance, push and PR creation complete.
 - PR02 mapping characterization is prepared but semantic mapping/database behavior has not been changed.
 
 ## Issue IDs đã xong
@@ -89,6 +90,7 @@ NO.
 
 ## Git status / PR URL
 
-- Commit: PENDING at the time this handoff draft was written.
-- PR URL: PENDING creation against `hieu`.
+- Implementation commit: `d990e5e155b3549eb2718090f91e7809ed0b9ac6`.
+- PR: https://github.com/learnappChinese/learnchinesene/pull/23 (base `hieu`).
+- Worktree after handoff metadata update contains only unrelated untracked screenshot/image assets listed below.
 - Preserve unrelated untracked user assets/spec files unless deliberately included; do not stage `docs/emulator_current.png`, `docs/screenshots/`, or `docs/unit_overview_stages_preview.jpg` for this PR.
