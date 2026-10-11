@@ -38,54 +38,58 @@ class HomeProgressTab extends StatelessWidget {
               subtitle: 'Theo dõi năng lực tiếng Trung và lịch sử kinh nghiệm',
             ),
             Expanded(
-              child: Obx(() {
-                final todayXp = controller?.todayXp.value ?? 0;
-                final lifetimeXp = controller?.lifetimeXp.value ?? 0;
-                final streak = controller?.streak.value ?? 0;
-                final mastery = controller?.masteryProfile.value;
-                final overallPercent = mastery?.overallPercent ?? 0;
-                final sevenDayData = controller?.sevenDayXp.toList() ?? [];
-                final timeline = controller?.recentTimeline.toList() ?? [];
-
-                return SingleChildScrollView(
-                  key: const PageStorageKey('home-progress-scroll'),
-                  physics: const ClampingScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(
-                    16.w,
-                    8.w,
-                    16.w,
-                    120.w + MediaQuery.viewPaddingOf(context).bottom,
-                  ),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: ResponsiveHelper.contentMaxWidth(context),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSummaryGrid(
-                            todayXp: todayXp,
-                            lifetimeXp: lifetimeXp,
-                            streak: streak,
-                            overallPercent: overallPercent,
-                          ),
-                          SizedBox(height: 18.w),
-                          _buildWeeklyChart(sevenDayData),
-                          SizedBox(height: 18.w),
-                          _buildSkillMasterySection(mastery),
-                          SizedBox(height: 18.w),
-                          _buildRecentTimelineSection(timeline),
-                          SizedBox(height: 18.w),
-                          _buildQuickActions(context),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
+              child: controller != null
+                  ? Obx(() => _buildScrollBody(context, controller))
+                  : _buildScrollBody(context, null),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScrollBody(BuildContext context, HomeController? controller) {
+    final todayXp = controller?.todayXp.value ?? 0;
+    final lifetimeXp = controller?.lifetimeXp.value ?? 0;
+    final streak = controller?.streak.value ?? 0;
+    final mastery = controller?.masteryProfile.value;
+    final overallPercent = mastery?.overallPercent ?? 0;
+    final sevenDayData = controller?.sevenDayXp.toList() ?? [];
+    final timeline = controller?.recentTimeline.toList() ?? [];
+
+    return SingleChildScrollView(
+      key: const PageStorageKey('home-progress-scroll'),
+      physics: const ClampingScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(
+        16.w,
+        8.w,
+        16.w,
+        120.w + MediaQuery.viewPaddingOf(context).bottom,
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: ResponsiveHelper.contentMaxWidth(context),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSummaryGrid(
+                todayXp: todayXp,
+                lifetimeXp: lifetimeXp,
+                streak: streak,
+                overallPercent: overallPercent,
+              ),
+              SizedBox(height: 18.w),
+              _buildWeeklyChart(sevenDayData),
+              SizedBox(height: 18.w),
+              _buildSkillMasterySection(mastery),
+              SizedBox(height: 18.w),
+              _buildRecentTimelineSection(timeline),
+              SizedBox(height: 18.w),
+              _buildQuickActions(context),
+            ],
+          ),
         ),
       ),
     );
@@ -230,13 +234,15 @@ class HomeProgressTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'HOẠT ĐỘNG 7 NGÀY GẦN NHẤT',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFF475569),
-                  letterSpacing: 0.8,
+              Expanded(
+                child: Text(
+                  'HOẠT ĐỘNG 7 NGÀY GẦN NHẤT',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF475569),
+                    letterSpacing: 0.8,
+                  ),
                 ),
               ),
               const Icon(Icons.show_chart_rounded,
@@ -368,20 +374,27 @@ class HomeProgressTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Text(icon, style: TextStyle(fontSize: 15.sp)),
-                  SizedBox(width: 8.w),
-                  Text(
-                    name,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1E293B),
+              Expanded(
+                child: Row(
+                  children: [
+                    Text(icon, style: TextStyle(fontSize: 15.sp)),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E293B),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              SizedBox(width: 8.w),
               Text(
                 '$percent%',
                 style: TextStyle(
@@ -430,13 +443,15 @@ class HomeProgressTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'LỊCH SỬ HỌC TẬP GẦN ĐÂY',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFF475569),
-                  letterSpacing: 0.8,
+              Expanded(
+                child: Text(
+                  'LỊCH SỬ HỌC TẬP GẦN ĐÂY',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF475569),
+                    letterSpacing: 0.8,
+                  ),
                 ),
               ),
               TextButton(

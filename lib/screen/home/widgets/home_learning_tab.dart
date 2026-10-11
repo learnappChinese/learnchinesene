@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/theme/game_visual_tokens.dart';
@@ -38,35 +39,39 @@ class HomeLearningTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomSpace = 122.w + MediaQuery.viewPaddingOf(context).bottom;
-    return SharedTabBackground(
-      child: Column(children: [
-        const TabHeader(
-          icon: Icons.menu_book_rounded,
-          title: 'Học tập',
-          accentTitle: 'lộ trình',
-          subtitle: 'Khám phá bản đồ ải và trung tâm luyện kỹ năng',
-        ),
-        Expanded(
-          child: SingleChildScrollView(
-            key: const ValueKey('learning-scroll'),
-            padding: EdgeInsets.fromLTRB(16.w, 4.w, 16.w, bottomSpace),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildStageMapHero(context),
-                if (reviewSummary != null && reviewSummary!.totalDue > 0) ...[
-                  SizedBox(height: 12.w),
-                  _buildReviewBanner(context),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: SharedTabBackground(
+        child: Column(children: [
+          const TabHeader(
+            icon: Icons.menu_book_rounded,
+            title: 'Học tập',
+            accentTitle: 'lộ trình',
+            subtitle: 'Khám phá bản đồ ải và trung tâm luyện kỹ năng',
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              key: const PageStorageKey('home-learning-scroll'),
+              physics: const ClampingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(16.w, 4.w, 16.w, bottomSpace),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildStageMapHero(context),
+                  if (reviewSummary != null && reviewSummary!.totalDue > 0) ...[
+                    SizedBox(height: 12.w),
+                    _buildReviewBanner(context),
+                  ],
+                  SizedBox(height: 16.w),
+                  _buildQuickSkillsGrid(context),
+                  SizedBox(height: 16.w),
+                  _buildCurriculumCards(context),
                 ],
-                SizedBox(height: 16.w),
-                _buildQuickSkillsGrid(context),
-                SizedBox(height: 16.w),
-                _buildCurriculumCards(context),
-              ],
+              ),
             ),
           ),
-        ),
-      ]),
+        ]),
+      ),
     );
   }
 
@@ -107,19 +112,24 @@ class HomeLearningTab extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.w),
-                decoration: BoxDecoration(
-                  color: GameVisualTokens.imperialGold,
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Text(
-                  'VÙNG $worldNum • BÀI $chapterNum',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.6,
+              Flexible(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.w),
+                  decoration: BoxDecoration(
+                    color: GameVisualTokens.imperialGold,
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'VÙNG $worldNum • BÀI $chapterNum',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -168,7 +178,7 @@ class HomeLearningTab extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(6.r),
                   child: LinearProgressIndicator(
-                    value: progress.clamp(0.0, 1.0),
+                    value: (progress.isFinite ? progress : 0.0).clamp(0.0, 1.0),
                     backgroundColor: Colors.white24,
                     valueColor: const AlwaysStoppedAnimation<Color>(GameVisualTokens.gold),
                     minHeight: 8.w,
@@ -190,26 +200,38 @@ class HomeLearningTab extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
+                child: ElevatedButton(
                   onPressed: onLearningPath ?? onPractice,
-                  icon: const Icon(Icons.explore_rounded, color: Colors.black),
-                  label: Text(
-                    'VÀO BẢN ĐỒ ẢI',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GameVisualTokens.gold,
                     foregroundColor: Colors.black,
                     elevation: 3,
-                    padding: EdgeInsets.symmetric(vertical: 12.w),
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 12.w),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.r),
                     ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.explore_rounded, color: Colors.black, size: 20),
+                      SizedBox(width: 6.w),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'VÀO BẢN ĐỒ ẢI',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -220,12 +242,18 @@ class HomeLearningTab extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white38),
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 12.w),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                   ),
-                  child: const Text('Các vùng'),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Các vùng',
+                      style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
+                    ),
+                  ),
                 ),
               ],
             ],
@@ -524,6 +552,7 @@ class _LearningCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(20.r);
     return Container(
+      height: height,
       decoration: BoxDecoration(borderRadius: radius, boxShadow: [
         BoxShadow(
             color: const Color(0x226B662A),
