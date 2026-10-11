@@ -92,12 +92,13 @@ World -> Section -> Unit -> Stage -> Item -> Boss
 - Full tests: PASS in bounded batches. A single monolithic invocation is terminated by the host runner; every affected file/group passed independently.
 - Build: PASS; split release APKs produced for arm64-v8a, armeabi-v7a, and x86_64.
 - Cloud-only guard: PASS using the equivalent PowerShell checks because Python is unavailable on the Windows host.
-- CI: local workflow-equivalent checks PASS; remote workflow status must be checked after push.
+- CI: PASS — Flutter Hieu CI #70, run `38041949198`, validated checkpoint `4471db2` and uploaded split release APK artifacts.
 
 ## Git State
 
 - Latest implementation commit SHA: `1fab090`.
-- Latest handoff/checkpoint commit: resolve with `git log -1 --oneline`.
+- Latest CI-validated checkpoint commit: `4471db2`.
+- Latest handoff commit: this document-only commit; resolve with `git log -1 --oneline`.
 - Working tree: tracked files clean after the handoff commit; unrelated screenshot artifacts remain untracked and must not be committed.
 - Pushed: YES to `origin/feature/learning-pro-ui-flow` after checkpoint completion.
 - PR: not created in this session.
