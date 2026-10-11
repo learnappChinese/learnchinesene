@@ -7,7 +7,9 @@ import '../../core/widgets/learning_scene_background.dart';
 import 'controller/conversations_controller.dart';
 
 class ConversationsScreen extends StatefulWidget {
-  const ConversationsScreen({super.key});
+  const ConversationsScreen({super.key, this.controller});
+
+  final ConversationsController? controller;
 
   @override
   State<ConversationsScreen> createState() => _ConversationsScreenState();
@@ -15,14 +17,27 @@ class ConversationsScreen extends StatefulWidget {
 
 class _ConversationsScreenState extends State<ConversationsScreen> {
   late final ConversationsController controller;
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
-    // GetX retains the existing route ownership and cleanup.
-    controller = Get.isRegistered<ConversationsController>()
-        ? Get.find<ConversationsController>()
-        : Get.put(ConversationsController());
+    if (widget.controller != null) {
+      controller = widget.controller!;
+    } else if (Get.isRegistered<ConversationsController>()) {
+      controller = Get.find<ConversationsController>();
+    } else {
+      controller = Get.put(ConversationsController());
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController && Get.isRegistered<ConversationsController>()) {
+      Get.delete<ConversationsController>();
+    }
+    super.dispose();
   }
 
   @override

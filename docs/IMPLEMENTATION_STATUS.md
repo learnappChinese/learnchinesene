@@ -46,9 +46,9 @@ Status vocabulary:
 | P1-14 | DONE_CODE | Truthfully separated and labeled in UI: "Lịch sử học tập" (authoritative learning ledger) vs "Lịch sử công cụ AI" (local utility interactions) | PR09 |
 | P2-01 | DONE_CODE | Unified single source of truth for next-action recommendations in `LearningRecommendationService` and `RecommendedNextAction`; removed duplicate resolution in `HomeJourneyRepository` and `LearningJourneyRepository.getNextAction` | PR08 |
 | P2-02 | DONE_CODE | SRS spaced repetition due boundaries fixed in `SupabaseReviewRepository`; unmastered words with future review dates are not prematurely marked due | PR07 |
-| P2-03 | OPEN | route bindings/fallback `Get.put` ownership overlap and duplicate subscription DI remain | PR10 |
+| P2-03 | DONE_CODE | Standardized constructor injection (`this.controller`) and route-scoped disposal (`_ownsController`) across 15 screens; fixed SubscriptionPage Obx reactivity on activeProductId; eliminated state leaks | PR10 |
 | P2-04 | DONE_CODE | Home strictly renders Today XP from `controller.todayXp.value` (including 0); eliminated deceptive fallback that swapped Lifetime XP into Today's metric | PR08 |
-| P2-05 | OPEN | broad silent catches and empty fallbacks remain across the repository | PR10 |
+| P2-05 | DONE_CODE | Eliminated broad silent catches across services, repositories, and controllers; replaced with structured debugPrint and typed exception logging | PR10 |
 | P2-06 | DONE_CODE | lifecycle refresh moved from Profile-only behavior to app-wide typed invalidation owned by Home lifecycle | PR01 |
 
 ## PR01 implementation boundary

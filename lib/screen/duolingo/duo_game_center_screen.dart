@@ -8,7 +8,9 @@ import 'controller/duo_game_center_controller.dart';
 import 'page/duo_game_path_screen.dart';
 
 class DuoGameCenterScreen extends StatefulWidget {
-  const DuoGameCenterScreen({super.key});
+  const DuoGameCenterScreen({super.key, this.controller});
+
+  final DuoGameCenterController? controller;
 
   @override
   State<DuoGameCenterScreen> createState() => _DuoGameCenterScreenState();
@@ -16,14 +18,27 @@ class DuoGameCenterScreen extends StatefulWidget {
 
 class _DuoGameCenterScreenState extends State<DuoGameCenterScreen> {
   late final DuoGameCenterController controller;
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
-    // GetX retains the existing route ownership and cleanup.
-    controller = Get.isRegistered<DuoGameCenterController>()
-        ? Get.find<DuoGameCenterController>()
-        : Get.put(DuoGameCenterController());
+    if (widget.controller != null) {
+      controller = widget.controller!;
+    } else if (Get.isRegistered<DuoGameCenterController>()) {
+      controller = Get.find<DuoGameCenterController>();
+    } else {
+      controller = Get.put(DuoGameCenterController());
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController && Get.isRegistered<DuoGameCenterController>()) {
+      Get.delete<DuoGameCenterController>();
+    }
+    super.dispose();
   }
 
   @override

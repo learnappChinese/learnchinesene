@@ -16,7 +16,9 @@ import 'controller/learning_overview_controller.dart';
 /// Detail for a lexicon chapter. Server-backed progression is rendered by the
 /// Chapter Adventure flow; this screen never invents stars or unlock state.
 class LearningOverviewScreen extends StatefulWidget {
-  const LearningOverviewScreen({super.key});
+  const LearningOverviewScreen({super.key, this.controller});
+
+  final LearningOverviewController? controller;
 
   @override
   State<LearningOverviewScreen> createState() => _LearningOverviewScreenState();
@@ -24,13 +26,27 @@ class LearningOverviewScreen extends StatefulWidget {
 
 class _LearningOverviewScreenState extends State<LearningOverviewScreen> {
   late final LearningOverviewController controller;
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
-    controller = Get.isRegistered<LearningOverviewController>()
-        ? Get.find<LearningOverviewController>()
-        : Get.put(LearningOverviewController());
+    if (widget.controller != null) {
+      controller = widget.controller!;
+    } else if (Get.isRegistered<LearningOverviewController>()) {
+      controller = Get.find<LearningOverviewController>();
+    } else {
+      controller = Get.put(LearningOverviewController());
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController && Get.isRegistered<LearningOverviewController>()) {
+      Get.delete<LearningOverviewController>();
+    }
+    super.dispose();
   }
 
   void _go(Widget screen) {

@@ -153,6 +153,7 @@ void main() {
       final actions = <String>[];
       await tester.pumpWidget(_app(
           BossBattleVictoryScreen(
+            xpEarned: 100,
             onContinue: () => actions.add('continue'),
             onBackToHub: () => actions.add('hub'),
           ),

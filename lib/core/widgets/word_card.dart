@@ -33,7 +33,9 @@ class _WordCardState extends State<WordCard> {
     try {
       await _tts.setLanguage('zh-CN');
       await _tts.setSpeechRate(0.45);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[WordCard] Failed to init TTS: $e');
+    }
   }
 
   Future<void> _speak() async {
@@ -41,7 +43,9 @@ class _WordCardState extends State<WordCard> {
       if (widget.word.chinese.isNotEmpty) {
         await _tts.speak(widget.word.chinese);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[WordCard] Failed to speak: $e');
+    }
   }
 
   @override

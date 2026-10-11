@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -247,7 +248,9 @@ class GuestProgressMigrationService {
               .map((row) => Map<String, dynamic>.from(row))
               .toList();
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[GuestProgressMigrationService] _readJsonList failed: $e');
+      }
     }
     return <Map<String, dynamic>>[];
   }

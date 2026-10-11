@@ -87,12 +87,16 @@ class DuoChallenge {
   static String? _parseSolutions(dynamic value) {
     if (value == null) return null;
     if (value is String) {
-      try {
-        final decoded = jsonDecode(value);
-        if (decoded is List) {
-          return decoded.map((item) => item.toString()).join(' ');
+      if (value.trim().startsWith('[') || value.trim().startsWith('{')) {
+        try {
+          final decoded = jsonDecode(value);
+          if (decoded is List) {
+            return decoded.map((item) => item.toString()).join(' ');
+          }
+        } on FormatException {
+          // Plain string fallback
         }
-      } catch (_) {}
+      }
       return value;
     }
     if (value is List) {

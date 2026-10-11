@@ -112,12 +112,17 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Widget _buildActiveStatusBanner() {
     return Obx(() {
-      if (!controller.isPremium && !controller.isStandard) {
+      final activeProduct = controller.activeProductId.value;
+      final isPremium =
+          controller.isPremium || activeProduct == 'premium_package';
+      final isStandard =
+          controller.isStandard || activeProduct == 'standard_package';
+      if (!isPremium && !isStandard) {
         return const SizedBox.shrink();
       }
 
       final packageName =
-          controller.isPremium ? 'Gói Cao Cấp (Premium)' : 'Gói Tiêu Chuẩn';
+          isPremium ? 'Gói Cao Cấp (Premium)' : 'Gói Tiêu Chuẩn';
       final days = controller.remainingDays;
 
       return Container(

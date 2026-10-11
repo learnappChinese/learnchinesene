@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../core/learning/data/learning_journey_repository.dart';
 import '../../../core/learning/model/learning_journey_models.dart';
@@ -128,7 +129,9 @@ class UnitOverviewController extends GetxController {
           if (!isClosed && request == _loadRequest) {
             nextUnit.value = loadedNextUnit;
           }
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('[UnitOverviewController] getNextUnit failed: $e');
+        }
       } else {
         nextUnit.value = null;
       }

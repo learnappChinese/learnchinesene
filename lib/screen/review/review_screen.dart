@@ -10,7 +10,9 @@ import 'controller/review_controller.dart';
 import 'model/review_item.dart';
 
 class ReviewScreen extends StatefulWidget {
-  const ReviewScreen({super.key});
+  const ReviewScreen({super.key, this.controller});
+
+  final ReviewController? controller;
 
   @override
   State<ReviewScreen> createState() => _ReviewScreenState();
@@ -18,13 +20,27 @@ class ReviewScreen extends StatefulWidget {
 
 class _ReviewScreenState extends State<ReviewScreen> {
   late final ReviewController controller;
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
-    controller = Get.isRegistered<ReviewController>()
-        ? Get.find<ReviewController>()
-        : Get.put(ReviewController());
+    if (widget.controller != null) {
+      controller = widget.controller!;
+    } else if (Get.isRegistered<ReviewController>()) {
+      controller = Get.find<ReviewController>();
+    } else {
+      controller = Get.put(ReviewController());
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController && Get.isRegistered<ReviewController>()) {
+      Get.delete<ReviewController>();
+    }
+    super.dispose();
   }
 
   @override

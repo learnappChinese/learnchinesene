@@ -46,7 +46,10 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
   Future<void> _initSpeech() async {
     try {
       await _speech.initialize();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+          '[DictionaryScreen] Speech recognition initialization failed: $e');
+    }
   }
 
   @override

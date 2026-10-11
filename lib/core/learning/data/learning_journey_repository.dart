@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../presentation/learning_presentation_mapper.dart';
 import '../../widgets/adventure_node.dart';
@@ -176,7 +177,9 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
           return null;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[LearningJourneyRepository] getNextUnit failed: $e');
+    }
     return null;
   }
 
@@ -197,7 +200,10 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
         final levelId = levelRows.first['id'] as String;
         return await _chapterRepo.loadChapter(levelId);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+          '[LearningJourneyRepository] getUnitJourney fallback failed: $e');
+    }
     return null;
   }
 
@@ -350,7 +356,10 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
           estimatedMinutes: (learningNodes.length * 5).clamp(3, 35).toInt(),
         );
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+          '[LearningJourneyRepository] getUnitOverview fallback failed: $e');
+    }
     return null;
   }
 
@@ -367,7 +376,9 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       if (nextAction != null) {
         return nextAction.toLearningNextAction();
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[LearningJourneyRepository] getNextAction failed: $e');
+    }
     return null;
   }
 

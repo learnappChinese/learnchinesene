@@ -12,10 +12,8 @@ import 'package:flash_learn_chinese/screen/dragon_panda/screens/chinese_restaura
 import 'package:flash_learn_chinese/screen/dragon_panda/screens/quick_answer/quick_answer_screen.dart';
 import 'package:flash_learn_chinese/screen/dragon_panda/screens/radical_builder/radical_builder_screen.dart';
 import 'package:flash_learn_chinese/screen/dragon_panda/screens/tone_ninja/tone_ninja_screen.dart';
-import 'package:flash_learn_chinese/screen/duolingo/page/duo_game_runner_screen.dart';
 import 'package:flash_learn_chinese/screen/game_hub/game_hub_screen.dart';
 import 'package:flash_learn_chinese/screen/hanzi_writing/screens/hanzi_writing_home_screen.dart';
-import 'package:flash_learn_chinese/screen/speaking/speaking_screen.dart';
 
 class StubLearningJourneyRepository implements LearningJourneyRepository {
   StubLearningJourneyRepository({

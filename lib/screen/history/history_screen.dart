@@ -6,7 +6,9 @@ import 'controller/history_controller.dart';
 import 'widget/history_content.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  const HistoryScreen({super.key, this.controller});
+
+  final HistoryController? controller;
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -14,13 +16,27 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   late final HistoryController controller;
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
-    controller = Get.isRegistered<HistoryController>()
-        ? Get.find<HistoryController>()
-        : Get.put(HistoryController());
+    if (widget.controller != null) {
+      controller = widget.controller!;
+    } else if (Get.isRegistered<HistoryController>()) {
+      controller = Get.find<HistoryController>();
+    } else {
+      controller = Get.put(HistoryController());
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController && Get.isRegistered<HistoryController>()) {
+      Get.delete<HistoryController>();
+    }
+    super.dispose();
   }
 
   @override

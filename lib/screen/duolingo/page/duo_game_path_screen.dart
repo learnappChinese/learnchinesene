@@ -142,36 +142,58 @@ class _DuoGamePathScreenState extends State<DuoGamePathScreen> {
             return;
           }
           if (!isUnlocked) {
+            final activeLevel = controller.currentLevel ??
+                controller.levels
+                    .where((row) =>
+                        (row['is_unlocked'] as num?)?.toInt() == 1 &&
+                        (row['is_completed'] as num?)?.toInt() == 0)
+                    .firstOrNull;
+            final activeIdx =
+                activeLevel != null ? controller.levels.indexOf(activeLevel) : -1;
             showLockedMissionSheet(
               context,
               title: 'Nhiệm vụ chưa mở',
               message: _lockMessage(level['lock_reason'] as String?),
+              requiredTitle: activeIdx >= 0
+                  ? 'Cần làm: Nhiệm vụ ${activeIdx + 1}'
+                  : null,
+              actionLabel:
+                  activeIdx >= 0 ? 'LÀM CỬA ${activeIdx + 1}' : null,
+              onViewRequired: activeLevel != null
+                  ? () => _startLevel(activeLevel, activeIdx)
+                  : null,
             );
             return;
           }
-          if (widget.gameCode == 'learn_words') {
-            Get.to(
-              () => const VocabularyAdventureScreen(),
-              binding: VocabularyAdventureBinding(
-                levelId: levelId,
-                gameId: widget.gameId,
-                gameName: widget.gameName,
-              ),
-            )?.then((_) => controller.loadLevels());
-            return;
-          }
-          Get.to(
-            () => DuoGameRunnerScreen(
-              gameId: widget.gameId,
-              gameCode: widget.gameCode,
-              levelId: levelId,
-              gameName: widget.gameName,
-              chapterNumber: unitNum,
-              missionNumber: idx + 1,
-              missionCount: controller.levels.length,
-            ),
-          )?.then((_) => controller.loadLevels());
+          _startLevel(level, idx);
         });
+  }
+
+  void _startLevel(Map<String, dynamic> targetLevel, int targetIdx) {
+    final targetLevelId = (targetLevel['id'] as num?)?.toInt() ?? 0;
+    final targetUnitNum = (targetLevel['unit_number'] as num?)?.toInt() ?? 1;
+    if (widget.gameCode == 'learn_words') {
+      Get.to(
+        () => const VocabularyAdventureScreen(),
+        binding: VocabularyAdventureBinding(
+          levelId: targetLevelId,
+          gameId: widget.gameId,
+          gameName: widget.gameName,
+        ),
+      )?.then((_) => controller.loadLevels());
+      return;
+    }
+    Get.to(
+      () => DuoGameRunnerScreen(
+        gameId: widget.gameId,
+        gameCode: widget.gameCode,
+        levelId: targetLevelId,
+        gameName: widget.gameName,
+        chapterNumber: targetUnitNum,
+        missionNumber: targetIdx + 1,
+        missionCount: controller.levels.length,
+      ),
+    )?.then((_) => controller.loadLevels());
   }
 
   String _lockMessage(String? reason) => switch (reason) {

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../database/db_helper.dart';
@@ -84,7 +85,9 @@ class DefaultLearningMasteryService implements LearningMasteryService {
           hanziScore += unitMastery.hanzi!;
           dataPoints++;
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[LearningMasteryService] fetchUnitMastery failed: $e');
+      }
     }
 
     // 2. Supplement / fallback from DB stats
@@ -115,7 +118,9 @@ class DefaultLearningMasteryService implements LearningMasteryService {
       if (hanziScore == 0 && learned > 0) {
         hanziScore = (mastered / 30.0).clamp(0.0, 0.90);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[LearningMasteryService] getStats failed: $e');
+    }
 
     // Ensure fallback non-zero reasonable baselines if user has any progress
     final values = [vocabScore, listenScore, speakScore, hanziScore, sentScore];

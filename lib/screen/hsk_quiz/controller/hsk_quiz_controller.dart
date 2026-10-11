@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../core/services/history_service.dart';
 import '../data/hsk_quiz_repository.dart';
@@ -110,6 +111,8 @@ class HskQuizController extends GetxController {
           },
         ),
       );
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[HskQuizController] Failed to record quiz history: $e');
+    }
   }
 }

@@ -55,6 +55,20 @@ class _PandaCompanionState extends State<PandaCompanion>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final disableAnimations =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (disableAnimations) {
+      if (_floatController.isAnimating) {
+        _floatController.stop();
+      }
+    } else if (widget.animate && !_inTest && !_floatController.isAnimating) {
+      _floatController.repeat(reverse: true);
+    }
+  }
+
+  @override
   void dispose() {
     _floatController.dispose();
     super.dispose();

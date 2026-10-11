@@ -7,7 +7,9 @@ import 'controller/quiz_controller.dart';
 import '../../core/widgets/learning_scaffold.dart';
 
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({super.key});
+  const QuizScreen({super.key, this.controller});
+
+  final QuizController? controller;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -15,14 +17,27 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   late final QuizController controller;
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
-    // The existing GetX route owns this registration.
-    controller = Get.isRegistered<QuizController>()
-        ? Get.find<QuizController>()
-        : Get.put(QuizController());
+    if (widget.controller != null) {
+      controller = widget.controller!;
+    } else if (Get.isRegistered<QuizController>()) {
+      controller = Get.find<QuizController>();
+    } else {
+      controller = Get.put(QuizController());
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController && Get.isRegistered<QuizController>()) {
+      Get.delete<QuizController>();
+    }
+    super.dispose();
   }
 
   @override

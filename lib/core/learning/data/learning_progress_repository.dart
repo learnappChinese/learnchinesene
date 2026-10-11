@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -566,7 +567,9 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
               .map((row) => Map<String, dynamic>.from(row))
               .toList();
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[LearningProgressRepository] _readJsonList failed: $e');
+      }
     }
     return <Map<String, dynamic>>[];
   }

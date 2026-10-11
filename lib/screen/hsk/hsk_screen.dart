@@ -12,7 +12,9 @@ import '../subscription/controller/subscription_controller.dart';
 import '../../core/helper/upgrade_dialog_helper.dart';
 
 class HskScreen extends StatefulWidget {
-  const HskScreen({super.key});
+  const HskScreen({super.key, this.controller});
+
+  final HskController? controller;
 
   @override
   State<HskScreen> createState() => _HskScreenState();
@@ -20,14 +22,27 @@ class HskScreen extends StatefulWidget {
 
 class _HskScreenState extends State<HskScreen> {
   late final HskController controller;
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
-    // The existing GetX route owns this registration.
-    controller = Get.isRegistered<HskController>()
-        ? Get.find<HskController>()
-        : Get.put(HskController());
+    if (widget.controller != null) {
+      controller = widget.controller!;
+    } else if (Get.isRegistered<HskController>()) {
+      controller = Get.find<HskController>();
+    } else {
+      controller = Get.put(HskController());
+      _ownsController = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController && Get.isRegistered<HskController>()) {
+      Get.delete<HskController>();
+    }
+    super.dispose();
   }
 
   @override
