@@ -41,11 +41,8 @@ class SubscriptionController extends GetxController {
   bool get isPremium => _premiumAccess?.isPremium ?? false;
   bool get isStandard => _premiumAccess?.isStandard ?? false;
 
-  String? get activeProductId =>
-      _premiumAccess?.currentEntitlement.value?.productId;
-
-  DateTime? get purchaseDate =>
-      _premiumAccess?.currentEntitlement.value?.lastVerifiedAt;
+  final activeProductId = RxnString();
+  final purchaseDate = Rxn<DateTime>();
 
   int get remainingDays => _premiumAccess?.remainingDays ?? 0;
 
@@ -73,6 +70,16 @@ class SubscriptionController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    if (_premiumAccess != null) {
+      activeProductId.value =
+          _premiumAccess.currentEntitlement.value?.productId;
+      purchaseDate.value =
+          _premiumAccess.currentEntitlement.value?.lastVerifiedAt;
+      ever(_premiumAccess.currentEntitlement, (entitlement) {
+        activeProductId.value = entitlement?.productId;
+        purchaseDate.value = entitlement?.lastVerifiedAt;
+      });
+    }
     _initIAP();
   }
 

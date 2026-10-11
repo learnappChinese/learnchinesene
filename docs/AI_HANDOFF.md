@@ -5,10 +5,8 @@
 - Timestamp: 2026-10-11 (Asia/Saigon)
 - Repo: `D:\Projects\Flutter_Project\learnchinesene`
 - Integration branch: `hieu`
-- HEAD: `9cebe28` (PR 06 merged into `hieu`)
-- Merged feature branch: `feature/pr06-curriculum-adaptive-session-composer`
-- PR 06 Merge Commit: `9cebe28`
-- Next dependency: PR 07 (`Review, Hanzi, Speaking Context & SRS Quality`).
+- Feature branch: `feature/pr07-review-hanzi-speaking-context`
+- Next dependency: PR 08 (`Personalized Home, Smart Next Action & Learning Recommendation`).
 
 ## Phase / PR hiện tại
 
@@ -19,7 +17,8 @@
 - PR04 `Authentication, Guest Progress & Cloud Migration`: merged into `hieu` (`110740e`).
 - PR05 `Production Security: Premium, IAP, Gemini AI & Supabase`: merged into `hieu` (`6f965e2`).
 - PR06 `Curriculum, Adaptive Session Composer & Content Quality`: MERGED into `hieu` (`9cebe28`).
-- Next dependency: PR 07 (`Review, Hanzi, Speaking Context & SRS Quality`).
+- PR07 `Review, Hanzi, Speaking Context & SRS Quality`: COMPLETED & VERIFIED.
+- Next dependency: PR 08 (`Personalized Home, Smart Next Action & Learning Recommendation`).
 
 ## Issue IDs đã xong
 

@@ -58,6 +58,44 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       );
                     }
 
+                    if (controller.errorMessage.value.isNotEmpty &&
+                        controller.summary.value == null) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.cloud_off_rounded,
+                                size: 56,
+                                color: GameVisualTokens.crimson,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                controller.errorMessage.value,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: GameVisualTokens.jade,
+                                  foregroundColor: Colors.white,
+                                ),
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: const Text('Thử lại'),
+                                onPressed: controller.loadInitialData,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
                     final summary =
                         controller.summary.value ?? const ReviewSummary();
                     final selectedCat = controller.selectedCategory.value;

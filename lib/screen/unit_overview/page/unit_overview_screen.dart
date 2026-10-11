@@ -17,9 +17,11 @@ import '../../duolingo/page/duo_game_runner_screen.dart';
 import '../../vocabulary_adventure/binding/vocabulary_adventure_binding.dart';
 import '../../vocabulary_adventure/page/vocabulary_adventure_screen.dart';
 import '../../../core/learning/model/learning_navigation_outcome.dart';
+import '../../../core/learning/model/learning_source_context.dart';
 import '../../../core/learning/model/learning_stage_models.dart';
 import '../../../core/widgets/segmented_progress_node.dart';
 import '../../hanzi_writing/screens/hanzi_writing_home_screen.dart';
+import '../../hanzi_writing/screens/hanzi_writing_screen.dart';
 import '../../speaking/speaking_screen.dart';
 import '../../hsk/hsk_screen.dart';
 import '../binding/unit_overview_binding.dart';
@@ -655,14 +657,43 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
         break;
 
       case LearningStageActivityType.hanzi:
+        final firstCharId = stage.items.isNotEmpty
+            ? int.tryParse(stage.items.first.sourceId)
+            : null;
+        final hanziContext = LearningSourceContext(
+          courseId: 'duo_chinese',
+          duoUnitId: 'unit_${chapter.chapterNumber}',
+          lexiconUnitId: chapter.chapterNumber,
+          levelId: targetLevelId,
+          gameCode: 'hanzi',
+          mode: LearningMode.duoMission,
+        );
         Get.to(
-          () => const HanziWritingHomeScreen(),
+          () => firstCharId != null
+              ? HanziWritingScreen(
+                  characterId: firstCharId,
+                  sourceContext: hanziContext,
+                )
+              : HanziWritingHomeScreen(
+                  sourceContext: hanziContext,
+                ),
         )?.then(_handleStageReturn);
         break;
 
       case LearningStageActivityType.speaking:
+        final speakingContext = LearningSourceContext(
+          courseId: 'duo_chinese',
+          duoUnitId: 'unit_${chapter.chapterNumber}',
+          lexiconUnitId: chapter.chapterNumber,
+          levelId: targetLevelId,
+          gameCode: 'speaking',
+          mode: LearningMode.duoMission,
+        );
         Get.to(
-          () => SpeakingScreen(unitId: chapter.chapterNumber),
+          () => SpeakingScreen(
+            unitId: chapter.chapterNumber,
+            sourceContext: speakingContext,
+          ),
         )?.then(_handleStageReturn);
         break;
 

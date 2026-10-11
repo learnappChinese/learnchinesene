@@ -35,17 +35,17 @@ Status vocabulary:
 | P1-03 | DONE_CODE | Implemented typed `LearningNavigationOutcome` with actions (`completed`, `failed`, `paused`, `abandoned`, `cancelled`, `retry`, `nextMission`, `fightBoss`, `nextUnit`) replacing loose `Get.off` chains | PR03 |
 | P1-04 | DONE_CODE | Guest level progression (`_unlockNextGuestLevel`) in `DuoGameRunnerController` unlocks `reward.nextNodeId` directly based on path dependencies instead of guessing linearly | PR03 |
 | P1-05 | DONE_CODE | Home loads seven slices independently, preserves successful values, exposes partial error state and rejects stale requests | PR01 |
-| P1-06 | PARTIAL | Profile now observes canonical invalidation and no longer overwrites fresh DB stats from a racing Home snapshot; `lastStudyDate` is still `DateTime.now()` | PR06 |
-| P1-07 | OPEN | Hanzi/Speaking context remains optional/inconsistent for several entry paths | PR03/PR07 |
-| P1-08 | DONE_CODE | review completion, flashcard rating and mark-learned actions invalidate Review/Stats/Mastery/Profile/Path scopes | PR01 |
-| P1-09 | OPEN | loaders still contain broad Unit pools and random/hard-coded fallbacks | PR07 |
+| P1-06 | PARTIAL | Profile now observes canonical invalidation and no longer overwrites fresh DB stats from a racing Home snapshot; `lastStudyDate` is still `DateTime.now()` | PR08 |
+| P1-07 | DONE_CODE | Canonical `LearningSourceContext` threaded across Unit Overview, Hanzi writing, and Speaking; curriculum passes unit/level context while free practice mode strictly isolates attempts | PR07 |
+| P1-08 | DONE_CODE | review completion, flashcard rating and mark-learned actions invalidate Review/Stats/Mastery/Profile/Path scopes via `ProgressService` and `LearningProgressSyncService` | PR07 |
+| P1-09 | DONE_CODE | `LearningSessionComposer` eliminated global random fallbacks; strict question budget and unit bounding enforced; truthful speech-to-text matching metrics without fake tone multipliers | PR06/PR07 |
 | P1-10 | OPEN | HSK Quiz and Exam remain outside the canonical durable learning result policy | PR09 |
 | P1-11 | DONE_CODE | Removed client `geminiApiKey` and direct API calls; all queries routed through secure Supabase Edge Function `gemini-ai-gateway` with token auth and quota enforcement | PR05 |
 | P1-12 | OPEN | multiple independent `FlutterTts` instances remain | PR08 |
 | P1-13 | DONE_CODE | `UnitBridgeResolver` resolves bidirectional mappings between text `duo_unit_id` and integer `lexicon_unit_id`; `LearningSourceContext` carries canonical provenance across activities | PR06 |
-| P1-14 | OPEN | Supabase learning history and local `history_logs.json` remain separate/overloaded in product terminology | PR06/PR09 |
-| P2-01 | OPEN | legacy HSK/Unit, journey v2, chapter adventure and Game Center remain overlapping navigation/progression surfaces | PR06 |
-| P2-02 | OPEN | session selection is not yet mastery/history-adaptive | PR07 |
+| P1-14 | OPEN | Supabase learning history and local `history_logs.json` remain separate/overloaded in product terminology | PR08/PR09 |
+| P2-01 | OPEN | legacy HSK/Unit, journey v2, chapter adventure and Game Center remain overlapping navigation/progression surfaces | PR08 |
+| P2-02 | DONE_CODE | SRS spaced repetition due boundaries fixed in `SupabaseReviewRepository`; unmastered words with future review dates are not prematurely marked due | PR07 |
 | P2-03 | OPEN | route bindings/fallback `Get.put` ownership overlap and duplicate subscription DI remain | PR10 |
 | P2-04 | OPEN | Home still substitutes lifetime XP when today XP is zero | PR06 |
 | P2-05 | OPEN | broad silent catches and empty fallbacks remain across the repository | PR10 |

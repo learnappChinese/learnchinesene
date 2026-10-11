@@ -155,7 +155,7 @@ class ReviewController extends GetxController {
             'unitTitle': 'Ôn tập Từ vựng',
             'reviewWords': wordList,
           },
-        );
+        )?.then((_) => loadInitialData());
         break;
       case ReviewCategory.listening:
         final wordList =
@@ -167,25 +167,28 @@ class ReviewController extends GetxController {
               'unitTitle': 'Ôn tập Luyện nghe',
               'reviewWords': wordList,
             },
-          );
+          )?.then((_) => loadInitialData());
         } else {
-          Get.to(() => const ConversationsScreen());
+          Get.to(() => const ConversationsScreen())
+              ?.then((_) => loadInitialData());
         }
         break;
       case ReviewCategory.speaking:
         Get.to(
           () => const SpeakingScreen(random: true),
           arguments: const {'standalone': true},
-        );
+        )?.then((_) => loadInitialData());
         break;
       case ReviewCategory.hanzi:
         final firstItem =
             items.firstWhereOrNull((it) => it.category == ReviewCategory.hanzi);
         final cid = int.tryParse(firstItem?.id.replaceAll('hanzi_', '') ?? '');
         if (cid != null && cid > 0) {
-          Get.to(() => HanziWritingScreen(characterId: cid));
+          Get.to(() => HanziWritingScreen(characterId: cid))
+              ?.then((_) => loadInitialData());
         } else {
-          Get.to(() => const HanziWritingHomeScreen());
+          Get.to(() => const HanziWritingHomeScreen())
+              ?.then((_) => loadInitialData());
         }
         break;
     }
@@ -208,7 +211,8 @@ class ReviewController extends GetxController {
                 groupSubtitle: '',
                 wrongCount: item.wrongCount,
               );
-        Get.to(() => const WordDetailScreen(), arguments: {'word': word});
+        Get.to(() => const WordDetailScreen(), arguments: {'word': word})
+            ?.then((_) => loadInitialData());
         break;
       case ReviewCategory.listening:
         Get.to(
@@ -218,20 +222,22 @@ class ReviewController extends GetxController {
             'reviewWords':
                 words.isNotEmpty ? words.toList() : _mapItemsToWords(items),
           },
-        );
+        )?.then((_) => loadInitialData());
         break;
       case ReviewCategory.speaking:
         Get.to(
           () => const SpeakingScreen(random: true),
           arguments: const {'standalone': true},
-        );
+        )?.then((_) => loadInitialData());
         break;
       case ReviewCategory.hanzi:
         final cid = int.tryParse(item.id.replaceAll('hanzi_', ''));
         if (cid != null && cid > 0) {
-          Get.to(() => HanziWritingScreen(characterId: cid));
+          Get.to(() => HanziWritingScreen(characterId: cid))
+              ?.then((_) => loadInitialData());
         } else {
-          Get.to(() => const HanziWritingHomeScreen());
+          Get.to(() => const HanziWritingHomeScreen())
+              ?.then((_) => loadInitialData());
         }
         break;
     }

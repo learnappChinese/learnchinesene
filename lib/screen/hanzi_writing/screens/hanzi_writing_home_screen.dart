@@ -7,11 +7,17 @@ import '../controller/hanzi_writing_home_controller.dart';
 import '../../../core/models/hanzi_character.dart';
 import '../../../core/widgets/learning_scene_background.dart';
 import '../../../core/widgets/learning_scaffold.dart';
+import '../../../core/learning/model/learning_source_context.dart';
 import '../../../core/theme/learning_theme.dart';
 import 'hanzi_writing_screen.dart';
 
 class HanziWritingHomeScreen extends StatefulWidget {
-  const HanziWritingHomeScreen({super.key});
+  final LearningSourceContext? sourceContext;
+
+  const HanziWritingHomeScreen({
+    super.key,
+    this.sourceContext,
+  });
 
   @override
   State<HanziWritingHomeScreen> createState() => _HanziWritingHomeScreenState();
@@ -178,8 +184,10 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>
-                                HanziWritingScreen(characterId: char.id),
+                            builder: (_) => HanziWritingScreen(
+                              characterId: char.id,
+                              sourceContext: widget.sourceContext,
+                            ),
                           ),
                         );
                       });

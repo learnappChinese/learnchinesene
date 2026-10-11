@@ -59,10 +59,7 @@ class SpeakingResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int pron = score.round();
-    final int tone = (score * 0.94).round().clamp(60, 100);
-    final int flu = (score * 0.92).round().clamp(60, 100);
-    final int acc = (score * 0.98).round().clamp(60, 100);
+    final int matchScore = score.round();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -106,7 +103,7 @@ class SpeakingResultCard extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  '$pron',
+                  '$matchScore',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
@@ -121,7 +118,7 @@ class SpeakingResultCard extends StatelessWidget {
                   children: [
                     Text(
                       correct
-                          ? 'Tuyệt đỉnh! Phát âm rất chuẩn 🎯'
+                          ? 'Tuyệt đỉnh! Nhận diện rất chuẩn 🎯'
                           : 'Gần đúng rồi — thử lại nhé!',
                       style: const TextStyle(
                         fontSize: 16,
@@ -147,14 +144,13 @@ class SpeakingResultCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // 4 Game Badges
+          // Speech Match Badges (Truthful to Speech-to-Text Text Similarity)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildMetricBadge('Phát âm', pron, GameVisualTokens.jadeDark),
-              _buildMetricBadge('Thanh điệu', tone, const Color(0xFFD97706)),
-              _buildMetricBadge('Lưu loát', flu, const Color(0xFF0284C7)),
-              _buildMetricBadge('Chính xác', acc, const Color(0xFF7C3AED)),
+              _buildMetricBadge('Độ khớp từ', matchScore, GameVisualTokens.jadeDark),
+              _buildMetricBadge('Nhận dạng', correct ? 100 : matchScore, const Color(0xFF0284C7)),
+              _buildMetricBadge('Mức độ', correct ? 100 : (matchScore > 50 ? 60 : 30), const Color(0xFF7C3AED)),
             ],
           ),
           const SizedBox(height: 16),

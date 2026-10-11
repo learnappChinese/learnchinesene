@@ -1,8 +1,8 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/learning/model/learning_result.dart';
+import '../../../core/learning/model/learning_source_context.dart';
 import '../../../core/learning/service/learning_reward_service.dart';
 import '../../../core/models/speaking_practice_item.dart';
 import '../../../core/services/speech_service.dart';
@@ -12,15 +12,17 @@ import '../../../core/helper/permission_helper.dart';
 
 class SpeakingController extends GetxController
     with GetSingleTickerProviderStateMixin {
-  final speech = SpeechService();
-  final vocabService = VocabularyService();
-  final audioService = AudioService();
+  final SpeechService speech;
+  final VocabularyService vocabService;
+  final AudioService audioService;
+  final Future<bool> Function() _permissionChecker;
 
   int? wordId;
   int? exampleId;
   int? unitId;
   bool random = false;
   bool isBottomSheet = false;
+  LearningSourceContext? sourceContext;
 
   final items = <SpeakingPracticeItem>[].obs;
   final currentIndex = 0.obs;
@@ -32,10 +34,18 @@ class SpeakingController extends GetxController
   final score = 0.0.obs;
   final correct = RxnBool();
   final learningResult = Rxn<LearningResult>();
-  final LearningRewardService _rewardService = LearningRewardService();
+  final LearningRewardService _rewardService;
   String? _activeAttemptId;
 
   late final AnimationController pulse;
+
+  bool get _hasPulse {
+    try {
+      return pulse.duration != null;
+    } catch (_) {
+      return false;
+    }
+  }
 
   SpeakingController({
     int? wordId,
@@ -43,13 +53,27 @@ class SpeakingController extends GetxController
     int? unitId,
     bool random = false,
     bool isBottomSheet = false,
-  }) {
+    this.sourceContext,
+    LearningRewardService? rewardService,
+    SpeechService? speechService,
+    VocabularyService? vocabularyService,
+    AudioService? audioService,
+    Future<bool> Function()? permissionChecker,
+  })  : _rewardService = rewardService ?? LearningRewardService(),
+        speech = speechService ?? SpeechService(),
+        vocabService = vocabularyService ?? VocabularyService(),
+        audioService = audioService ?? AudioService(),
+        _permissionChecker =
+            permissionChecker ?? PermissionHelper.requestSpeakingPermissions {
     final args = Get.arguments as Map<String, dynamic>?;
     this.wordId = wordId ?? args?['wordId'];
     this.exampleId = exampleId ?? args?['exampleId'];
     this.unitId = unitId ?? args?['unitId'];
     this.random = args?['random'] ?? args?['standalone'] ?? random;
     this.isBottomSheet = args?['isBottomSheet'] ?? isBottomSheet;
+    if (args?['sourceContext'] is LearningSourceContext) {
+      sourceContext = args?['sourceContext'] as LearningSourceContext;
+    }
   }
 
   @override
@@ -74,7 +98,7 @@ class SpeakingController extends GetxController
         ),
       );
     }
-    pulse.dispose();
+    if (_hasPulse) pulse.dispose();
     speech.stop();
     audioService.dispose();
     super.onClose();
@@ -119,10 +143,10 @@ class SpeakingController extends GetxController
     }
   }
 
-  Future<void> start(BuildContext context) async {
+  Future<void> start([BuildContext? context]) async {
     if (isClosed || items.isEmpty || busy.value) return;
 
-    final granted = await PermissionHelper.requestSpeakingPermissions();
+    final granted = await _permissionChecker();
     if (isClosed) return;
     if (!granted) {
       Get.snackbar(
@@ -137,6 +161,9 @@ class SpeakingController extends GetxController
     }
 
     if (isClosed) return;
+    // Stop any ongoing audio playback before opening the microphone
+    await audioService.stop();
+
     final currentItem = items[currentIndex.value];
     final sourceId =
         'spk_${currentItem.wordId ?? currentItem.exampleId ?? currentIndex.value}';
@@ -144,27 +171,39 @@ class SpeakingController extends GetxController
     final startedAt = DateTime.now();
     _activeAttemptId = attemptId;
 
+    final String? rewardUnitId = (sourceContext?.isCurriculum == true)
+        ? sourceContext!.duoUnitId
+        : (unitId != null && (sourceContext == null || !sourceContext!.isPractice)
+            ? 'unit_$unitId'
+            : null);
+    final String? rewardLevelId = (sourceContext?.isCurriculum == true)
+        ? sourceContext!.levelId
+        : null;
+
     await _rewardService.startSpeakingAttempt(
       sourceId: sourceId,
       attemptId: attemptId,
       wordId: currentItem.wordId,
       exampleId: currentItem.exampleId,
       targetText: currentItem.targetText,
-      unitId: unitId?.toString(),
+      unitId: rewardUnitId,
+      levelId: rewardLevelId,
     );
 
     busy.value = true;
     recognized.value = '';
     correct.value = null;
-    pulse.repeat(reverse: true);
+    if (_hasPulse) pulse.repeat(reverse: true);
 
     final result = await speech.listenAndScore(
       targetText: currentItem.targetText,
     );
 
     if (isClosed) return;
-    pulse.stop();
-    pulse.value = 1;
+    if (_hasPulse) {
+      pulse.stop();
+      pulse.value = 1;
+    }
 
     if (!result.isAvailable) {
       await _rewardService.abandonAttempt(
@@ -188,7 +227,8 @@ class SpeakingController extends GetxController
         wordId: currentItem.wordId,
         exampleId: currentItem.exampleId,
         targetText: currentItem.targetText,
-        unitId: unitId?.toString(),
+        unitId: rewardUnitId,
+        levelId: rewardLevelId,
         durationSeconds: DateTime.now().difference(startedAt).inSeconds,
       );
       learningResult.value = reward;

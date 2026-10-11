@@ -18,6 +18,12 @@ class AudioService {
     }
   }
 
+  Future<void> stop() async {
+    try {
+      await _player.stop();
+    } catch (_) {}
+  }
+
   Future<void> dispose() async {
     await _player.dispose();
   }
