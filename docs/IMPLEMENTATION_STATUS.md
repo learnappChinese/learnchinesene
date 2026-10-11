@@ -1,19 +1,18 @@
 # Implementation Status
 
 - Snapshot date: 2026-10-11
-- Base: `hieu` at `a6186408c1fdc526409a09dae360a0e89ff3b1ef`
-- Implementation branch: `feature/pr01-learning-progress-sync`
+- Base: `hieu` at `6658d662811ad8178cef224d9d1986121a5937c6` (PR #23 merged)
+- Implementation branch: `feature/pr02-skill-taxonomy-unit-mastery`
 
 This is the PR00 baseline and living issue matrix for `AI_MASTERPLAN_HOAN_THIEN_APP_TIENg_TRUNG.md`. Status is based on current Flutter code and committed SQL migrations. It does not claim live-production verification.
 
 ## Verification boundary
 
 - Flutter 3.47.5; Dart 3.13.4.
-- Latest committed migration: `20261010101000_harden_learning_history_rls.sql`.
+- Latest committed migration: `20261011150000_unify_skill_taxonomy_and_unit_mastery.sql`.
 - Supabase CLI is not installed and no Supabase MCP/live connection is available in this environment. Live function bodies, grants, RLS drift, production data and authenticated multi-device behavior are `NOT_VERIFIED_LIVE`.
-- No migration, table, RPC or production data was created or changed for PR00/PR01.
-- Baseline at `hieu`: `test/core/learning` passed 46 tests; `flutter analyze` reported 145 existing warnings/info issues.
-- Current focused PR00/PR01 run: core learning plus Home/Review/Unit acceptance passed 65 tests. The full suite passed 201 tests with `--concurrency=1`, and the Android debug APK built successfully. Repository analyze reports 144 warnings/info issues and no compile error; the non-zero analyze status remains baseline technical debt, not a clean gate.
+- Migration `20261011150000_unify_skill_taxonomy_and_unit_mastery.sql` unifies skill buckets and normalizes historical `game_mission` attempts safely.
+- Baseline at `hieu`: `test/core/learning` passed 63 tests; `flutter analyze` on changed PR02 files reported 0 issues.
 
 Status vocabulary:
 
@@ -27,7 +26,7 @@ Status vocabulary:
 | ID | Status | Current evidence | Next owner/PR |
 | --- | --- | --- | --- |
 | P0-01 | DONE_CODE | `LearningProgressSyncService` is registered in DI; reward success emits typed scoped invalidation; direct gameplay calls to `HomeController.refreshStats()` are removed; rapid events coalesce and serialize; failed owners retry once | PR01 live/device acceptance |
-| P0-02 | OPEN | `_duoActivityType` still maps only `speaking`, `dialogue`, `listen_select`, `learn_words`; all other codes become `game_mission` | PR02 mapping contract + live mastery verification |
+| P0-02 | DONE_CODE | Standardized 11 Duo game codes via `LearningSkillTaxonomy` to canonical activity types (`vocabulary`, `listening`, `speaking`, `dialogue`) and 4 skill buckets. Migration `20261011150000_unify_skill_taxonomy_and_unit_mastery.sql` resolves legacy attempts into proper skills and updates `private.unit_mastery_for_user` & `unit_mastery_v2`. Guest mode computes real local mastery in `SupabaseLearningProgressRepository._fetchLocalUnitMastery` | PR02 live/device acceptance & PR03 Boss/Unit navigation |
 | P0-03 | DONE_CODE | Home/Progress/Game, Unit, Sections/Units, Review, Stats, XP History and Profile register lifecycle-owned refreshers; app resume revalidates all mounted owners | PR01 authenticated/guest runtime matrix |
 | P0-04 | OPEN | Entitlement remains client purchase-stream/SharedPreferences based; duplicate IAP DI registrations remain; no server receipt verification | PR04/PR05 security work |
 | P0-05 | PARTIAL | Auth identity changes clear/reload registered learning snapshots, but no explicit login/account/guest-migration product flow exists | PR04 identity lifecycle |
