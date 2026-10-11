@@ -93,6 +93,8 @@ class HomeDashboard extends StatelessWidget {
                           child: _header(),
                         ),
                         _hero(width, sceneTop, sceneHeight, headerHeight),
+                        if (errorMessage != null && errorMessage!.isNotEmpty)
+                          _staleNotice(),
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 22.w),
                           child: HomeLearningSections(
@@ -253,4 +255,44 @@ class HomeDashboard extends StatelessWidget {
       ]),
     );
   }
+
+  Widget _staleNotice() => Container(
+        margin: EdgeInsets.symmetric(horizontal: 22.w, vertical: 4.w),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 7.w),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF8E6),
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: const Color(0xFFFFE0A3), width: 1),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.cloud_off_rounded,
+                size: 14.sp, color: const Color(0xFF946200)),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Text(
+                '${errorMessage ?? 'Tiến độ chưa thể cập nhật đầy đủ'} • Dữ liệu ngoại tuyến',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: const Color(0xFF7A5200),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (onRetry != null)
+              GestureDetector(
+                onTap: onRetry,
+                child: Text(
+                  'Thử lại',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: const Color(0xFF573B00),
+                    fontWeight: FontWeight.w800,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
 }

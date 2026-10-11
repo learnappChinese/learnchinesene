@@ -1,18 +1,18 @@
 # Implementation Status
 
 - Snapshot date: 2026-10-11
-- Base: `hieu` at `6f965e25210cc5d2c97051a27e9d39f36c802f77` (PR 05 merged)
-- Next implementation: PR 06 (Curriculum, Adaptive Session Composer & Content Quality)
+- Base: `hieu` (PR 08 completed & verified)
+- Next implementation: PR 09 (AI Learning Quality, HSK Quiz/Exam & Unified Learning Outcomes)
 
 This is the living issue matrix for `AI_MASTERPLAN_HOAN_THIEN_APP_TIENg_TRUNG.md`. Status is based on current Flutter code and committed SQL migrations. It does not claim live-production verification.
 
 ## Verification boundary
 
 - Flutter 3.47.5; Dart 3.13.4.
-- Latest committed migration: `20261011160000_complete_learning_activity_result_contract.sql`.
+- Latest committed migration: `20261011180000_secure_entitlements_and_ai_quotas.sql`.
 - Supabase CLI is not installed and no Supabase MCP/live connection is available in this environment. Live function bodies, grants, RLS drift, production data and authenticated multi-device behavior are `NOT_VERIFIED_LIVE`.
-- Migration `20261011160000_complete_learning_activity_result_contract.sql` standardizes the `complete_learning_activity_v2` result contract with `boss_ready`, `unit_completed`, and `next_unit_id`.
-- Baseline at `hieu`: `test/core/learning` passed 74 tests; `flutter analyze` on changed PR03 files reported 0 issues/warnings.
+- PR 08 completed: single authoritative recommendation contract `RecommendedNextAction`, unified `LearningRecommendationService`, zero Today/Lifetime XP flipping, and partial failure resilience.
+- Baseline at `hieu`: `test/core/learning` and `test/screen/home/` passed; `flutter analyze` on changed PR08 files reported 0 issues/warnings.
 
 Status vocabulary:
 
@@ -43,11 +43,11 @@ Status vocabulary:
 | P1-11 | DONE_CODE | Removed client `geminiApiKey` and direct API calls; all queries routed through secure Supabase Edge Function `gemini-ai-gateway` with token auth and quota enforcement | PR05 |
 | P1-12 | OPEN | multiple independent `FlutterTts` instances remain | PR08 |
 | P1-13 | DONE_CODE | `UnitBridgeResolver` resolves bidirectional mappings between text `duo_unit_id` and integer `lexicon_unit_id`; `LearningSourceContext` carries canonical provenance across activities | PR06 |
-| P1-14 | OPEN | Supabase learning history and local `history_logs.json` remain separate/overloaded in product terminology | PR08/PR09 |
-| P2-01 | OPEN | legacy HSK/Unit, journey v2, chapter adventure and Game Center remain overlapping navigation/progression surfaces | PR08 |
+| P1-14 | OPEN | Supabase learning history and local `history_logs.json` remain separate/overloaded in product terminology | PR09 |
+| P2-01 | DONE_CODE | Unified single source of truth for next-action recommendations in `LearningRecommendationService` and `RecommendedNextAction`; removed duplicate resolution in `HomeJourneyRepository` and `LearningJourneyRepository.getNextAction` | PR08 |
 | P2-02 | DONE_CODE | SRS spaced repetition due boundaries fixed in `SupabaseReviewRepository`; unmastered words with future review dates are not prematurely marked due | PR07 |
 | P2-03 | OPEN | route bindings/fallback `Get.put` ownership overlap and duplicate subscription DI remain | PR10 |
-| P2-04 | OPEN | Home still substitutes lifetime XP when today XP is zero | PR06 |
+| P2-04 | DONE_CODE | Home strictly renders Today XP from `controller.todayXp.value` (including 0); eliminated deceptive fallback that swapped Lifetime XP into Today's metric | PR08 |
 | P2-05 | OPEN | broad silent catches and empty fallbacks remain across the repository | PR10 |
 | P2-06 | DONE_CODE | lifecycle refresh moved from Profile-only behavior to app-wide typed invalidation owned by Home lifecycle | PR01 |
 

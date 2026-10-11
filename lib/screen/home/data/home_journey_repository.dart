@@ -1,5 +1,5 @@
-import '../../../core/learning/model/learning_recommendation.dart';
 import '../../../core/learning/data/learning_journey_repository.dart';
+import '../../../core/learning/model/recommended_next_action.dart';
 import '../../../core/learning/service/learning_recommendation_service.dart';
 import '../../chapter_adventure/data/chapter_adventure_repository.dart';
 import '../model/home_journey.dart';
@@ -41,9 +41,10 @@ class CloudHomeJourneyRepository implements HomeJourneyRepository {
     final currentMission = chapter.missions.isEmpty || missionIndex < 0
         ? null
         : chapter.missions[missionIndex];
-    LearningRecommendation? recommendation;
+
+    RecommendedNextAction? nextAction;
     try {
-      recommendation = await _recommendationService.recommend(
+      nextAction = await _recommendationService.recommend(
         unitId: chapter.unitId,
         levelId: chapter.levelId,
       );
@@ -53,25 +54,26 @@ class CloudHomeJourneyRepository implements HomeJourneyRepository {
     }
 
     return HomeJourney(
-      gameId: currentMission?.gameId ?? 0,
-      gameCode: currentMission?.gameCode ?? '',
+      gameId: nextAction?.gameId ?? currentMission?.gameId ?? 0,
+      gameCode: nextAction?.gameCode ?? currentMission?.gameCode ?? '',
       gameName: 'Hành trình tiếng Trung',
       gameDescription: unit.teachingObjective,
-      levelId: chapter.levelId,
-      unitId: chapter.unitId,
+      levelId: nextAction?.levelId ?? chapter.levelId,
+      unitId: nextAction?.unitId ?? chapter.unitId,
       worldNumber: chapter.regionNumber,
       chapterNumber: chapter.chapterNumber,
       chapterTitle: chapter.title,
       missionNumber: missionIndex < 0 ? totalMissions : missionIndex + 1,
-      missionTitle: recommendation?.title ??
+      missionTitle: nextAction?.title ??
           currentMission?.title ??
           'Sẵn sàng đánh Boss',
       completedMissions: completed,
       totalMissions: totalMissions,
       stars: stars,
       bossProgress: chapter.progress,
-      nextRewardXp: 20 + (missionIndex.clamp(0, 4) * 5),
-      recommendation: recommendation,
+      nextRewardXp: nextAction?.xpReward ?? (20 + (missionIndex.clamp(0, 4) * 5)),
+      recommendation: nextAction?.toLearningRecommendation(),
+      nextAction: nextAction,
     );
   }
 }

@@ -164,7 +164,9 @@ class HomeLearningSections extends StatelessWidget {
                     SizedBox(
                       width: 88.w,
                       child: HomeGreenButton(
-                        label: 'Tiếp tục',
+                        label: journey?.nextAction?.label ??
+                            journey?.recommendation?.cta ??
+                            'Tiếp tục',
                         onTap: onStartLearning,
                         chevronIcon: false,
                       ),

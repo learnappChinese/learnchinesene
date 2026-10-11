@@ -5,8 +5,8 @@
 - Timestamp: 2026-10-11 (Asia/Saigon)
 - Repo: `D:\Projects\Flutter_Project\learnchinesene`
 - Integration branch: `hieu`
-- Feature branch: `feature/pr07-review-hanzi-speaking-context`
-- Next dependency: PR 08 (`Personalized Home, Smart Next Action & Learning Recommendation`).
+- Feature branch: `feature/pr08-personalized-home-recommendations`
+- Next dependency: PR 09 (`AI Learning Quality, HSK Quiz/Exam & Unified Learning Outcomes`).
 
 ## Phase / PR hiện tại
 
@@ -17,8 +17,9 @@
 - PR04 `Authentication, Guest Progress & Cloud Migration`: merged into `hieu` (`110740e`).
 - PR05 `Production Security: Premium, IAP, Gemini AI & Supabase`: merged into `hieu` (`6f965e2`).
 - PR06 `Curriculum, Adaptive Session Composer & Content Quality`: MERGED into `hieu` (`9cebe28`).
-- PR07 `Review, Hanzi, Speaking Context & SRS Quality`: COMPLETED & VERIFIED.
-- Next dependency: PR 08 (`Personalized Home, Smart Next Action & Learning Recommendation`).
+- PR07 `Review, Hanzi, Speaking Context & SRS Quality`: MERGED into `hieu` (`a1cfaf8`).
+- PR08 `Personalized Home, Smart Next Action & Learning Recommendation`: COMPLETED & VERIFIED.
+- Next dependency: PR 09 (`AI Learning Quality, HSK Quiz/Exam & Unified Learning Outcomes`).
 
 ## Issue IDs đã xong
 

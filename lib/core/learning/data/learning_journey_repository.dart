@@ -8,6 +8,7 @@ import '../model/learning_journey_models.dart';
 import '../model/unit_mastery.dart';
 
 import '../model/learning_stage_models.dart';
+import '../service/learning_recommendation_service.dart';
 import '../service/learning_stage_grouping_service.dart';
 
 abstract interface class LearningJourneyRepository {
@@ -36,19 +37,20 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
     ChapterAdventureRepository? chapterAdventureRepository,
     ReviewRepository? reviewRepository,
     LearningStageGroupingService? stageGroupingService,
+    LearningRecommendationService? recommendationService,
   })  : _client = client ?? Supabase.instance.client,
         _chapterRepo =
             chapterAdventureRepository ?? SupabaseChapterAdventureRepository(),
         _reviewRepo = reviewRepository ?? SupabaseReviewRepository(),
         _stageGroupingService =
-            stageGroupingService ?? const LearningStageGroupingService();
+            stageGroupingService ?? const LearningStageGroupingService(),
+        _recommendationService = recommendationService;
 
   final SupabaseClient _client;
   final ChapterAdventureRepository _chapterRepo;
   final ReviewRepository _reviewRepo;
   final LearningStageGroupingService _stageGroupingService;
-
-  String? get _userId => _client.auth.currentUser?.id;
+  final LearningRecommendationService? _recommendationService;
 
   @override
   Future<List<LearningSectionViewModel>> getSections() async {
@@ -355,137 +357,15 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
   @override
   Future<LearningNextAction?> getNextAction() async {
     try {
-      final currentUnit = await getCurrentProgress();
-
-      // 1. Resume luôn có ưu tiên cao nhất.
-      if (_userId != null) {
-        final activeRows = List<Map<String, dynamic>>.from(
-          await _client
-              .from('duo_active_sessions')
-              .select(
-                'game_id, level_id, current_index, score, correct_count, wrong_count, status',
-              )
-              .eq('user_id', _userId!)
-              .eq('status', 'active')
-              .order('updated_at', ascending: false)
-              .limit(1),
-        );
-
-        if (activeRows.isNotEmpty && currentUnit != null) {
-          final active = activeRows.first;
-          final levelId = '${active['level_id'] ?? ''}';
-          final gameId = (active['game_id'] as num?)?.toInt();
-          final currIdx = (active['current_index'] as num?)?.toInt() ?? 0;
-          final journey = await getUnitJourney(currentUnit.id);
-          final currentMission = journey?.missions
-              .where((mission) => mission.gameId == gameId)
-              .firstOrNull;
-
-          return LearningNextAction(
-            type: LearningActionType.activeSession,
-            unitId: currentUnit.id,
-            sectionNumber: currentUnit.sectionNumber,
-            unitNumber: currentUnit.unitNumber,
-            sectionTitle: LearningPresentationMapper.sectionName(
-              currentUnit.sectionNumber,
-            ),
-            unitTitle: currentUnit.title,
-            missionTitle: currentMission?.title ?? 'Nhiệm vụ đang tiếp diễn',
-            gameId: gameId,
-            gameCode: currentMission?.gameCode,
-            levelId: levelId,
-            label: 'TIẾP TỤC $currIdx/${currentMission?.currentTotal ?? 0}',
-            description: 'Tiếp tục câu hỏi đang làm dở, không mất tiến độ.',
-            currentIndex: currIdx,
-            currentTotal: currentMission?.currentTotal ?? 0,
+      final recService = _recommendationService ??
+          SupabaseLearningRecommendationService(
+            client: _client,
+            journeyRepository: this,
+            reviewRepository: _reviewRepo,
           );
-        }
-      }
-
-      // 2. Ôn quá hạn trước khi mở nội dung mới.
-      final reviewSummary = await _reviewRepo.loadReviewSummary();
-      if (reviewSummary.totalDue > 0 && currentUnit != null) {
-        return LearningNextAction(
-          type: LearningActionType.reviewOverdue,
-          unitId: currentUnit.id,
-          sectionNumber: currentUnit.sectionNumber,
-          unitNumber: currentUnit.unitNumber,
-          sectionTitle: LearningPresentationMapper.sectionName(
-            currentUnit.sectionNumber,
-          ),
-          unitTitle: currentUnit.title,
-          missionTitle: '${reviewSummary.totalDue} mục cần ôn hôm nay',
-          label: 'ÔN NGAY',
-          description: 'Ưu tiên các mục quá hạn và từng trả lời sai.',
-          xpReward: 25,
-        );
-      }
-
-      // 3. Tiếp tục đúng node server đã mở trong Unit hiện tại.
-      if (currentUnit != null) {
-        final journey = await getUnitJourney(currentUnit.id);
-        if (journey != null && journey.missions.isNotEmpty) {
-          final nextMission = journey.missions
-              .where((mission) =>
-                  !mission.isCompleted &&
-                  mission.state != AdventureNodeState.locked)
-              .firstOrNull;
-          if (nextMission != null) {
-            return LearningNextAction(
-              type: LearningActionType.continueMission,
-              unitId: currentUnit.id,
-              sectionNumber: currentUnit.sectionNumber,
-              unitNumber: currentUnit.unitNumber,
-              sectionTitle: LearningPresentationMapper.sectionName(
-                currentUnit.sectionNumber,
-              ),
-              unitTitle: currentUnit.title,
-              missionTitle: nextMission.title,
-              gameId: nextMission.gameId,
-              gameCode: nextMission.gameCode,
-              levelId: journey.levelId,
-              label: nextMission.state == AdventureNodeState.failed
-                  ? 'THỬ LẠI'
-                  : 'TIẾP TỤC BÀI',
-              description: nextMission.description,
-              xpReward: 20,
-              currentIndex: nextMission.currentIndex,
-              currentTotal: nextMission.currentTotal,
-            );
-          }
-        }
-
-        if (currentUnit.bossAvailable && !currentUnit.bossWon) {
-          return LearningNextAction(
-            type: LearningActionType.fightBoss,
-            unitId: currentUnit.id,
-            sectionNumber: currentUnit.sectionNumber,
-            unitNumber: currentUnit.unitNumber,
-            sectionTitle: LearningPresentationMapper.sectionName(
-              currentUnit.sectionNumber,
-            ),
-            unitTitle: currentUnit.title,
-            missionTitle: 'Boss ${currentUnit.bossName ?? 'cuối bài'}',
-            label: 'CHIẾN ĐẤU',
-            description: 'Đánh bại Boss để mở bài học tiếp theo.',
-            xpReward: 50,
-          );
-        }
-
-        return LearningNextAction(
-          type: LearningActionType.startUnit,
-          unitId: currentUnit.id,
-          sectionNumber: currentUnit.sectionNumber,
-          unitNumber: currentUnit.unitNumber,
-          sectionTitle: LearningPresentationMapper.sectionName(
-            currentUnit.sectionNumber,
-          ),
-          unitTitle: currentUnit.title,
-          missionTitle: 'Khám phá bài học',
-          label: 'BẮT ĐẦU',
-          description: currentUnit.teachingObjective,
-          xpReward: 20,
-        );
+      final nextAction = await recService.recommend();
+      if (nextAction != null) {
+        return nextAction.toLearningNextAction();
       }
     } catch (_) {}
     return null;
