@@ -5,9 +5,9 @@
 - Timestamp: 2026-10-11 (Asia/Saigon)
 - Repo: `D:\Projects\Flutter_Project\learnchinesene`
 - Integration branch: `hieu`
-- Feature branch: `feature/pr04-auth-guest-cloud-migration`
+- HEAD: `110740e5e3946546417f2c09afe2cc6fceac9423` (PR 04 merged into `hieu`)
+- Merged feature branch: `feature/pr04-auth-guest-cloud-migration`
 - Base: `7999332` on `hieu` (contains PR 01, PR 02, PR 03)
-- PR04 implementation commit: pending merge
 
 ## Phase / PR hiện tại
 
@@ -15,7 +15,7 @@
 - PR01 `LearningProgressSyncService`: merged into `hieu` via PR #23.
 - PR02 `Skill Taxonomy & Unit Mastery`: merged into `hieu` via PR #24 (`19a6118`).
 - PR03 `Complete Learning Flow, Unlock & Boss Navigation`: merged into `hieu` via `9b3965e`.
-- PR04 `Authentication, Guest Progress & Cloud Migration`: code, tests, and handoff complete.
+- PR04 `Authentication, Guest Progress & Cloud Migration`: MERGED into `hieu` (`110740e`).
 - Next dependency: PR 05 (`Security: IAP Verification & Gemini API Protection`).
 
 ## Issue IDs đã xong
@@ -88,12 +88,13 @@ NO.
 
 ## Next exact 3 coding steps
 
-1. Create GitHub PR for PR 02 against `hieu`.
-2. Transition to PR 03: implement typed completion & navigation outcome (`LearningCompletionOutcome`).
-3. Refactor `BossBattleScreen` and Unit Complete to remove hard-coded XP/star parameters and use server-authoritative results.
+1. Begin PR 05: Security — IAP Verification & Gemini API Protection.
+2. Replace client-only IAP handling with backend verification / receipts policy.
+3. Secure Gemini API calls via backend proxy / edge function, avoiding client-side raw key exposure.
 
 ## Git status / PR URL
 
-- Implementation branch: `feature/pr02-skill-taxonomy-unit-mastery`.
-- Base branch: `hieu`.
-- Target PR: PR 02.
+- Integration branch: `hieu`.
+- Merge commit: `110740e5e3946546417f2c09afe2cc6fceac9423` (PR 04 merged).
+- Feature branch merged: `feature/pr04-auth-guest-cloud-migration`.
+- Next task: PR 05.
