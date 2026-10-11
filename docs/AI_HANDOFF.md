@@ -5,9 +5,9 @@
 - Timestamp: 2026-10-11 (Asia/Saigon)
 - Repo: `D:\Projects\Flutter_Project\learnchinesene`
 - Integration branch: `hieu`
-- Feature branch: `feature/pr03-completion-unlock-boss-navigation`
-- Base: `19a6118d0b2db4ce469cfbe4f16922cfb9cce677` (PR #24 / PR 02 merged into `hieu`)
-- PR03 merge commit: `9b3965eed3c1b17389d3bdf09f547740cf0c647d` (merged into `hieu`)
+- Feature branch: `feature/pr04-auth-guest-cloud-migration`
+- Base: `7999332` on `hieu` (contains PR 01, PR 02, PR 03)
+- PR04 implementation commit: pending merge
 
 ## Phase / PR hiện tại
 
@@ -15,13 +15,15 @@
 - PR01 `LearningProgressSyncService`: merged into `hieu` via PR #23.
 - PR02 `Skill Taxonomy & Unit Mastery`: merged into `hieu` via PR #24 (`19a6118`).
 - PR03 `Complete Learning Flow, Unlock & Boss Navigation`: merged into `hieu` via `9b3965e`.
-- Next dependency: PR 04 (`Authentication, Guest Progress & Cloud Migration`).
+- PR04 `Authentication, Guest Progress & Cloud Migration`: code, tests, and handoff complete.
+- Next dependency: PR 05 (`Security: IAP Verification & Gemini API Protection`).
 
 ## Issue IDs đã xong
 
 - `P0-01` DONE_CODE: typed domain invalidation, one reward success boundary, no gameplay dependency on `HomeController`.
 - `P0-02` DONE_CODE: standardized 11 Duo game codes to canonical activity types (`vocabulary`, `listening`, `speaking`, `dialogue`) and 4 skill buckets (`vocabulary`, `listening`, `speaking`, `hanzi`) via `LearningSkillTaxonomy`.
 - `P0-03` DONE_CODE: mounted Home/Progress/Game, Unit, Sections/Units, Review, Stats, XP History and Profile owners refresh by domain.
+- `P0-05` DONE_CODE: comprehensive Auth & Identity Lifecycle implemented (Guest mode, Sign In, Sign Up, Sign Out, session restore, password recovery, guest-to-cloud migration, and account switching with scoped cache invalidation).
 - `P1-01` DONE_CODE: standardized `LearningResult` contract parsing with `boss_ready`, `unit_completed`, `next_unit_id`, and migration `20261011160000_complete_learning_activity_result_contract.sql`.
 - `P1-02` DONE_CODE: removed hardcoded XP (`50` in Unit Complete, `+100 XP` in Boss Victory), dynamically rendering server reward.
 - `P1-03` DONE_CODE: standardized navigation outcome with typed `LearningNavigationOutcome` (`completed`, `failed`, `paused`, `abandoned`, `cancelled`, `retry`, `nextMission`, `fightBoss`, `nextUnit`).
@@ -29,48 +31,45 @@
 - `P1-05` DONE_CODE: Home slice-wise refresh with partial success and stale-response protection.
 - `P1-08` DONE_CODE: review, flashcard and mark-learned invalidation.
 - `P2-06` DONE_CODE: centralized app-resume invalidation.
-- Next dependency: PR 04 (`P0-04`, `P0-05`).
+- Next dependency: PR 05 (`P0-04` IAP & backend Gemini security).
 
 ## Files changed / migrations
 
 Core implementation:
 
-- `lib/core/learning/model/learning_navigation_outcome.dart` (new)
-- `lib/core/learning/model/mission_state_machine.dart` (new)
-- `lib/core/learning/model/learning_result.dart`
-- `lib/core/learning/model/unit_mastery.dart`
-- `lib/core/learning/data/learning_progress_repository.dart`
-- `lib/core/widgets/adventure_node.dart`
+- `lib/core/auth/model/auth_state.dart` (new)
+- `lib/core/auth/data/auth_repository.dart` (new)
+- `lib/core/auth/service/guest_progress_migration_service.dart` (new)
+- `lib/core/auth/controller/auth_controller.dart` (new)
+- `lib/screen/auth/welcome_screen.dart` (new)
+- `lib/screen/auth/login_screen.dart` (new)
+- `lib/screen/auth/register_screen.dart` (new)
+- `lib/screen/auth/forgot_password_screen.dart` (new)
+- `lib/screen/auth/widget/guest_save_prompt_sheet.dart` (new)
+- `lib/screen/splash/controller/splash_controller.dart`
+- `lib/screen/system/widget/profile_achievements.dart`
 - `lib/core/widgets/mission_complete_overlay.dart`
-- `lib/screen/boss_battle/boss_battle_screen.dart`
-- `lib/screen/chapter_adventure/widget/adventure_map.dart`
-- `lib/screen/dragon_panda/screens/boss_battle/boss_battle_victory_screen.dart`
-- `lib/screen/dragon_panda/screens/boss_battle/widgets/boss_victory_content.dart`
-- `lib/screen/duolingo/controller/duo_game_runner_controller.dart`
-- `lib/screen/duolingo/page/duo_game_runner_screen.dart`
-- `lib/screen/unit_overview/page/unit_complete_screen.dart`
-- `lib/screen/unit_overview/page/unit_overview_screen.dart`
+- `lib/di.dart`
 
 Tests:
 
-- `test/core/learning/learning_flow_unlock_boss_navigation_test.dart` (new)
-
-SQL migrations:
-
-- `supabase/migrations/20261011160000_complete_learning_activity_result_contract.sql` (new)
+- `test/core/auth/auth_guest_cloud_migration_test.dart` (new)
+- `test/core/widgets/learning_adventure_components_test.dart`
 
 Documents:
 
 - `docs/IMPLEMENTATION_STATUS.md`
-- `docs/implementation_reports/PR_03.md` (new)
+- `docs/implementation_reports/PR_04.md` (new)
 - `docs/AI_HANDOFF.md`
 
 ## Commands actually run + PASS/FAIL
 
-- `flutter test --concurrency=1 test/core/learning/learning_flow_unlock_boss_navigation_test.dart`: PASS (11 tests).
+- `flutter test test/core/auth/auth_guest_cloud_migration_test.dart`: PASS (12 tests).
+- `flutter test test/core/auth/ test/core/widgets/`: PASS (22 tests).
 - `flutter test --concurrency=1 test/core/learning/`: PASS (74 tests).
-- `flutter analyze` on changed PR 03 files: PASS (0 errors, 0 warnings).
-- `dart format` on changed PR 03 files: PASS (all files formatted).
+- `flutter test test/core/backend/supabase_config_test.dart`: PASS (1 test).
+- `flutter analyze`: PASS (0 errors, 0 warnings across all PR 04 files).
+- `dart format`: PASS (all 16 files formatted).
 - Backend SQL integration: NOT_RUN (Supabase CLI / live instance not connected locally; migration file written for deploy).
 - iOS smoke: NOT_RUN (Windows environment).
 

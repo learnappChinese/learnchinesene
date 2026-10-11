@@ -21,7 +21,7 @@ LearningResult result({required bool passed}) => LearningResult(
       newTotalXp: 142,
       currentStreak: 3,
       masteryBefore: .4,
-      masteryAfter: passed ? .45 : .4,
+      masteryAfter: passed ? .85 : .4,
       bestCombo: 7,
       firstClear: passed,
       perfect: false,
@@ -75,10 +75,10 @@ void main() {
         find.text(passed ? 'HOÀN THÀNH NHIỆM VỤ' : 'CHƯA ĐẠT'),
         findsOneWidget,
       );
-      expect(find.text(passed ? 'ẢI TIẾP THEO' : 'THỬ LẠI'),
-          findsOneWidget);
+      expect(
+          find.text(passed ? 'TIẾP TỤC NHIỆM VỤ' : 'THỬ LẠI'), findsOneWidget);
       await tester.tap(
-        find.text(passed ? 'ẢI TIẾP THEO' : 'THỬ LẠI'),
+        find.text(passed ? 'TIẾP TỤC NHIỆM VỤ' : 'THỬ LẠI'),
       );
       expect(primaryTapped, isTrue);
       expect(tester.takeException(), isNull);

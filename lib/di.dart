@@ -8,6 +8,9 @@ import 'screen/splash/controller/splash_controller.dart';
 import 'core/services/gemini_service.dart';
 import 'core/services/history_service.dart';
 import 'core/backend/supabase_service.dart';
+import 'core/auth/controller/auth_controller.dart';
+import 'core/auth/data/auth_repository.dart';
+import 'core/auth/service/guest_progress_migration_service.dart';
 import 'core/services/iap_service.dart';
 import 'core/learning/service/learning_progress_sync_service.dart';
 import 'screen/subscription/controller/subscription_controller.dart';
@@ -16,6 +19,24 @@ void initDI() {
   Get.lazyPut<SupabaseClient>(() => Supabase.instance.client, fenix: true);
   Get.lazyPut<LearningProgressSyncService>(
     () => LearningProgressSyncService(client: Get.find<SupabaseClient>()),
+    fenix: true,
+  );
+  Get.lazyPut<AuthRepository>(
+    () => SupabaseAuthRepository(client: Get.find<SupabaseClient>()),
+    fenix: true,
+  );
+  Get.lazyPut<GuestProgressMigrationService>(
+    () => GuestProgressMigrationService(
+      client: Get.find<SupabaseClient>(),
+      syncService: Get.find<LearningProgressSyncService>(),
+    ),
+    fenix: true,
+  );
+  Get.lazyPut<AuthController>(
+    () => AuthController(
+      authRepository: Get.find<AuthRepository>(),
+      migrationService: Get.find<GuestProgressMigrationService>(),
+    ),
     fenix: true,
   );
   Get.lazyPut(() => SupabaseService(Get.find<SupabaseClient>()), fenix: true);
@@ -33,9 +54,6 @@ void initDI() {
     ),
     fenix: true,
   );
-  Get.lazyPut(() => IAPService(), fenix: true);
-  Get.lazyPut(() => SubscriptionController(Get.find<IAPService>()),
-      fenix: true);
   Get.lazyPut(() => IAPService(), fenix: true);
   Get.lazyPut(() => SubscriptionController(Get.find<IAPService>()),
       fenix: true);

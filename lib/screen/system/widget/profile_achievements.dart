@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../../../core/auth/controller/auth_controller.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/game_visual_tokens.dart';
+import '../../auth/login_screen.dart';
 import '../../vocabulary/data/models/user_stats_model.dart';
 
 class ProfileAchievements extends StatelessWidget {
@@ -20,6 +24,7 @@ class ProfileAchievements extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       children: [
+        _buildAccountCard(context),
         _buildIdentityCard(context),
         const SizedBox(height: 20),
         _buildLifetimeMetrics(context),
@@ -33,6 +38,164 @@ class ProfileAchievements extends StatelessWidget {
         _buildCompetencyBadges(context),
         const SizedBox(height: 32),
       ],
+    );
+  }
+
+  Widget _buildAccountCard(BuildContext context) {
+    if (!Get.isRegistered<AuthController>()) return const SizedBox.shrink();
+    final auth = Get.find<AuthController>();
+
+    return Obx(() {
+      final isGuest = auth.isGuest;
+      final user = auth.currentUser.value;
+
+      if (isGuest) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.amber.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.amber.shade400, width: 1.2),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.cloud_off_rounded,
+                  color: Colors.amber.shade800, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tài khoản Khách (Chưa lưu Cloud)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.amber.shade900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Đăng nhập để giữ XP và tiến độ bài học',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.amber.shade900.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () => Get.to(() => const LoginScreen()),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.red,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text(
+                  'LƯU NGAY',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2D9D2), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.cloud_done_rounded,
+                color: AppColors.success, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user?.displayName ?? 'Hiệp Khách Cloud',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                  Text(
+                    user?.email ?? '',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => _confirmSignOut(context, auth),
+              icon: const Icon(Icons.logout_rounded,
+                  size: 16, color: AppColors.red),
+              label: const Text(
+                'Đăng xuất',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.red,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  void _confirmSignOut(BuildContext context, AuthController auth) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận đăng xuất?'),
+        content: const Text(
+          'Tiến độ trên Cloud vẫn được bảo lưu an toàn. Bạn có chắc chắn muốn đăng xuất không?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await auth.signOut();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('ĐĂNG XUẤT'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -52,7 +215,8 @@ class ProfileAchievements extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: GameVisualTokens.gold.withValues(alpha: 0.6), width: 1.5),
+        border: Border.all(
+            color: GameVisualTokens.gold.withValues(alpha: 0.6), width: 1.5),
         boxShadow: const [
           BoxShadow(
             color: Color(0x33064E3B),
@@ -91,7 +255,8 @@ class ProfileAchievements extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
                     color: GameVisualTokens.imperialGold,
                     borderRadius: BorderRadius.circular(10),
@@ -246,10 +411,13 @@ class ProfileAchievements extends StatelessWidget {
       runSpacing: 8,
       children: const [
         _CompetencyChip(label: 'Bộ thủ & Chữ Hán', icon: Icons.draw_rounded),
-        _CompetencyChip(label: 'Thanh điệu Pinyin', icon: Icons.music_note_rounded),
-        _CompetencyChip(label: 'Phát âm chuẩn', icon: Icons.record_voice_over_rounded),
+        _CompetencyChip(
+            label: 'Thanh điệu Pinyin', icon: Icons.music_note_rounded),
+        _CompetencyChip(
+            label: 'Phát âm chuẩn', icon: Icons.record_voice_over_rounded),
         _CompetencyChip(label: 'Ngữ pháp HSK', icon: Icons.menu_book_rounded),
-        _CompetencyChip(label: 'Phản xạ đàm thoại', icon: Icons.chat_bubble_rounded),
+        _CompetencyChip(
+            label: 'Phản xạ đàm thoại', icon: Icons.chat_bubble_rounded),
       ],
     );
   }
@@ -397,7 +565,9 @@ class _AchievementTile extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: isUnlocked ? GameVisualTokens.ink : Colors.black45,
+                          color: isUnlocked
+                              ? GameVisualTokens.ink
+                              : Colors.black45,
                         ),
                       ),
                     ),
@@ -412,7 +582,8 @@ class _AchievementTile extends StatelessWidget {
                       )
                     else if (isUnlocked)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: GameVisualTokens.jadeMint,
                           borderRadius: BorderRadius.circular(6),

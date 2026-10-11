@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../auth/controller/auth_controller.dart';
 import '../learning/model/learning_result.dart';
 import '../theme/game_visual_tokens.dart';
+import '../../screen/auth/widget/guest_save_prompt_sheet.dart';
 import 'panda_companion.dart';
 
 class MissionCompleteOverlay extends StatelessWidget {
@@ -194,6 +197,27 @@ class MissionCompleteOverlay extends StatelessWidget {
                 ),
               ),
             ),
+            if (Get.isRegistered<AuthController>() &&
+                Get.find<AuthController>().isGuest &&
+                passed) ...[
+              const SizedBox(height: 4),
+              TextButton.icon(
+                onPressed: () => GuestSavePromptSheet.show(context),
+                icon: const Icon(
+                  Icons.cloud_upload_outlined,
+                  size: 16,
+                  color: Colors.amberAccent,
+                ),
+                label: const Text(
+                  'Lưu tiến độ vào Cloud',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.amberAccent,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -203,8 +227,9 @@ class MissionCompleteOverlay extends StatelessWidget {
   String _ctaText(LearningResult result) {
     if (!result.passed) return 'THỬ LẠI';
     if (result.unitCompleted) return 'KHÁM PHÁ UNIT MỚI';
-    if (result.activityType == 'boss' && result.passed)
+    if (result.activityType == 'boss' && result.passed) {
       return 'SANG BÀI TIẾP THEO';
+    }
     if (result.bossReady) return 'CHIẾN ĐẤU BOSS';
     if (result.masteryAfter > 0 &&
         result.masteryAfter < 0.70 &&
@@ -218,16 +243,18 @@ class MissionCompleteOverlay extends StatelessWidget {
   IconData _ctaIcon(LearningResult result) {
     if (!result.passed) return Icons.refresh_rounded;
     if (result.unitCompleted) return Icons.explore_rounded;
-    if (result.activityType == 'boss' && result.passed)
+    if (result.activityType == 'boss' && result.passed) {
       return Icons.arrow_forward_rounded;
+    }
     if (result.bossReady) return Icons.local_fire_department_rounded;
     if (result.masteryAfter > 0 &&
         result.masteryAfter < 0.70 &&
         result.passed) {
       return Icons.fitness_center_rounded;
     }
-    if (result.unlockedNext || result.passed)
+    if (result.unlockedNext || result.passed) {
       return Icons.arrow_forward_rounded;
+    }
     return Icons.map_rounded;
   }
 
