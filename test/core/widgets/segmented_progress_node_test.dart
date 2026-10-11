@@ -13,7 +13,8 @@ void main() {
   }
 
   group('SegmentedProgressNode Dynamic Ring & Presentation Tests', () {
-    testWidgets('Renders cleanly with 3 segments (small stage)', (tester) async {
+    testWidgets('Renders cleanly with 3 segments (small stage)',
+        (tester) async {
       await tester.pumpWidget(
         wrapWidget(
           const SegmentedProgressNode(
@@ -30,7 +31,8 @@ void main() {
       expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
     });
 
-    testWidgets('Renders cleanly with 5 segments (medium stage)', (tester) async {
+    testWidgets('Renders cleanly with 5 segments (medium stage)',
+        (tester) async {
       await tester.pumpWidget(
         wrapWidget(
           const SegmentedProgressNode(
@@ -68,7 +70,9 @@ void main() {
       expect(find.byIcon(Icons.star_outline_rounded), findsOneWidget);
     });
 
-    testWidgets('Transitions cleanly to continuous ring when totalSegments > continuousThreshold (e.g. 15 segments)', (tester) async {
+    testWidgets(
+        'Transitions cleanly to continuous ring when totalSegments > continuousThreshold (e.g. 15 segments)',
+        (tester) async {
       await tester.pumpWidget(
         wrapWidget(
           const SegmentedProgressNode(
@@ -101,7 +105,8 @@ void main() {
       expect(find.byIcon(Icons.shield_rounded), findsOneWidget);
     });
 
-    testWidgets('Locked state renders lock badge and muted styling', (tester) async {
+    testWidgets('Locked state renders lock badge and muted styling',
+        (tester) async {
       await tester.pumpWidget(
         wrapWidget(
           const SegmentedProgressNode(
