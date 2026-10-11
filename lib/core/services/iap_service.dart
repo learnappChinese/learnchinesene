@@ -3,18 +3,33 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 class IAPService {
-  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
+  IAPService({InAppPurchase? inAppPurchase})
+      : _inAppPurchaseInstance = inAppPurchase;
+
+  InAppPurchase? _inAppPurchaseInstance;
+  InAppPurchase get _inAppPurchase =>
+      _inAppPurchaseInstance ??= InAppPurchase.instance;
+
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
   // Stream controller to broadcast purchase updates to Cubits/Blocs
-  final _purchaseStreamController = StreamController<List<PurchaseDetails>>.broadcast();
-  Stream<List<PurchaseDetails>> get purchaseStream => _purchaseStreamController.stream;
+  final _purchaseStreamController =
+      StreamController<List<PurchaseDetails>>.broadcast();
+  Stream<List<PurchaseDetails>> get purchaseStream =>
+      _purchaseStreamController.stream;
 
   bool _isAvailable = false;
   bool get isAvailable => _isAvailable;
 
   Future<void> initConnection() async {
-    _isAvailable = await _inAppPurchase.isAvailable();
+    try {
+      _isAvailable = await _inAppPurchase.isAvailable();
+    } catch (e) {
+      debugPrint('IAP is not available or mock environment: $e');
+      _isAvailable = false;
+      return;
+    }
+
     if (_isAvailable) {
       final purchaseUpdated = _inAppPurchase.purchaseStream;
       _subscription = purchaseUpdated.listen(
@@ -41,9 +56,9 @@ class IAPService {
       } else {
         if (purchaseDetails.status == PurchaseStatus.error) {
           debugPrint('IAP Error: ${purchaseDetails.error}');
-        } else if (purchaseDetails.status == PurchaseStatus.purchased || purchaseDetails.status == PurchaseStatus.restored) {
-          // Deliver product and verify receipt here.
-          // Note: In production, verify the purchase token with your server.
+        } else if (purchaseDetails.status == PurchaseStatus.purchased ||
+            purchaseDetails.status == PurchaseStatus.restored) {
+          // Deliver product and verify receipt with server.
         }
 
         // Complete the purchase so that the store knows it was delivered.
@@ -57,7 +72,8 @@ class IAPService {
   Future<List<ProductDetails>> fetchProducts(Set<String> productIds) async {
     if (!_isAvailable) return [];
 
-    final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(productIds);
+    final ProductDetailsResponse response =
+        await _inAppPurchase.queryProductDetails(productIds);
 
     if (response.notFoundIDs.isNotEmpty) {
       debugPrint('Products not found on store: ${response.notFoundIDs}');
@@ -75,8 +91,6 @@ class IAPService {
     if (!_isAvailable) throw Exception('Store is not available');
 
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
-    // Determine if it's a non-consumable/subscription or consumable
-    // For subscriptions, we typically use buyNonConsumable
     await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
   }
 

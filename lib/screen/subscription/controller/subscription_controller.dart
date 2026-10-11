@@ -1,14 +1,18 @@
 import 'dart:async';
-import 'package:flash_learn_chinese/core/helper/shared_prefs_helper.dart';
+import 'dart:io' show Platform;
 import 'package:flash_learn_chinese/core/services/iap_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+
+import '../../../core/entitlement/service/premium_access_service.dart';
 
 enum SubscriptionStatus {
   initial,
   loadingProducts,
   loadedProducts,
   purchasePending,
+  purchaseVerifying,
   purchaseSuccess,
   purchaseError
 }
@@ -16,45 +20,47 @@ enum SubscriptionStatus {
 const Set<String> _kProductIds = {'premium_package', 'standard_package'};
 
 class SubscriptionController extends GetxController {
-  final IAPService _iapService;
+  SubscriptionController(
+    this._iapService, {
+    PremiumAccessService? premiumAccessService,
+  }) : _premiumAccess = premiumAccessService ??
+            (Get.isRegistered<PremiumAccessService>()
+                ? Get.find<PremiumAccessService>()
+                : null);
 
-  SubscriptionController(this._iapService);
+  final IAPService _iapService;
+  final PremiumAccessService? _premiumAccess;
 
   final status = SubscriptionStatus.initial.obs;
   final products = <ProductDetails>[].obs;
   final errorMessage = RxnString();
   final selectedPackageIndex = 1.obs;
-  final activeProductId = RxnString();
-  final purchaseDate = Rxn<DateTime>();
 
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
 
-  bool get isPremium => activeProductId.value == 'premium_package';
-  bool get isStandard =>
-      activeProductId.value == 'standard_package' ||
-      activeProductId.value == 'premium_package';
+  bool get isPremium => _premiumAccess?.isPremium ?? false;
+  bool get isStandard => _premiumAccess?.isStandard ?? false;
+
+  String? get activeProductId =>
+      _premiumAccess?.currentEntitlement.value?.productId;
+
+  DateTime? get purchaseDate =>
+      _premiumAccess?.currentEntitlement.value?.lastVerifiedAt;
+
+  int get remainingDays => _premiumAccess?.remainingDays ?? 0;
 
   bool isLevelUnlocked(int level) {
-    if (isPremium) return true;
-    if (isStandard) return level <= 3;
-    return level == 1; // Free users get only HSK 1
+    if (_premiumAccess != null) {
+      return _premiumAccess.isLevelUnlocked(level);
+    }
+    return level == 1;
   }
 
   bool isFeatureUnlocked(String featureKey) {
-    if (isPremium) return true;
-    // Premium features (AI Chat, HSK Exam with AI, AI Lessons) require premium
+    if (_premiumAccess != null) {
+      return _premiumAccess.isFeatureUnlocked(featureKey);
+    }
     return false;
-  }
-
-  int get remainingDays {
-    if (purchaseDate.value == null || activeProductId.value == null) return 0;
-
-    // Gói cao cấp: 1 năm (365 ngày), Gói tiêu chuẩn: 1 tháng (30 ngày)
-    final durationDays = activeProductId.value == 'premium_package' ? 365 : 30;
-
-    final expiryDate = purchaseDate.value!.add(Duration(days: durationDays));
-    final diff = expiryDate.difference(DateTime.now()).inDays;
-    return diff > 0 ? diff : 0;
   }
 
   ProductDetails? productFor(String id) {
@@ -67,21 +73,7 @@ class SubscriptionController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadSubscriptionStatus();
     _initIAP();
-  }
-
-  Future<void> _loadSubscriptionStatus() async {
-    final savedProductId = await SharedPrefsHelper.getActiveProductId();
-    final savedDate = await SharedPrefsHelper.getPurchaseDate();
-    if (savedProductId != null) {
-      activeProductId.value = savedProductId;
-      if (savedDate != null) {
-        purchaseDate.value = savedDate;
-      } else {
-        purchaseDate.value = DateTime.now();
-      }
-    }
   }
 
   Future<void> _initIAP() async {
@@ -122,16 +114,19 @@ class SubscriptionController extends GetxController {
     } catch (e) {
       errorMessage.value = e.toString();
       status.value = SubscriptionStatus.purchaseError;
-      // Revert to loaded state after showing error
       await Future.delayed(const Duration(seconds: 1));
       status.value = SubscriptionStatus.loadedProducts;
     }
   }
 
   Future<void> restorePurchases() async {
-    status.value = SubscriptionStatus.purchasePending;
+    status.value = SubscriptionStatus.purchaseVerifying;
     try {
       await _iapService.restorePurchases();
+      if (_premiumAccess != null) {
+        await _premiumAccess.reload();
+      }
+      status.value = SubscriptionStatus.purchaseSuccess;
     } catch (e) {
       errorMessage.value = e.toString();
       status.value = SubscriptionStatus.purchaseError;
@@ -140,17 +135,8 @@ class SubscriptionController extends GetxController {
     }
   }
 
-  DateTime _parseDate(String? transactionDate) {
-    if (transactionDate == null) return DateTime.now();
-    try {
-      final milliseconds = int.parse(transactionDate);
-      return DateTime.fromMillisecondsSinceEpoch(milliseconds);
-    } catch (e) {
-      return DateTime.now();
-    }
-  }
-
-  void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
+  void _listenToPurchaseUpdated(
+      List<PurchaseDetails> purchaseDetailsList) async {
     for (var purchaseDetails in purchaseDetailsList) {
       if (purchaseDetails.status == PurchaseStatus.pending) {
         status.value = SubscriptionStatus.purchasePending;
@@ -158,21 +144,42 @@ class SubscriptionController extends GetxController {
         errorMessage.value = purchaseDetails.error?.message ?? 'Lỗi thanh toán';
         status.value = SubscriptionStatus.purchaseError;
       } else if (purchaseDetails.status == PurchaseStatus.canceled) {
-        // Handle when user closes the payment dialog natively
         status.value = SubscriptionStatus.loadedProducts;
       } else if (purchaseDetails.status == PurchaseStatus.purchased ||
           purchaseDetails.status == PurchaseStatus.restored) {
-        activeProductId.value = purchaseDetails.productID;
-        final date = _parseDate(purchaseDetails.transactionDate);
-        purchaseDate.value = date;
-        status.value = SubscriptionStatus.purchaseSuccess;
-        _saveSubscriptionStatus(purchaseDetails.productID, date);
+        // PRODUCTION SECURITY: Server-Authoritative Verification
+        status.value = SubscriptionStatus.purchaseVerifying;
+        try {
+          if (_premiumAccess != null) {
+            String platform = 'android';
+            try {
+              if (Platform.isIOS) platform = 'ios';
+            } catch (_) {}
+
+            final transactionId = purchaseDetails.purchaseID ??
+                purchaseDetails.verificationData.serverVerificationData;
+            final token =
+                purchaseDetails.verificationData.serverVerificationData;
+
+            await _premiumAccess.verifyAndApplyPurchase(
+              platform: platform,
+              productId: purchaseDetails.productID,
+              transactionId: transactionId,
+              purchaseToken: token,
+              rawPayload: {
+                'transaction_date': purchaseDetails.transactionDate,
+                'status': purchaseDetails.status.name,
+              },
+            );
+          }
+          status.value = SubscriptionStatus.purchaseSuccess;
+        } catch (e) {
+          debugPrint('Server purchase verification failed: $e');
+          errorMessage.value = e.toString().replaceFirst('Exception: ', '');
+          status.value = SubscriptionStatus.purchaseError;
+        }
       }
     }
-  }
-
-  Future<void> _saveSubscriptionStatus(String productId, DateTime date) async {
-    await SharedPrefsHelper.saveSubscriptionStatus(productId, date);
   }
 
   @override
