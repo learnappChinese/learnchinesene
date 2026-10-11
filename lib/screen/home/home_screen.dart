@@ -136,17 +136,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openCurrentJourney() {
     final journey = controller.journey.value;
-    if (journey == null) {
-      Get.to(() => const HskScreen());
-      return;
-    }
     Get.to(
       () => const UnitOverviewScreen(),
       binding: UnitOverviewBinding(
-        unitId: journey.unitId ?? journey.levelId,
-        unitTitle: journey.chapterTitle,
-        sectionNumber: journey.worldNumber,
-        unitNumber: journey.chapterNumber,
+        unitId: journey?.unitId ?? journey?.levelId ?? 'sec_1_unit_1',
+        unitTitle: journey?.chapterTitle ?? 'Gọi tên món ăn và đồ uống',
+        sectionNumber: journey?.worldNumber ?? 1,
+        unitNumber: journey?.chapterNumber ?? 1,
       ),
     )?.then((_) => controller.refreshStats());
   }

@@ -235,7 +235,23 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
 
   @override
   Future<ChapterAdventure?> getUnitJourney(String unitId) async {
-    return _chapterRepo.loadChapter(unitId);
+    final direct = await _chapterRepo.loadChapter(unitId);
+    if (direct != null) return direct;
+
+    try {
+      final levelRows = List<Map<String, dynamic>>.from(
+        await _client
+            .from('duo_levels')
+            .select('id')
+            .eq('unit_id', unitId)
+            .limit(1),
+      );
+      if (levelRows.isNotEmpty) {
+        final levelId = levelRows.first['id'] as String;
+        return _chapterRepo.loadChapter(levelId);
+      }
+    } catch (_) {}
+    return null;
   }
 
   @override
