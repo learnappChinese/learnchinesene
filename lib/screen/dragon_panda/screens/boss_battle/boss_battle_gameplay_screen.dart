@@ -6,7 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
+import '../../../../core/database/db_helper.dart';
+import '../../../../core/models/speaking_practice_item.dart';
 import 'view/boss_battle_arena.dart';
+
 import 'widgets/boss_battle_gameplay_widgets.dart';
 
 enum _ActorState { idle, attacking, hurt, victory, defeated }
@@ -157,6 +160,7 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
     super.initState();
     _initTts();
     _loadImages();
+    _loadQuestionsFromDb();
 
     _ticker = AnimationController(
       vsync: this,
@@ -168,6 +172,51 @@ class _BossBattleGameplayScreenState extends State<BossBattleGameplayScreen>
       });
     _ticker.repeat();
   }
+
+  Future<void> _loadQuestionsFromDb() async {
+    try {
+      final List<SpeakingPracticeItem> items =
+          await DbHelper.instance.getRandomSpeakingItems(limit: 30);
+      if (items.length >= 4) {
+        final random = math.Random();
+        final List<Map<String, dynamic>> dynamicQuestions = [];
+
+        for (int i = 0; i < items.length; i++) {
+          final target = items[i];
+          final otherItems = items.where((it) => it.targetText != target.targetText).toList()
+            ..shuffle(random);
+
+          if (otherItems.length >= 3) {
+            final opts = [
+              {'hanzi': target.targetText, 'pinyin': target.pinyin},
+              {'hanzi': otherItems[0].targetText, 'pinyin': otherItems[0].pinyin},
+              {'hanzi': otherItems[1].targetText, 'pinyin': otherItems[1].pinyin},
+              {'hanzi': otherItems[2].targetText, 'pinyin': otherItems[2].pinyin},
+            ]..shuffle(random);
+
+            final correctIdx = opts.indexWhere((o) => o['hanzi'] == target.targetText);
+
+            dynamicQuestions.add({
+              'prompt': target.meaning.isNotEmpty ? target.meaning : target.targetText,
+              'hanziPrompt': target.targetText,
+              'pinyinPrompt': target.pinyin,
+              'options': opts,
+              'correct': correctIdx >= 0 ? correctIdx : 0,
+            });
+          }
+          if (dynamicQuestions.length >= 10) break;
+        }
+
+        if (dynamicQuestions.isNotEmpty && mounted) {
+          setState(() {
+            _questions.clear();
+            _questions.addAll(dynamicQuestions);
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
 
   Future<void> _initTts() async {
     try {

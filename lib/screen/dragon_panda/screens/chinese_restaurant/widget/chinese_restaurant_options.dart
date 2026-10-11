@@ -2,33 +2,58 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 
 class RestaurantFoodCard extends StatelessWidget {
-  const RestaurantFoodCard(
-      {super.key,
-      required this.hanzi,
-      required this.vietnamese,
-      required this.assetPath,
-      required this.fallbackEmoji,
-      required this.onTap});
+  const RestaurantFoodCard({
+    super.key,
+    required this.hanzi,
+    required this.vietnamese,
+    required this.assetPath,
+    required this.fallbackEmoji,
+    required this.onTap,
+    this.isCorrect = false,
+    this.isWrong = false,
+  });
+
   final String hanzi;
   final String vietnamese;
   final String assetPath;
   final String fallbackEmoji;
   final VoidCallback onTap;
+  final bool isCorrect;
+  final bool isWrong;
 
   @override
   Widget build(BuildContext context) {
+    Color borderColor = AppColors.primaryOrange;
+    Color bgColor = Colors.white;
+
+    if (isCorrect) {
+      borderColor = const Color(0xFF10B981);
+      bgColor = const Color(0xFFD1FAE5);
+    } else if (isWrong) {
+      borderColor = const Color(0xFFEF4444);
+      bgColor = const Color(0xFFFEE2E2);
+    }
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: 100,
-        height: 115,
+        height: 120,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: bgColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.primaryOrange, width: 2),
+          border: Border.all(
+            color: borderColor,
+            width: isCorrect || isWrong ? 3 : 2,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: isCorrect
+                  ? const Color(0xFF10B981).withOpacity(0.3)
+                  : (isWrong
+                      ? const Color(0xFFEF4444).withOpacity(0.3)
+                      : Colors.black.withOpacity(0.08)),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -51,13 +76,20 @@ class RestaurantFoodCard extends StatelessWidget {
             Text(
               hanzi,
               style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textDark),
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+                color: AppColors.textDark,
+              ),
             ),
-            Text(
-              vietnamese,
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                vietnamese,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              ),
             ),
           ],
         ),
@@ -65,3 +97,4 @@ class RestaurantFoodCard extends StatelessWidget {
     );
   }
 }
+
