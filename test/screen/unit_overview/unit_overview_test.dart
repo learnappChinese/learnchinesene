@@ -168,7 +168,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('BÀI 1: Gọi tên món ăn và đồ uống'),
+      expect(find.textContaining('Bài 1: Gọi tên món ăn và đồ uống'),
           findsOneWidget);
       expect(find.textContaining('PHẦN 1'), findsOneWidget);
       expect(find.text('1 / 3'), findsOneWidget); // 1 completed out of 3

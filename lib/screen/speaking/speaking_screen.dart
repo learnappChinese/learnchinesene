@@ -6,6 +6,8 @@ import '../../core/responsive/responsive_layout.dart';
 import '../../core/learning/model/learning_source_context.dart';
 import '../../core/widgets/learning_scene_background.dart';
 import '../../core/widgets/learning_scaffold.dart';
+import '../../core/widgets/adventure_quest_banner.dart';
+import '../../core/widgets/panda_companion.dart';
 import 'controller/speaking_controller.dart';
 
 class SpeakingScreen extends StatefulWidget {
@@ -139,6 +141,25 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
                     ),
                   ),
                 ),
+              if (!controller.isBottomSheet) ...[
+                AdventureQuestBanner(
+                  eyebrow: 'Nhiệm vụ khẩu ngữ',
+                  title: 'Nói cùng Panda',
+                  description:
+                      'Nghe mẫu, đọc rõ chữ Hán và giữ đúng thanh điệu. Điểm phản hồi đến từ lần ghi âm thật.',
+                  progress: controller.items.isEmpty
+                      ? 0
+                      : (controller.currentIndex.value + 1) /
+                          controller.items.length,
+                  progressLabel:
+                      '${controller.currentIndex.value + 1}/${controller.items.length}',
+                  statusLabel: 'Mic chủ động',
+                  mood: PandaMood.thinking,
+                  accent: AppColors.crimson,
+                  compact: true,
+                ),
+                const SizedBox(height: 16),
+              ],
               _buildPracticeHeader(),
               const SizedBox(height: 12),
               SpeakingPromptCard(

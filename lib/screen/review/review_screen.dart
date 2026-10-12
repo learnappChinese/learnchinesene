@@ -6,6 +6,7 @@ import '../../core/theme/game_visual_tokens.dart';
 import '../../core/widgets/learning_scene_background.dart';
 import '../../core/widgets/panda_companion.dart';
 import '../../core/widgets/learning_scaffold.dart';
+import '../../core/widgets/adventure_quest_banner.dart';
 import 'controller/review_controller.dart';
 import 'model/review_item.dart';
 
@@ -249,80 +250,17 @@ class _ReviewHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(isCompact ? 14 : 18),
-      decoration: BoxDecoration(
-        color: GameVisualTokens.night.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: GameVisualTokens.imperialGold.withValues(alpha: 0.35),
-          width: 1.2,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black45,
-            blurRadius: 16,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          PandaCompanion(
-            mood: totalDue > 0 ? PandaMood.encourage : PandaMood.celebrate,
-            size: isCompact ? 56 : 68,
-          ),
-          SizedBox(width: isCompact ? 12 : 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: GameVisualTokens.crimson.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: GameVisualTokens.crimson.withValues(alpha: 0.4),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: Text(
-                    totalDue > 0
-                        ? '$totalDue MỤC CẦN ÔN HÔM NAY'
-                        : 'ĐÃ HOÀN TẤT ÔN TẬP',
-                    style: const TextStyle(
-                      color: GameVisualTokens.crimson,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 10,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Luyện Trí Nhớ Sắc Bén',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Hệ thống tự động ưu tiên các từ bạn hay sai hoặc lâu chưa luyện.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return AdventureQuestBanner(
+      eyebrow: totalDue > 0 ? 'Ôn tập hôm nay' : 'Đã hoàn tất',
+      title: totalDue > 0 ? '$totalDue mục đang chờ' : 'Trí nhớ đã sẵn sàng',
+      description:
+          'Hệ thống ưu tiên nội dung bạn hay sai hoặc đã lâu chưa luyện, không dùng dữ liệu mẫu.',
+      statusLabel: totalDue > 0 ? 'SRS ưu tiên' : 'Không còn mục đến hạn',
+      mood: totalDue > 0 ? PandaMood.encourage : PandaMood.celebrate,
+      accent: totalDue > 0
+          ? GameVisualTokens.crimson
+          : GameVisualTokens.jade,
+      compact: isCompact,
     );
   }
 }

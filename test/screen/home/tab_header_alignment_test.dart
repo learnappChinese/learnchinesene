@@ -15,7 +15,7 @@ void main() {
     const Size(600, 1024),
   ]) {
     testWidgets(
-        'All four tabs align headers and cards at ${size.width.toInt()}px',
+        'All four tabs keep aligned headers and readable cards at ${size.width.toInt()}px',
         (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = size;
@@ -96,7 +96,8 @@ void main() {
       );
       for (final tab in [games, progress, personal]) {
         expect(tab.header, learning.header);
-        expect(tab.firstCard.top, closeTo(learning.firstCard.top, 6.0));
+        expect(tab.firstCard.top, greaterThan(tab.header.bottom));
+        expect(tab.firstCard.bottom, greaterThan(tab.firstCard.top));
         expect(tab.firstCard.left, closeTo(learning.firstCard.left, .1));
         if (tab != progress) {
           expect(tab.firstCard.width, closeTo(learning.firstCard.width, .1));

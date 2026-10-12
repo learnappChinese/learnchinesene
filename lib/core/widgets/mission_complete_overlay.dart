@@ -30,20 +30,26 @@ class MissionCompleteOverlay extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1035),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [GameVisualTokens.parchment, GameVisualTokens.creamStrong],
+          ),
           borderRadius: BorderRadius.circular(32),
           border: Border.all(color: GameVisualTokens.imperialGold, width: 2.5),
           boxShadow: [
             BoxShadow(
-              color: GameVisualTokens.imperialGold.withValues(alpha: 0.35),
+              color: (passed ? GameVisualTokens.jade : GameVisualTokens.crimson)
+                  .withValues(alpha: 0.24),
               blurRadius: 28,
               offset: const Offset(0, 10),
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(3, (i) {
@@ -99,6 +105,11 @@ class MissionCompleteOverlay extends StatelessWidget {
             PandaCompanion(
               size: 110,
               mood: passed ? PandaMood.victory : PandaMood.encourage,
+              speechText: passed
+                  ? (result.bossReady
+                      ? 'Cổng Boss đã mở. Hãy chuẩn bị cho trận quyết đấu!'
+                      : 'Giỏi lắm! Xem báo cáo rồi tiếp tục hành trình nhé.')
+                  : 'Panda đã tìm thấy phần cần luyện lại cho bạn.',
             ),
             if (!passed) ...[
               const SizedBox(height: 8),
@@ -107,7 +118,11 @@ class MissionCompleteOverlay extends StatelessWidget {
                     ? _reasonCopy(result.reason)
                     : 'Cần ít nhất 70% để mở nhiệm vụ tiếp theo.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70, height: 1.35),
+                style: const TextStyle(
+                  color: GameVisualTokens.ink,
+                  height: 1.35,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
             const SizedBox(height: 16),
@@ -116,9 +131,9 @@ class MissionCompleteOverlay extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: Colors.white.withValues(alpha: 0.82),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white12),
+                border: Border.all(color: GameVisualTokens.goldLight),
               ),
               child: Wrap(
                 alignment: WrapAlignment.spaceAround,
@@ -193,7 +208,7 @@ class MissionCompleteOverlay extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white70,
+                  color: GameVisualTokens.jadeDark,
                 ),
               ),
             ),
@@ -206,14 +221,14 @@ class MissionCompleteOverlay extends StatelessWidget {
                 icon: const Icon(
                   Icons.cloud_upload_outlined,
                   size: 16,
-                  color: Colors.amberAccent,
+                  color: GameVisualTokens.gold,
                 ),
                 label: const Text(
                   'Lưu tiến độ vào Cloud',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Colors.amberAccent,
+                    color: GameVisualTokens.gold,
                   ),
                 ),
               ),
@@ -221,7 +236,8 @@ class MissionCompleteOverlay extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   String _ctaText(LearningResult result) {
@@ -267,7 +283,7 @@ class MissionCompleteOverlay extends StatelessWidget {
           style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: Colors.white54,
+            color: GameVisualTokens.muted,
             letterSpacing: 0.8,
           ),
         ),

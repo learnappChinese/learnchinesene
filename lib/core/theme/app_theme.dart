@@ -7,13 +7,13 @@ import 'game_visual_tokens.dart';
 abstract final class AppTheme {
   static ThemeData get light {
     final scheme = ColorScheme.fromSeed(
-      seedColor: GameVisualTokens.blue,
+      seedColor: AppColors.jade,
       brightness: Brightness.light,
-      surface: Colors.white,
+      surface: AppColors.parchment,
     ).copyWith(
-      primary: GameVisualTokens.blue,
-      secondary: GameVisualTokens.orange,
-      error: GameVisualTokens.red,
+      primary: AppColors.jade,
+      secondary: AppColors.imperialGold,
+      error: AppColors.crimson,
     );
 
     return ThemeData(
@@ -53,12 +53,12 @@ abstract final class AppTheme {
         height: 72,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        indicatorColor: const Color(0xFFDCEEFF),
+        indicatorColor: AppColors.jadeMint,
         elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           return TextStyle(
             color: states.contains(WidgetState.selected)
-                ? GameVisualTokens.blue
+                ? AppColors.jade
                 : AppColors.muted,
             fontSize: 10.5,
             fontWeight: states.contains(WidgetState.selected)
@@ -69,7 +69,7 @@ abstract final class AppTheme {
         iconTheme: WidgetStateProperty.resolveWith((states) {
           return IconThemeData(
             color: states.contains(WidgetState.selected)
-                ? GameVisualTokens.blue
+                ? AppColors.jade
                 : const Color(0xFF948A85),
             size: states.contains(WidgetState.selected) ? 25 : 23,
           );
@@ -77,7 +77,7 @@ abstract final class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: GameVisualTokens.blue,
+          backgroundColor: AppColors.jade,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(50),
           elevation: 0,
@@ -119,7 +119,7 @@ abstract final class AppTheme {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(GameVisualTokens.radiusM),
           borderSide: const BorderSide(
-            color: GameVisualTokens.blue,
+            color: AppColors.jade,
             width: 1.5,
           ),
         ),
@@ -136,7 +136,7 @@ abstract final class AppTheme {
         ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: GameVisualTokens.blue,
+        color: AppColors.jade,
         linearTrackColor: Color(0xFFE8E3DC),
       ),
       dividerColor: const Color(0xFFEFE7DF),

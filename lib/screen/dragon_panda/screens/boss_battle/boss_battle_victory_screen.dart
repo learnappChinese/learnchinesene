@@ -10,6 +10,9 @@ class BossBattleVictoryScreen extends StatelessWidget {
   final VoidCallback onBackToHub;
   final int xpEarned;
   final int stars;
+  final int score;
+  final int accuracy;
+  final int bestCombo;
 
   const BossBattleVictoryScreen({
     super.key,
@@ -17,6 +20,9 @@ class BossBattleVictoryScreen extends StatelessWidget {
     required this.onBackToHub,
     this.xpEarned = 0,
     this.stars = 3,
+    this.score = 0,
+    this.accuracy = 0,
+    this.bestCombo = 0,
   });
 
   @override
@@ -74,6 +80,9 @@ class BossBattleVictoryScreen extends StatelessWidget {
           onBackToHub: onBackToHub,
           xpEarned: xpEarned,
           stars: stars,
+          score: score,
+          accuracy: accuracy,
+          bestCombo: bestCombo,
         )),
       ),
     );

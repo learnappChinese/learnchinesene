@@ -8,6 +8,7 @@ import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/widgets/learning_scaffold.dart';
 import '../../../core/widgets/learning_scene_background.dart';
 import '../../../core/widgets/panda_companion.dart';
+import '../../../core/widgets/adventure_quest_banner.dart';
 import '../../hsk/hsk_screen.dart';
 import '../binding/unit_overview_binding.dart';
 import 'unit_overview_screen.dart';
@@ -112,18 +113,21 @@ class _UnitCompleteScreenState extends State<UnitCompleteScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildStarsRow(),
-                  const SizedBox(height: 12),
-                  _buildRibbon(),
-                  const SizedBox(height: 20),
-                  const PandaCompanion(
-                    size: 130,
+                  AdventureQuestBanner(
+                    eyebrow:
+                        'Chương ${widget.sectionNumber} · Chặng hoàn thành',
+                    title: 'Bài ${widget.unitNumber}: ${widget.unitTitle}',
+                    description: widget.bossName != null
+                        ? 'Bạn đã vượt mọi nhiệm vụ và đánh bại ${widget.bossName}. Panda đã sẵn sàng đồng hành sang chặng kế tiếp.'
+                        : 'Bạn đã hoàn thành hành trình của bài học này. Cùng Panda tiếp tục khám phá bản đồ phía trước!',
+                    statusLabel: '${widget.starsEarned.clamp(0, 3)}/3 sao',
                     mood: PandaMood.victory,
-                    speechText:
-                        'Tuyệt đỉnh công phu! Bạn đã hoàn thành bài học!',
+                    accent: GameVisualTokens.crimson,
                   ),
                   const SizedBox(height: 20),
                   _buildSummaryCard(),
+                  const SizedBox(height: 14),
+                  _buildNextJourneyCard(),
                   const SizedBox(height: 28),
                   _buildPrimaryNextButton(),
                   const SizedBox(height: 12),
@@ -137,58 +141,21 @@ class _UnitCompleteScreenState extends State<UnitCompleteScreen> {
     );
   }
 
-  Widget _buildStarsRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (i) {
-        final active = i < widget.starsEarned;
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          child: Text(
-            active ? '⭐' : '🖤',
-            style: TextStyle(fontSize: i == 1 ? 52 : 36),
-          ),
-        );
-      }),
-    );
-  }
-
-  Widget _buildRibbon() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [GameVisualTokens.crimson, GameVisualTokens.imperialGold],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: GameVisualTokens.crimson.withValues(alpha: 0.4),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: const Text(
-        '🏆 BÀI HỌC HOÀN THÀNH 🏆',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w900,
-          color: Colors.white,
-          letterSpacing: 1.2,
-        ),
-      ),
-    );
-  }
-
   Widget _buildSummaryCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFFBEB), Color(0xFFFFF1D4)],
+        ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: GameVisualTokens.imperialGold, width: 2),
+        border: Border.all(
+          color: GameVisualTokens.imperialGold.withValues(alpha: .72),
+          width: 1.5,
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x33000000),
@@ -205,7 +172,7 @@ class _UnitCompleteScreenState extends State<UnitCompleteScreen> {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
-              color: GameVisualTokens.goldLight,
+              color: GameVisualTokens.ink,
               letterSpacing: 0.5,
             ),
           ),
@@ -217,7 +184,7 @@ class _UnitCompleteScreenState extends State<UnitCompleteScreen> {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFFE2E8F0),
+              color: GameVisualTokens.muted,
               height: 1.4,
             ),
           ),
@@ -225,10 +192,23 @@ class _UnitCompleteScreenState extends State<UnitCompleteScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _metricBadge('PHẦN THƯỞNG', '+${widget.xpEarned} XP',
-                  GameVisualTokens.imperialGold),
-              _metricBadge('THÀNH THẠO', '100%', GameVisualTokens.jade),
-              _metricBadge('XẾP HẠNG', 'Xuất sắc', const Color(0xFF38BDF8)),
+              _metricBadge(
+                'PHẦN THƯỞNG',
+                '+${widget.xpEarned} XP',
+                GameVisualTokens.imperialGold,
+              ),
+              _metricBadge(
+                'HUY HIỆU',
+                '${widget.starsEarned.clamp(0, 3)}/3 sao',
+                GameVisualTokens.jade,
+              ),
+              _metricBadge(
+                'HÀNH TRÌNH',
+                _isLoadingNext
+                    ? 'Đang tải'
+                    : (_nextUnit == null ? 'Bản đồ' : 'Bài kế'),
+                GameVisualTokens.crimson,
+              ),
             ],
           ),
         ],
@@ -244,7 +224,7 @@ class _UnitCompleteScreenState extends State<UnitCompleteScreen> {
           style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF94A3B8),
+            color: GameVisualTokens.muted,
             letterSpacing: 0.6,
           ),
         ),
@@ -258,6 +238,83 @@ class _UnitCompleteScreenState extends State<UnitCompleteScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildNextJourneyCard() {
+    final next = _nextUnit;
+    return Semantics(
+      container: true,
+      label: _isLoadingNext
+          ? 'Đang tìm bài học tiếp theo'
+          : next == null
+              ? 'Hành trình tiếp theo là bản đồ thế giới'
+              : 'Bài học tiếp theo: ${next.title}',
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: GameVisualTokens.jade.withValues(alpha: .28),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: GameVisualTokens.jade.withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: _isLoadingNext
+                  ? const Padding(
+                      padding: EdgeInsets.all(13),
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : const Icon(
+                      Icons.explore_rounded,
+                      color: GameVisualTokens.jade,
+                      size: 28,
+                    ),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'ĐÍCH ĐẾN TIẾP THEO',
+                    style: TextStyle(
+                      color: GameVisualTokens.jade,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: .8,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _isLoadingNext
+                        ? 'Đang mở bản đồ hành trình…'
+                        : next == null
+                            ? 'Trở về bản đồ thế giới'
+                            : 'Bài ${next.unitNumber}: ${next.title}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: GameVisualTokens.ink,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

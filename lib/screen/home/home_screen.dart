@@ -138,8 +138,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         onPractice: () => Get.to(
           () => _buildPracticePage(),
         ),
-        onVocabulary: () => Get.to(() => const HskScreen()),
+        onVocabulary: () => Get.to(() => const LearningSectionsScreen()),
         onSections: () => Get.to(() => const LearningSectionsScreen()),
+        onHsk: () => Get.to(() => const HskScreen()),
         onLessons: () => _runIfFeatureUnlocked(
           'lessons',
           'Mở khóa Bài học AI',

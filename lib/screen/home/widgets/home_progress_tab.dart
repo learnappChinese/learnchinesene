@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 
 import '../../../core/responsive/responsive_layout.dart';
 import '../../../core/theme/game_visual_tokens.dart';
+import '../../../core/widgets/adventure_quest_banner.dart';
+import '../../../core/widgets/panda_companion.dart';
 import '../../stats/page/xp_history_screen.dart';
 import '../controller/home_controller.dart';
 import 'shared_tab_background.dart';
@@ -73,6 +75,24 @@ class HomeProgressTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              AdventureQuestBanner(
+                eyebrow: 'Sổ hành trình',
+                title: overallPercent > 0
+                    ? 'Năng lực đang ở mức $overallPercent%'
+                    : 'Bắt đầu ghi dấu hành trình',
+                description: todayXp > 0
+                    ? 'Hôm nay bạn đã nhận $todayXp XP. Panda đang giữ nhịp để bạn tiến tới mục tiêu tiếp theo.'
+                    : 'Hoàn thành một ải để biểu đồ, mastery và lịch sử phản ánh đúng năng lực của bạn.',
+                progress: overallPercent / 100,
+                progressLabel: '$overallPercent% mastery',
+                statusLabel: streak > 0 ? '🔥 $streak ngày' : 'Ngày khởi đầu',
+                actionLabel: 'Xem lịch sử học',
+                onAction: onHistory,
+                mood:
+                    overallPercent >= 70 ? PandaMood.victory : PandaMood.happy,
+                compact: true,
+              ),
+              SizedBox(height: 16.w),
               _buildSummaryGrid(
                 todayXp: todayXp,
                 lifetimeXp: lifetimeXp,

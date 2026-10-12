@@ -84,7 +84,9 @@ class _PandaCompanionState extends State<PandaCompanion>
         return 'assets/images/characters/panda_archer.png';
       case PandaMood.victory:
       case PandaMood.celebrate:
-        return 'assets/images/characters/panda_victory.png';
+        // panda_victory.png is a legacy placeholder swatch, not character art.
+        // Keep production victory surfaces on the real companion illustration.
+        return 'assets/images/characters/home_title_panda.png';
       case PandaMood.thinking:
         return 'assets/images/characters/home_panda_peek.png';
       case PandaMood.happy:

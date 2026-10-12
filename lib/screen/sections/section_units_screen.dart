@@ -8,6 +8,8 @@ import '../../core/theme/game_visual_tokens.dart';
 import '../../core/widgets/learning_scaffold.dart';
 import '../../core/widgets/learning_scene_background.dart';
 import '../../core/widgets/locked_mission_sheet.dart';
+import '../../core/widgets/adventure_quest_banner.dart';
+import '../../core/widgets/panda_companion.dart';
 import '../unit_overview/binding/unit_overview_binding.dart';
 import '../unit_overview/page/unit_overview_screen.dart';
 
@@ -140,6 +142,10 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
       );
     }
 
+    final units = _units.toList()
+      ..sort((a, b) => a.unitNumber.compareTo(b.unitNumber));
+    final completed = units.where((unit) => unit.isCompleted).length;
+
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(
@@ -152,35 +158,93 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
             ResponsiveHelper.horizontalPadding(context),
             40,
           ),
-          itemCount: _units.length,
+          itemCount: units.length + 1,
           separatorBuilder: (_, __) => const SizedBox(height: 14),
           itemBuilder: (context, idx) {
-            final unit = _units[idx];
-            return _UnitCard(
-              unit: unit,
-              onTap: () {
-                if (!unit.isUnlocked) {
-                  showLockedMissionSheet(
-                    context,
-                    title: 'Bài học chưa mở',
-                    message: unit.lockReason ??
-                        'Hoàn thành bài học trước để mở khóa bài này.',
+            if (idx == 0) {
+              return AdventureQuestBanner(
+                eyebrow: widget.section.title,
+                title: widget.section.subtitle,
+                description:
+                    'Đi lần lượt qua từng Unit. Unit đang học luôn ở đầu đường và Boss bảo vệ lối sang phần mới.',
+                progress: units.isEmpty ? 0 : completed / units.length,
+                progressLabel: '$completed/${units.length} Unit',
+                statusLabel: 'Phần ${widget.section.sectionNumber}',
+                mood: PandaMood.happy,
+                compact: true,
+              );
+            }
+            final unit = units[idx - 1];
+            return _UnitPathCard(
+              index: idx - 1,
+              isLast: idx == units.length,
+              child: _UnitCard(
+                unit: unit,
+                onTap: () {
+                  if (!unit.isUnlocked) {
+                    showLockedMissionSheet(
+                      context,
+                      title: 'Bài học chưa mở',
+                      message: unit.lockReason ??
+                          'Hoàn thành bài học trước để mở khóa bài này.',
+                    );
+                    return;
+                  }
+                  Get.to(
+                    () => const UnitOverviewScreen(),
+                    binding: UnitOverviewBinding(
+                      unitId: unit.id,
+                      unitTitle: unit.title,
+                      sectionNumber: unit.sectionNumber,
+                      unitNumber: unit.unitNumber,
+                    ),
                   );
-                  return;
-                }
-                Get.to(
-                  () => const UnitOverviewScreen(),
-                  binding: UnitOverviewBinding(
-                    unitId: unit.id,
-                    unitTitle: unit.title,
-                    sectionNumber: unit.sectionNumber,
-                    unitNumber: unit.unitNumber,
-                  ),
-                );
-              },
+                },
+              ),
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _UnitPathCard extends StatelessWidget {
+  const _UnitPathCard({
+    required this.index,
+    required this.isLast,
+    required this.child,
+  });
+
+  final int index;
+  final bool isLast;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final left = index.isEven ? 0.0 : 24.0;
+    final right = index.isEven ? 24.0 : 0.0;
+    return Padding(
+      padding: EdgeInsets.only(left: left, right: right),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (!isLast)
+            Positioned(
+              left: index.isEven ? 28 : null,
+              right: index.isEven ? null : 28,
+              top: 114,
+              bottom: -24,
+              child: Container(
+                width: 4,
+                decoration: BoxDecoration(
+                  color: GameVisualTokens.imperialGold.withValues(alpha: .6),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+          child,
+        ],
       ),
     );
   }
