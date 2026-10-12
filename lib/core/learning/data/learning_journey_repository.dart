@@ -11,6 +11,9 @@ import '../model/unit_mastery.dart';
 import '../model/learning_stage_models.dart';
 import '../service/learning_recommendation_service.dart';
 import '../service/learning_stage_grouping_service.dart';
+import 'guest_learning_progress_store.dart';
+import '../service/guest_journey_resolver.dart';
+import 'learning_progress_repository.dart';
 
 abstract interface class LearningJourneyRepository {
   Future<List<LearningSectionViewModel>> getSections();
@@ -39,19 +42,33 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
     ReviewRepository? reviewRepository,
     LearningStageGroupingService? stageGroupingService,
     LearningRecommendationService? recommendationService,
+    LearningProgressRepository? progressRepository,
+    GuestLearningProgressStore? guestStore,
+    GuestJourneyResolver guestResolver = const GuestJourneyResolver(),
   })  : _client = client ?? Supabase.instance.client,
         _chapterRepo =
             chapterAdventureRepository ?? SupabaseChapterAdventureRepository(),
         _reviewRepo = reviewRepository ?? SupabaseReviewRepository(),
         _stageGroupingService =
             stageGroupingService ?? const LearningStageGroupingService(),
-        _recommendationService = recommendationService;
+        _recommendationService = recommendationService,
+        _progressRepo = progressRepository ??
+            SupabaseLearningProgressRepository(
+              client: client,
+              guestStore: guestStore,
+              guestResolver: guestResolver,
+            ),
+        _guestStore = guestStore ?? GuestLearningProgressStore(),
+        _guestResolver = guestResolver;
 
   final SupabaseClient _client;
   final ChapterAdventureRepository _chapterRepo;
   final ReviewRepository _reviewRepo;
   final LearningStageGroupingService _stageGroupingService;
   final LearningRecommendationService? _recommendationService;
+  final LearningProgressRepository _progressRepo;
+  final GuestLearningProgressStore _guestStore;
+  final GuestJourneyResolver _guestResolver;
 
   @override
   Future<List<LearningSectionViewModel>> getSections() async {
@@ -59,7 +76,7 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       final rows = List<Map<String, dynamic>>.from(
         await _client.rpc('learning_sections_v2'),
       );
-      return rows.map((row) {
+      final rawSections = rows.map((row) {
         final number = (row['section_number'] as num?)?.toInt() ?? 1;
         return LearningSectionViewModel(
           id: '${row['section_id'] ?? ''}',
@@ -78,13 +95,21 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
               (row['required_section_number'] as num?)?.toInt(),
         );
       }).toList(growable: false);
+
+      if (_client.auth.currentUser == null) {
+        return await _guestResolver.overlaySections(
+          sections: rawSections,
+          store: _guestStore,
+          unitsLoader: (sectionId) => getUnits(sectionId),
+        );
+      }
+      return rawSections;
     } catch (_) {
       return const [];
     }
   }
 
-  @override
-  Future<List<LearningUnitViewModel>> getUnits(String sectionId) async {
+  Future<List<LearningUnitViewModel>> _getRawUnits(String sectionId) async {
     try {
       final rows = List<Map<String, dynamic>>.from(
         await _client.rpc(
@@ -152,6 +177,47 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
     } catch (_) {
       return const [];
     }
+  }
+
+  @override
+  Future<List<LearningUnitViewModel>> getUnits(String sectionId) async {
+    final rawUnits = await _getRawUnits(sectionId);
+    if (_client.auth.currentUser == null) {
+      try {
+        final secRows = List<Map<String, dynamic>>.from(
+          await _client.rpc('learning_sections_v2'),
+        );
+        final rawSec = secRows
+            .where((r) => '${r['section_id'] ?? ''}' == sectionId)
+            .firstOrNull;
+        final secNum = (rawSec?['section_number'] as num?)?.toInt() ?? 1;
+        final isSectionUnlocked = secNum <= 1;
+
+        String? prevSectionLastUnitId;
+        if (secNum > 1) {
+          final prevSecRow = secRows
+              .where(
+                  (r) => (r['section_number'] as num?)?.toInt() == secNum - 1)
+              .firstOrNull;
+          if (prevSecRow != null) {
+            final prevSecId = '${prevSecRow['section_id'] ?? ''}';
+            final prevUnits = await _getRawUnits(prevSecId);
+            if (prevUnits.isNotEmpty) {
+              prevSectionLastUnitId = prevUnits.last.id;
+            }
+          }
+        }
+
+        return await _guestResolver.overlayUnits(
+          sectionId: sectionId,
+          units: rawUnits,
+          store: _guestStore,
+          isSectionUnlocked: isSectionUnlocked,
+          previousSectionLastUnitId: prevSectionLastUnitId,
+        );
+      } catch (_) {}
+    }
+    return rawUnits;
   }
 
   @override
@@ -276,9 +342,44 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       );
       final rawBossStage = bossRows.isNotEmpty ? bossRows.first : null;
 
+      var resolvedPathRows = pathRows;
+      if (_client.auth.currentUser == null) {
+        final mastery = await _progressRepo.fetchUnitMastery(unitId);
+        bool isUnitUnlocked = true;
+        try {
+          final unitRows = List<Map<String, dynamic>>.from(
+            await _client
+                .from('duo_units')
+                .select('section_id, unit_number')
+                .eq('id', unitId)
+                .limit(1),
+          );
+          if (unitRows.isNotEmpty) {
+            final secId = '${unitRows.first['section_id'] ?? ''}';
+            final uNum = (unitRows.first['unit_number'] as num?)?.toInt() ?? 1;
+            if (secId.isNotEmpty && uNum > 1) {
+              final rawUnits = await _getRawUnits(secId);
+              final prevUnit =
+                  rawUnits.where((u) => u.unitNumber == uNum - 1).firstOrNull;
+              if (prevUnit != null) {
+                isUnitUnlocked = await _guestStore.isBossWon(prevUnit.id);
+              }
+            }
+          }
+        } catch (_) {}
+
+        resolvedPathRows = await _guestResolver.overlayUnitPath(
+          unitId: unitId,
+          pathRows: pathRows,
+          store: _guestStore,
+          overallMastery: mastery.overall,
+          isUnitUnlocked: isUnitUnlocked,
+        );
+      }
+
       return _stageGroupingService.groupServerPath(
         unitId: unitId,
-        pathRows: pathRows,
+        pathRows: resolvedPathRows,
         rawChallenges: rawChallenges,
         rawBossStage: rawBossStage,
       );
@@ -289,6 +390,31 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
 
   @override
   Future<LearningUnitViewModel?> getCurrentProgress() async {
+    if (_client.auth.currentUser == null) {
+      try {
+        final sections = await getSections();
+        for (final section in sections) {
+          if (!section.isUnlocked) continue;
+          final units = await getUnits(section.id);
+          for (final unit in units) {
+            if (unit.isUnlocked && !unit.bossWon) {
+              return unit;
+            }
+          }
+        }
+        if (sections.isNotEmpty) {
+          final firstUnits = await getUnits(sections.first.id);
+          if (firstUnits.isNotEmpty) {
+            return firstUnits.first;
+          }
+        }
+      } catch (e) {
+        debugPrint(
+            '[LearningJourneyRepository] getCurrentProgress guest failed: $e');
+      }
+      return null;
+    }
+
     try {
       final response = await _client.rpc('current_learning_unit_v2');
       if (response is Map) {

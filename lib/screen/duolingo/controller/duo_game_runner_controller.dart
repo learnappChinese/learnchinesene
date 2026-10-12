@@ -124,6 +124,7 @@ class DuoGameRunnerController extends GetxController {
         gameCode: gameCode,
         levelId: levelId,
         attemptId: _attemptId,
+        unitId: resolvedUnitId,
       );
       _attemptStarted = true;
       await _saveSession();
@@ -210,10 +211,15 @@ class DuoGameRunnerController extends GetxController {
     if (_isFinishing) return;
     _isFinishing = true;
     try {
+      final resolvedUnitId = (unitId != null && unitId!.isNotEmpty)
+          ? unitId!
+          : (levelId.contains('_') ? levelId.split('_').first : levelId);
+
       final reward = await _rewardService.processDuoGameReward(
         gameId: gameId,
         gameCode: gameCode,
         levelId: levelId,
+        unitId: resolvedUnitId,
         attemptId: _attemptId,
         correctCount: correctCount.value,
         wrongCount: wrongCount.value,
@@ -255,9 +261,12 @@ class DuoGameRunnerController extends GetxController {
     }
   }
 
-  // Phương thức tìm và unlock level kế tiếp theo server contract hoặc path
+  // Phương thức tìm và unlock level kế tiếp theo server contract hoặc canonical unit path
   Future<void> _unlockNextGuestLevel(LearningResult reward) async {
     if (reward.nextNodeId != null && reward.nextNodeId!.isNotEmpty) {
+      if (reward.nextNodeId!.startsWith('boss:')) {
+        return; // Boss gate ready
+      }
       final parts = reward.nextNodeId!.split(':');
       if (parts.length == 2) {
         final nextGameId = int.tryParse(parts[0]);
@@ -268,6 +277,32 @@ class DuoGameRunnerController extends GetxController {
         }
       }
     }
+
+    final resolvedUnitId = (unitId != null && unitId!.isNotEmpty)
+        ? unitId!
+        : (levelId.contains('_') ? levelId.split('_').first : levelId);
+
+    try {
+      final unitPath =
+          await DuoDbHelper.instance.getUnitLearningPath(resolvedUnitId);
+      final learningNodes =
+          unitPath.where((r) => r['node_type'] == 'learning').toList();
+      final currentIndex = learningNodes.indexWhere(
+        (r) =>
+            ((r['game_id'] as num?)?.toInt() == gameId) &&
+            ('${r['level_id'] ?? ''}' == levelId),
+      );
+
+      if (currentIndex >= 0 && currentIndex + 1 < learningNodes.length) {
+        final nextNode = learningNodes[currentIndex + 1];
+        final nextGameId = (nextNode['game_id'] as num?)?.toInt();
+        final nextLevelId = '${nextNode['level_id'] ?? ''}';
+        if (nextGameId != null && nextLevelId.isNotEmpty) {
+          await DuoDbHelper.instance.unlockLevel(nextGameId, nextLevelId);
+          return;
+        }
+      }
+    } catch (_) {}
 
     final levels = await DuoDbHelper.instance.getGamePath(gameId, gameCode);
     bool foundCurrent = false;

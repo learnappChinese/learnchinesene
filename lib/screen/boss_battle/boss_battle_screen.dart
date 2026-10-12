@@ -105,6 +105,7 @@ class _BossBattleScreenState extends State<BossBattleScreen>
       _rewardService.startBossAttempt(
         stageId: widget.stage?.id ?? 0,
         attemptId: _attemptId,
+        unitId: widget.stage?.unitId,
       ),
     );
     _initQuestions();
@@ -462,6 +463,7 @@ class _BossBattleScreenState extends State<BossBattleScreen>
       bestCombo: maxCombo,
       playerHp: playerHp,
       bossHp: bossHp,
+      unitId: widget.stage?.unitId,
       durationSeconds: DateTime.now().difference(_startedAt).inSeconds,
     );
     _attemptCompleted = true;
@@ -512,6 +514,7 @@ class _BossBattleScreenState extends State<BossBattleScreen>
       bestCombo: maxCombo,
       playerHp: playerHp,
       bossHp: bossHp,
+      unitId: widget.stage?.unitId,
       durationSeconds: DateTime.now().difference(_startedAt).inSeconds,
     );
     _attemptCompleted = true;

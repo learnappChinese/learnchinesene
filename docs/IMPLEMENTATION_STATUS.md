@@ -19,6 +19,16 @@ This is the living issue matrix for `AI_MASTERPLAN_HOAN_THIEN_APP_TIENg_TRUNG.md
   - Android debug APK built successfully (`build/app/outputs/flutter-apk/app-debug.apk`).
   - Real Android emulator (`emulator-5554`, Android 14 API 34) runtime verified and captured (Home, Unit Overview, Vocabulary Adventure, Locked Stage Sheet, Tone Ninja, Learning Tab, Personal Tab). Live XP progression verified (135 -> 140 XP).
   - Release readiness assessed: CONDITIONALLY READY FOR RELEASE (Store Sandbox credentials required for Google Play submission).
+- P0 Bug Fix: Guest Learning Progression (2026-10-12):
+  - Created `GuestLearningProgressStore` for idempotent SharedPreferences local state with backward-compatible legacy migration.
+  - Implemented `GuestJourneyResolver` for dependency graph calculation across stages, Boss readiness, units, and sections.
+  - Fixed `LearningProgressRepository._completeLocalActivity` to calculate authoritative `nextNodeId`, `nextUnitId`, `bossReady`, and `unitCompleted`.
+  - Fixed `_fetchLocalUnitMastery` to evaluate genuine Boss victory (`isBossWon`) and require all learning nodes in `unit_learning_path_v2`.
+  - Threaded `unitId` across `LearningRewardService`, `DuoGameRunnerController`, `BossBattleController`, `BossBattleScreen`, and `VocabularyAdventureRepository`.
+  - Resolved `LearningJourneyRepository` unauthenticated RPC isolation by overlaying Guest local completion onto `getSections()`, `getUnits()`, `getUnitStages()`, and `getCurrentProgress()`.
+  - Harmonized `DuoDbHelper` and `LearningRecommendationService` to share the same canonical Guest progression state.
+  - Automated verification: 12/12 dedicated test scenarios in `guest_learning_progression_test.dart` passed; all 107 core learning tests green; 0 analyze warnings/errors.
+  - Live runtime verification on emulator-5554: Stage 1 pass unlocks Stage 2 immediately; Stage 2 enters gameplay; states persist across force-stop and app relaunch.
 
 Status vocabulary:
 

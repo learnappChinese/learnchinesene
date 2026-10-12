@@ -172,6 +172,7 @@ class BossBattleController extends GetxController {
         await _rewardService.startBossAttempt(
           stageId: stage?.id ?? 0,
           attemptId: sessionId.value,
+          unitId: stage?.unitId,
         );
         _attemptStarted = true;
       } catch (_) {
@@ -301,6 +302,7 @@ class BossBattleController extends GetxController {
         bestCombo: maxCombo.value,
         playerHp: playerHp.value,
         bossHp: bossHp.value,
+        unitId: stage?.unitId,
         durationSeconds:
             DateTime.now().difference(_startedAt ?? DateTime.now()).inSeconds,
       );

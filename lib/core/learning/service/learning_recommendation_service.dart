@@ -6,6 +6,8 @@ import '../data/learning_progress_repository.dart';
 import '../model/learning_journey_models.dart';
 import '../model/recommended_next_action.dart';
 import '../model/unit_mastery.dart';
+import '../data/guest_learning_progress_store.dart';
+import 'guest_journey_resolver.dart';
 import '../../../screen/review/data/review_repository.dart';
 
 abstract interface class LearningRecommendationService {
@@ -431,12 +433,25 @@ class SupabaseLearningRecommendationService
     if (_pathLoader != null) {
       return await _pathLoader(unitId);
     }
-    return List<Map<String, dynamic>>.from(
+    final rows = List<Map<String, dynamic>>.from(
       await _resolvedClient.rpc(
         'unit_learning_path_v2',
         params: <String, dynamic>{'p_unit_id': unitId},
       ),
     );
+    if (_resolvedClient.auth.currentUser == null) {
+      final store = GuestLearningProgressStore();
+      final resolver = const GuestJourneyResolver();
+      final mastery = await _resolvedProgressRepo.fetchUnitMastery(unitId);
+      return await resolver.overlayUnitPath(
+        unitId: unitId,
+        pathRows: rows,
+        store: store,
+        overallMastery: mastery.overall,
+        isUnitUnlocked: true,
+      );
+    }
+    return rows;
   }
 
   RecommendedNextAction? _weakSkillRecommendation(

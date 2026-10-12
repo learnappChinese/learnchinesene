@@ -10,6 +10,8 @@ import '../model/learning_result.dart';
 import '../model/learning_skill_taxonomy.dart';
 import '../model/unit_mastery.dart';
 import '../service/learning_rules_service.dart';
+import 'guest_learning_progress_store.dart';
+import '../service/guest_journey_resolver.dart';
 
 abstract interface class LearningProgressRepository {
   Future<void> startAttempt(LearningActivitySubmission submission);
@@ -35,14 +37,24 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
     SharedPreferences? prefs,
     LearningRulesService rulesService = const LearningRulesService(),
     DateTime Function()? nowProvider,
+    GuestLearningProgressStore? guestStore,
+    GuestJourneyResolver guestResolver = const GuestJourneyResolver(),
   })  : _client = client,
         _prefs = prefs,
         _rulesService = rulesService,
-        _now = nowProvider ?? DateTime.now;
+        _now = nowProvider ?? DateTime.now,
+        _guestStore = guestStore ??
+            GuestLearningProgressStore(
+              prefs: prefs,
+              nowProvider: nowProvider,
+            ),
+        _guestResolver = guestResolver;
 
   final SupabaseClient? _client;
   final LearningRulesService _rulesService;
   final DateTime Function() _now;
+  final GuestLearningProgressStore _guestStore;
+  final GuestJourneyResolver _guestResolver;
   SharedPreferences? _prefs;
   final Map<String, Future<LearningResult>> _localCompletions = {};
 
@@ -238,8 +250,70 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
     final newTotalXp = totalXp + evaluation.xpEarned;
     final isBossAct = submission.activityType == 'boss';
     final isUnitDone = isBossAct && evaluation.passed;
+
+    String? resolvedNextNodeId;
+    String? resolvedNextUnitId;
+    bool isUnlockedNext = false;
     bool isBossAvail = false;
-    if (submission.unitId != null && submission.unitId!.isNotEmpty) {
+
+    if (evaluation.passed) {
+      if (isBossAct) {
+        final stageId = (submission.metadata['stage_id'] as num?)?.toInt() ??
+            int.tryParse(submission.sourceId) ??
+            1;
+        final unitId = submission.unitId ?? '';
+        if (unitId.isNotEmpty) {
+          await _guestStore.recordBossWon(
+            unitId: unitId,
+            stageId: stageId,
+            score: evaluation.score.toInt(),
+            stars: evaluation.stars,
+          );
+          resolvedNextUnitId = await _resolveNextUnitForGuest(unitId);
+        }
+        isUnlockedNext = resolvedNextUnitId != null;
+      } else {
+        final gameId = (submission.metadata['game_id'] as num?)?.toInt() ??
+            int.tryParse(submission.sourceId.split(':').firstOrNull ?? '') ??
+            1;
+        final levelId = submission.levelId ??
+            (submission.sourceId.contains(':')
+                ? submission.sourceId.split(':').last
+                : submission.sourceId);
+        final unitId = submission.unitId;
+
+        await _guestStore.recordStagePassed(
+          gameId: gameId,
+          levelId: levelId,
+          unitId: unitId,
+          score: evaluation.score.toInt(),
+          stars: evaluation.stars,
+          activityType: submission.activityType,
+        );
+
+        if (unitId != null && unitId.isNotEmpty) {
+          final pathRows = await _fetchUnitPathRows(unitId);
+          if (pathRows.isNotEmpty) {
+            final nextResolution =
+                await _guestResolver.resolveNextNodeAfterStageCompletion(
+              unitId: unitId,
+              completedGameId: gameId,
+              completedLevelId: levelId,
+              pathRows: pathRows,
+              store: _guestStore,
+              overallMastery: masteryAfter,
+            );
+            resolvedNextNodeId = nextResolution.nextNodeId;
+            isUnlockedNext = nextResolution.unlockedNext;
+            isBossAvail = nextResolution.bossReady;
+          }
+        }
+      }
+    }
+
+    if (!isBossAvail &&
+        submission.unitId != null &&
+        submission.unitId!.isNotEmpty) {
       final localMastery = await _fetchLocalUnitMastery(submission.unitId!);
       isBossAvail = localMastery.isBossAvailable && !localMastery.isCompleted;
     }
@@ -265,7 +339,9 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
       firstClear: firstClear && evaluation.passed,
       perfect: evaluation.perfect,
       attemptNumber: attemptNumber,
-      unlockedNext: evaluation.passed,
+      unlockedNext: isUnlockedNext,
+      nextNodeId: resolvedNextNodeId,
+      nextUnitId: resolvedNextUnitId,
       bossReady: isBossAvail,
       unitCompleted: isUnitDone,
       reason: evaluation.reason,
@@ -274,6 +350,8 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
         'hanzi_mastered': evaluation.hanziMastered,
         'boss_ready': isBossAvail,
         'unit_completed': isUnitDone,
+        if (resolvedNextNodeId != null) 'next_node_id': resolvedNextNodeId,
+        if (resolvedNextUnitId != null) 'next_unit_id': resolvedNextUnitId,
       },
     );
 
@@ -471,8 +549,32 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
       hanziMastery: hanzi,
     );
 
-    final allPassed = unitAttempts.any((row) => row['status'] == 'passed');
-    final bossAvailable = overall >= LearningRulesConfig.unitMasteryThreshold;
+    final bossWon = await _guestStore.isBossWon(unitId);
+    final pathRows = await _fetchUnitPathRows(unitId);
+    final learningNodes =
+        pathRows.where((r) => r['node_type'] == 'learning').toList();
+
+    final bool allPassed;
+    if (learningNodes.isNotEmpty) {
+      final passedKeys = await _guestStore.getAllPassedStageKeys();
+      allPassed = learningNodes.every((node) {
+        final gId = (node['game_id'] as num?)?.toInt() ?? 0;
+        final lId = '${node['level_id'] ?? ''}'.trim();
+        return passedKeys.contains('$gId:$lId') ||
+            passedKeys.any((k) => k.endsWith(':$lId'));
+      });
+    } else {
+      allPassed = unitAttempts.any((row) => row['status'] == 'passed');
+    }
+
+    final bossAvailable =
+        allPassed && (overall >= LearningRulesConfig.unitMasteryThreshold);
+
+    final state = bossWon
+        ? UnitCompletionState.completed
+        : (bossAvailable
+            ? UnitCompletionState.bossPending
+            : UnitCompletionState.inProgress);
 
     return UnitMastery(
       vocabulary: vocab,
@@ -484,11 +586,68 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
       masteryThreshold: LearningRulesConfig.unitMasteryThreshold,
       bossRequired: true,
       bossAvailable: bossAvailable,
-      bossWon: false,
-      state: overall >= LearningRulesConfig.unitMasteryThreshold
-          ? UnitCompletionState.bossPending
-          : UnitCompletionState.inProgress,
+      bossWon: bossWon,
+      state: state,
     );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchUnitPathRows(String unitId) async {
+    final client = _activeClient;
+    if (client != null) {
+      try {
+        final rows = List<Map<String, dynamic>>.from(
+          await client.rpc(
+            'unit_learning_path_v2',
+            params: <String, dynamic>{'p_unit_id': unitId},
+          ),
+        );
+        if (rows.isNotEmpty) return rows;
+      } catch (_) {}
+    }
+    return const [];
+  }
+
+  Future<String?> _resolveNextUnitForGuest(String currentUnitId) async {
+    final client = _activeClient;
+    if (client == null) return null;
+    try {
+      final sectionRows = List<Map<String, dynamic>>.from(
+        await client.rpc('learning_sections_v2'),
+      );
+      for (final sec in sectionRows) {
+        final secId = '${sec['section_id'] ?? ''}';
+        final unitRows = List<Map<String, dynamic>>.from(
+          await client.rpc(
+            'learning_units_v2',
+            params: <String, dynamic>{'p_section_id': secId},
+          ),
+        );
+        final idx =
+            unitRows.indexWhere((u) => '${u['unit_id']}' == currentUnitId);
+        if (idx != -1) {
+          if (idx + 1 < unitRows.length) {
+            return '${unitRows[idx + 1]['unit_id']}';
+          }
+          final secIdx = sectionRows.indexOf(sec);
+          if (secIdx + 1 < sectionRows.length) {
+            final nextSecId = '${sectionRows[secIdx + 1]['section_id'] ?? ''}';
+            final nextSecUnits = List<Map<String, dynamic>>.from(
+              await client.rpc(
+                'learning_units_v2',
+                params: <String, dynamic>{'p_section_id': nextSecId},
+              ),
+            );
+            if (nextSecUnits.isNotEmpty) {
+              return '${nextSecUnits.first['unit_id']}';
+            }
+          }
+          return null;
+        }
+      }
+    } catch (e) {
+      debugPrint('[LearningProgressRepository] _resolveNextUnitForGuest: $e');
+    }
+    return null;
   }
 
   @override

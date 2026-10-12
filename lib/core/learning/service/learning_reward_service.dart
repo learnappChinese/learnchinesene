@@ -231,6 +231,7 @@ class LearningRewardService {
     required int bestCombo,
     required int playerHp,
     required int bossHp,
+    String? unitId,
     int durationSeconds = 0,
   }) {
     return completeActivity(
@@ -239,6 +240,7 @@ class LearningRewardService {
         sourceType: stageId > 0 ? 'boss_stage' : 'boss_practice',
         sourceId: stageId > 0 ? '$stageId' : 'free_battle',
         attemptId: attemptId,
+        unitId: unitId,
         score: score.toDouble(),
         correctCount: correctCount,
         wrongCount: wrongCount,
@@ -246,7 +248,10 @@ class LearningRewardService {
         bestCombo: bestCombo,
         bossHp: bossHp,
         playerHp: playerHp,
-        metadata: <String, dynamic>{'stage_id': stageId},
+        metadata: <String, dynamic>{
+          'stage_id': stageId,
+          if (unitId != null) 'unit_id': unitId,
+        },
       ),
     );
   }
@@ -254,6 +259,7 @@ class LearningRewardService {
   Future<void> startBossAttempt({
     required int stageId,
     required String attemptId,
+    String? unitId,
   }) {
     return startAttempt(
       LearningActivitySubmission(
@@ -261,8 +267,10 @@ class LearningRewardService {
         sourceType: stageId > 0 ? 'boss_stage' : 'boss_practice',
         sourceId: stageId > 0 ? '$stageId' : 'free_battle',
         attemptId: attemptId,
+        unitId: unitId,
         metadata: <String, dynamic>{
           if (stageId > 0) 'stage_id': stageId,
+          if (unitId != null) 'unit_id': unitId,
         },
       ),
     );
@@ -348,6 +356,7 @@ class LearningRewardService {
     required int correctCount,
     required int wrongCount,
     required int score,
+    String? unitId,
     int maxCombo = 0,
     int durationSeconds = 0,
     double? pronunciationScore,
@@ -361,6 +370,7 @@ class LearningRewardService {
         sourceType: 'duo_level',
         sourceId: '$gameId:$levelId',
         attemptId: attemptId,
+        unitId: unitId,
         levelId: levelId,
         score: score.toDouble(),
         correctCount: correctCount,
@@ -374,6 +384,7 @@ class LearningRewardService {
           'game_code': gameCode,
           'game_id': gameId,
           'level_id': levelId,
+          if (unitId != null) 'unit_id': unitId,
         },
       ),
     );
@@ -384,6 +395,7 @@ class LearningRewardService {
     required String gameCode,
     required String levelId,
     required String attemptId,
+    String? unitId,
   }) {
     return startAttempt(
       LearningActivitySubmission(
@@ -391,11 +403,13 @@ class LearningRewardService {
         sourceType: 'duo_level',
         sourceId: '$gameId:$levelId',
         attemptId: attemptId,
+        unitId: unitId,
         levelId: levelId,
         metadata: <String, dynamic>{
           'game_code': gameCode,
           'game_id': gameId,
           'level_id': levelId,
+          if (unitId != null) 'unit_id': unitId,
         },
       ),
     );

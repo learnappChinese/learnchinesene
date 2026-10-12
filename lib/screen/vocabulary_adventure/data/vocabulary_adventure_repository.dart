@@ -72,6 +72,7 @@ class SupabaseVocabularyAdventureRepository
   final DuoDbHelper _duoDatabase;
   final LearningRewardService _rewardService;
   final VocabularyEventBuilder _eventBuilder;
+  final Map<String, String> _unitIdByLevel = <String, String>{};
 
   @override
   Future<VocabularyMission?> loadMission({
@@ -89,6 +90,9 @@ class SupabaseVocabularyAdventureRepository
 
     final level = levelRows.first;
     final unitId = '${level['unit_id'] ?? ''}';
+    if (unitId.isNotEmpty) {
+      _unitIdByLevel[levelId] = unitId;
+    }
     final unitRows = List<Map<String, dynamic>>.from(
       await _client.from('duo_units').select('title').eq('id', unitId).limit(1),
     );
@@ -300,13 +304,19 @@ class SupabaseVocabularyAdventureRepository
     required String levelId,
     required int gameId,
     required String attemptId,
-  }) =>
-      _rewardService.startDuoGameAttempt(
-        gameId: gameId,
-        gameCode: 'learn_words',
-        levelId: levelId,
-        attemptId: attemptId,
-      );
+  }) async {
+    var unitId = _unitIdByLevel[levelId];
+    if (unitId == null || unitId.isEmpty) {
+      unitId = await _fetchUnitId(levelId);
+    }
+    return _rewardService.startDuoGameAttempt(
+      gameId: gameId,
+      gameCode: 'learn_words',
+      levelId: levelId,
+      unitId: unitId,
+      attemptId: attemptId,
+    );
+  }
 
   @override
   Future<void> abandonMission({
@@ -355,8 +365,13 @@ class SupabaseVocabularyAdventureRepository
     int wrongCount = 0,
     int maxCombo = 0,
   }) async {
+    var unitId = _unitIdByLevel[levelId];
+    if (unitId == null || unitId.isEmpty) {
+      unitId = await _fetchUnitId(levelId);
+    }
     final reward = await _rewardService.processVocabularyReward(
       levelId: levelId,
+      unitId: unitId,
       attemptId: attemptId,
       gameId: gameId,
       correctCount: correctCount,
@@ -373,16 +388,50 @@ class SupabaseVocabularyAdventureRepository
         reward.score.toInt(),
         reward.stars,
         reward.passed,
+        unitId: unitId,
       );
       if (reward.passed) {
-        await _unlockNextPlayableLevel(gameId, levelId);
+        await _unlockNextPlayableLevel(gameId, levelId, reward, unitId);
       }
       await _duoDatabase.clearActiveSession(gameId, levelId);
     }
     return reward;
   }
 
-  Future<void> _unlockNextPlayableLevel(int gameId, String levelId) async {
+  Future<void> _unlockNextPlayableLevel(
+    int gameId,
+    String levelId,
+    LearningResult reward,
+    String? unitId,
+  ) async {
+    if (reward.nextNodeId != null && reward.nextNodeId!.isNotEmpty) {
+      final parts = reward.nextNodeId!.split(':');
+      final nextGameId = parts.length >= 2 ? int.tryParse(parts[0]) : null;
+      final nextLevelId = parts.length >= 2 ? parts[1] : reward.nextNodeId!;
+      if (nextGameId != null && nextLevelId.isNotEmpty) {
+        await _duoDatabase.unlockLevel(nextGameId, nextLevelId);
+        return;
+      }
+    }
+
+    if (unitId != null && unitId.isNotEmpty) {
+      final unitPath = await _duoDatabase.getUnitLearningPath(unitId);
+      final idx = unitPath.indexWhere((r) =>
+          (r['game_id'] as num?)?.toInt() == gameId &&
+          '${r['level_id'] ?? ''}' == levelId);
+      if (idx != -1 && idx + 1 < unitPath.length) {
+        final nextNode = unitPath[idx + 1];
+        if (nextNode['node_type'] == 'learning') {
+          final nextGId = (nextNode['game_id'] as num?)?.toInt() ?? gameId;
+          final nextLId = '${nextNode['level_id'] ?? ''}';
+          if (nextLId.isNotEmpty) {
+            await _duoDatabase.unlockLevel(nextGId, nextLId);
+            return;
+          }
+        }
+      }
+    }
+
     final levels = await _duoDatabase.getGamePath(gameId, 'learn_words');
     var foundCurrent = false;
     for (final level in levels) {
@@ -394,6 +443,26 @@ class SupabaseVocabularyAdventureRepository
       }
       if (id == levelId) foundCurrent = true;
     }
+  }
+
+  Future<String?> _fetchUnitId(String levelId) async {
+    try {
+      final levelRows = List<Map<String, dynamic>>.from(
+        await _client
+            .from('duo_levels')
+            .select('unit_id')
+            .eq('id', levelId)
+            .limit(1),
+      );
+      if (levelRows.isNotEmpty) {
+        final uId = '${levelRows.first['unit_id'] ?? ''}';
+        if (uId.isNotEmpty) {
+          _unitIdByLevel[levelId] = uId;
+          return uId;
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 
   static int? _correctChoiceIndex(DuoChallenge challenge) {

@@ -2,26 +2,18 @@
 
 ## Timestamp + repo + branch + HEAD
 
-- Timestamp: 2026-10-11 (Asia/Saigon)
+- Timestamp: 2026-10-12 (Asia/Saigon)
 - Repo: `D:\Projects\Flutter_Project\learnchinesene`
 - Integration branch: `hieu`
-- Feature branch: `feature/pr11-production-qa-release-readiness`
-- Current implementation: PR 11 (`Final Production QA, Bug Fixing & Release Readiness`) — COMPLETED & READY FOR MERGE TO HIEU.
+- Feature branch: `feature/guest-learning-progression-fix`
+- Current implementation: P0 Bug Fix (`Guest Learning Progression Unlock Flow for Stages, Boss & Units`) — COMPLETED & VERIFIED.
 
 ## Phase / PR hiện tại
 
-- PR00 baseline/status inventory: complete.
-- PR01 `LearningProgressSyncService`: merged into `hieu` via PR #23.
-- PR02 `Skill Taxonomy & Unit Mastery`: merged into `hieu` via PR #24 (`19a6118`).
-- PR03 `Complete Learning Flow, Unlock & Boss Navigation`: merged into `hieu` via `9b3965e`.
-- PR04 `Authentication, Guest Progress & Cloud Migration`: merged into `hieu` (`110740e`).
-- PR05 `Production Security: Premium, IAP, Gemini AI & Supabase`: merged into `hieu` (`6f965e2`).
-- PR06 `Curriculum, Adaptive Session Composer & Content Quality`: MERGED into `hieu` (`9cebe28`).
-- PR07 `Review, Hanzi, Speaking Context & SRS Quality`: MERGED into `hieu` (`a1cfaf8`).
-- PR08 `Personalized Home, Smart Next Action & Learning Recommendation`: MERGED into `hieu` (`c88e86d`).
-- PR09 `AI Learning Quality, HSK Quiz/Exam & Unified Learning Outcomes`: MERGED into `hieu` (`1012a60`).
-- PR10 `Unified Chinese Fantasy Design System, Accessibility & UX Polish`: MERGED into `hieu` (`7bd7270`).
-- PR11 `Final Production QA, Bug Fixing & Release Readiness`: COMPLETED & READY FOR MERGE TO HIEU.
+- PR00–11: COMPLETED & MERGED into `hieu`.
+- P0 Bug Fix: `Guest Learning Progression: Stage, Boss & Unit Unlocking`:
+  - Production fix: `GuestLearningProgressStore`, `GuestJourneyResolver`, `LearningProgressRepository`, `LearningJourneyRepository`, `LearningRewardService`, `DuoGameRunnerController`, `BossBattleController`, `BossBattleScreen`, `DuoDbHelper`, `VocabularyAdventureRepository`, and `LearningRecommendationService`.
+  - Verification: 12/12 dedicated test scenarios in `guest_learning_progression_test.dart` passed; live Android emulator verification with before/after screenshots confirmed.
 
 ## Issue IDs đã xong
 

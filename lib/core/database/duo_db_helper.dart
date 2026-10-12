@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/duo_challenge.dart';
 import '../models/duo_flashcard.dart';
+import '../learning/data/guest_learning_progress_store.dart';
+import '../learning/service/guest_journey_resolver.dart';
 
 /// Cloud-backed data source for the Duolingo-style game center.
 ///
@@ -120,6 +122,9 @@ class DuoDbHelper {
         .toList(growable: false);
   }
 
+  final GuestLearningProgressStore _guestStore = GuestLearningProgressStore();
+  final GuestJourneyResolver _guestResolver = const GuestJourneyResolver();
+
   Future<List<Map<String, dynamic>>> getUnitLearningPath(String unitId) async {
     var rows = List<Map<String, dynamic>>.from(
       await _client.rpc(
@@ -127,7 +132,9 @@ class DuoDbHelper {
         params: <String, dynamic>{'p_unit_id': unitId},
       ),
     );
-    if (_userId == null) rows = await _overlayGuestPath(rows);
+    if (_userId == null) {
+      rows = await _overlayGuestPath(rows, unitId);
+    }
     return rows;
   }
 
@@ -136,11 +143,42 @@ class DuoDbHelper {
         Map<String, dynamic> current,
         List<Map<String, dynamic>> rows,
       })> _loadCurrentUnitPath() async {
-    final response = await _client.rpc('current_learning_unit_v2');
-    final current = response is Map
-        ? Map<String, dynamic>.from(response)
-        : <String, dynamic>{};
-    final unitId = '${current['unit_id'] ?? ''}';
+    var unitId = '';
+    Map<String, dynamic> current = <String, dynamic>{};
+
+    if (_userId == null) {
+      try {
+        final secRows = List<Map<String, dynamic>>.from(
+          await _client.rpc('learning_sections_v2'),
+        );
+        for (final sec in secRows) {
+          final sId = '${sec['section_id'] ?? ''}';
+          final uRows = List<Map<String, dynamic>>.from(
+            await _client
+                .rpc('learning_units_v2', params: {'p_section_id': sId}),
+          );
+          for (final u in uRows) {
+            final uId = '${u['unit_id'] ?? ''}';
+            final isWon = await _guestStore.isBossWon(uId);
+            if (!isWon) {
+              unitId = uId;
+              current = u;
+              break;
+            }
+          }
+          if (unitId.isNotEmpty) break;
+        }
+      } catch (_) {}
+    }
+
+    if (unitId.isEmpty) {
+      final response = await _client.rpc('current_learning_unit_v2');
+      current = response is Map
+          ? Map<String, dynamic>.from(response)
+          : <String, dynamic>{};
+      unitId = '${current['unit_id'] ?? ''}';
+    }
+
     if (unitId.isEmpty) {
       return (current: current, rows: const <Map<String, dynamic>>[]);
     }
@@ -151,31 +189,26 @@ class DuoDbHelper {
 
   Future<List<Map<String, dynamic>>> _overlayGuestPath(
     List<Map<String, dynamic>> rows,
+    String unitId,
   ) async {
+    final overlaid = await _guestResolver.overlayUnitPath(
+      unitId: unitId,
+      pathRows: rows,
+      store: _guestStore,
+    );
     final prefs = await SharedPreferences.getInstance();
-    return rows.map((row) {
+    return overlaid.map((row) {
       if (row['node_type'] != 'learning') return row;
       final gameId = (row['game_id'] as num?)?.toInt() ?? 0;
       final levelId = '${row['level_id'] ?? ''}';
-      final progress =
-          _decodeMap(prefs.getString(_progressKey(gameId, levelId)));
       final active = _decodeMap(prefs.getString(_sessionKey(gameId, levelId)));
       final inProgress = active['status'] == 'active';
       return <String, dynamic>{
         ...row,
-        'attempts': (progress['attempts'] as num?)?.toInt() ?? row['attempts'],
-        'best_score':
-            (progress['best_score'] as num?)?.toInt() ?? row['best_score'],
-        'stars': (progress['stars'] as num?)?.toInt() ?? row['stars'],
-        'is_unlocked': row['is_unlocked'] == true ||
-            progress['is_unlocked'] == true ||
-            progress['is_completed'] == true,
-        'is_completed': progress['is_completed'] == true,
         'in_progress': inProgress,
         'current_index': inProgress
             ? (active['current_index'] as num?)?.toInt() ?? 0
             : row['current_index'],
-        'current_total': row['current_total'],
       };
     }).toList(growable: false);
   }
@@ -198,13 +231,24 @@ class DuoDbHelper {
     String levelId,
     int score,
     int stars,
-    bool passed,
-  ) async {
+    bool passed, {
+    String? unitId,
+  }) async {
     final userId = _userId;
     if (userId != null) {
       throw StateError(
         'Cloud level progress must be written by '
         'complete_learning_activity_v2.',
+      );
+    }
+
+    if (passed) {
+      await _guestStore.recordStagePassed(
+        gameId: gameId,
+        levelId: levelId,
+        unitId: unitId,
+        score: score,
+        stars: stars,
       );
     }
 
