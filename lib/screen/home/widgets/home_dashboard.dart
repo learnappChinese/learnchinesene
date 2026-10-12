@@ -184,6 +184,24 @@ class HomeDashboard extends StatelessWidget {
 
   Widget _hero(
       double width, double sceneTop, double sceneHeight, double headerHeight) {
+    final nextAction = journey?.nextAction;
+    final hasJourney = journey != null;
+    final eyebrow = nextAction?.type.name == 'fightBoss'
+        ? 'CỔNG BOSS ĐÃ MỞ'
+        : hasJourney
+            ? 'NHIỆM VỤ TIẾP THEO'
+            : 'BÀI HỌC HÔM NAY';
+    final heroTitle = nextAction?.title.trim().isNotEmpty == true
+        ? nextAction!.title.trim()
+        : (hasJourney ? journey!.missionTitle : 'Khởi hành\ncùng Panda');
+    final description = nextAction?.description.trim().isNotEmpty == true
+        ? nextAction!.description.trim()
+        : (hasJourney
+            ? '${journey!.chapterTitle} • Ải ${journey!.missionNumber}/${journey!.totalMissions}'
+            : 'Học từ vựng, luyện nghe và mở khóa thế giới tiếng Trung đầy thú vị!');
+    final ctaLabel = nextAction?.label.trim().isNotEmpty == true
+        ? nextAction!.label.trim()
+        : (hasJourney ? 'Tiếp tục học' : 'Bắt đầu học');
     // Bounds measured on the artwork, independent of header and safe insets.
     double sceneY(double fraction) =>
         sceneTop + sceneHeight * fraction - headerHeight;
@@ -200,7 +218,7 @@ class HomeDashboard extends StatelessWidget {
             rect: artworkRect(const Rect.fromLTRB(.128, .344, .373, .380)),
             child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text('BÀI HỌC HÔM NAY',
+                child: Text(eyebrow,
                     maxLines: 1,
                     style: TextStyle(
                         color: const Color(0xFF57300A),
@@ -215,19 +233,22 @@ class HomeDashboard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Mỗi ngày\nmạnh hơn',
+                    Text(heroTitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                             color: const Color(0xFF342E10),
-                            fontSize: 24.sp,
+                            fontSize: 21.sp,
                             height: 1.03,
                             letterSpacing: -.6.w,
                             fontWeight: FontWeight.w900)),
-                    Text('một chút',
-                        style: TextStyle(
-                            color: const Color(0xFF375B1C),
-                            fontSize: 24.sp,
-                            height: 1.08,
-                            fontWeight: FontWeight.w900)),
+                    if (hasJourney)
+                      Text('cùng Panda',
+                          style: TextStyle(
+                              color: const Color(0xFF375B1C),
+                              fontSize: 17.sp,
+                              height: 1.08,
+                              fontWeight: FontWeight.w900)),
                   ]),
             )),
         Positioned.fromRect(
@@ -237,8 +258,9 @@ class HomeDashboard extends StatelessWidget {
               alignment: Alignment.topLeft,
               child: SizedBox(
                 width: width * .343,
-                child: Text(
-                    'Học từ vựng, luyện nghe và mở khóa thế giới tiếng Trung đầy thú vị!',
+                child: Text(description,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                         color: const Color(0xFF5D5C54),
                         fontSize: 9.8.sp,
@@ -251,7 +273,7 @@ class HomeDashboard extends StatelessWidget {
             top: sceneY(.770),
             width: width * .348,
             child: HomeGreenButton(
-                label: 'Bắt đầu học', onTap: onStartLearning, playIcon: true)),
+                label: ctaLabel, onTap: onStartLearning, playIcon: true)),
       ]),
     );
   }

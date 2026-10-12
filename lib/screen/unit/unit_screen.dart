@@ -10,6 +10,9 @@ import '../../core/models/unit_model.dart';
 import '../../core/widgets/learning_scene_background.dart';
 import '../../core/widgets/learning_scaffold.dart';
 import '../../core/widgets/locked_mission_sheet.dart';
+import '../../core/widgets/adventure_quest_banner.dart';
+import '../../core/widgets/panda_companion.dart';
+import '../../core/theme/game_visual_tokens.dart';
 
 class UnitScreen extends StatefulWidget {
   const UnitScreen({super.key, this.controller});
@@ -56,16 +59,14 @@ class _UnitScreenState extends State<UnitScreen> {
     );
   }
 
-  Widget _buildUnitMetrics(List<UnitModel> units, int i) {
-    final unit = units[i];
-    final unitNumber = i + 1;
-
+  Widget _buildUnitMetrics(UnitModel unit, int fallbackNumber) {
+    final unitNumber = unit.order > 0 ? unit.order : fallbackNumber;
     return FutureBuilder<Map<String, int>>(
       key: ValueKey(unit.id),
       future: controller.metricsFor(unit.id),
       builder: (context, snapshot) => UnitProgressTile(
         unit: unit,
-        number: i + 1,
+        number: unitNumber,
         words: snapshot.data?['words'] ?? 0,
         learned: snapshot.data?['learned'] ?? 0,
         onTap: () => _openJourneyUnit(unitNumber),
@@ -125,7 +126,8 @@ class _UnitScreenState extends State<UnitScreen> {
           message: 'Không thể đọc các bài học từ dữ liệu ngoại tuyến.',
         );
       }
-      final units = controller.units;
+      final units = controller.units.toList()
+        ..sort((a, b) => a.order.compareTo(b.order));
       if (units.isEmpty) {
         return const EmptyStateWidget(
           icon: Icons.route_rounded,
@@ -137,22 +139,91 @@ class _UnitScreenState extends State<UnitScreen> {
         child: ConstrainedBox(
           constraints: BoxConstraints(
               maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-          child: GridView.builder(
-            padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveHelper.horizontalPadding(context),
-              vertical: 24,
-            ),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 450,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              mainAxisExtent: 96,
-            ),
-            itemCount: units.length,
-            itemBuilder: (context, i) => _buildUnitMetrics(units, i),
+          child: CustomScrollView(
+            key: const PageStorageKey('unit-adventure-path'),
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  ResponsiveHelper.horizontalPadding(context),
+                  20,
+                  ResponsiveHelper.horizontalPadding(context),
+                  12,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: AdventureQuestBanner(
+                    eyebrow: 'Chặng đường hiện tại',
+                    title: controller.title,
+                    description:
+                        'Đi theo các cột mốc từ Chương 1. Panda sẽ đồng hành tới cổng Boss cuối lộ trình.',
+                    statusLabel: '${units.length} chương',
+                    mood: PandaMood.happy,
+                    compact: true,
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  ResponsiveHelper.horizontalPadding(context),
+                  8,
+                  ResponsiveHelper.horizontalPadding(context),
+                  40,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => _UnitPathItem(
+                      index: index,
+                      isLast: index == units.length - 1,
+                      child: _buildUnitMetrics(units[index], index + 1),
+                    ),
+                    childCount: units.length,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );
     });
+  }
+}
+
+class _UnitPathItem extends StatelessWidget {
+  const _UnitPathItem({
+    required this.index,
+    required this.isLast,
+    required this.child,
+  });
+
+  final int index;
+  final bool isLast;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final left = index.isEven ? 0.0 : 24.0;
+    final right = index.isEven ? 24.0 : 0.0;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(left, 10, right, 10),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (!isLast)
+            Positioned(
+              left: index.isEven ? 28 : null,
+              right: index.isEven ? null : 28,
+              top: 88,
+              bottom: -30,
+              child: Container(
+                width: 4,
+                decoration: BoxDecoration(
+                  color: GameVisualTokens.imperialGold.withValues(alpha: .65),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+          child,
+        ],
+      ),
+    );
   }
 }

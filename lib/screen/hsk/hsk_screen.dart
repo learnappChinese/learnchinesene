@@ -8,6 +8,9 @@ import '../sections/learning_sections_screen.dart';
 import 'controller/hsk_controller.dart';
 import '../../core/models/hsk_level.dart';
 import '../../core/widgets/learning_scene_background.dart';
+import '../../core/widgets/adventure_quest_banner.dart';
+import '../../core/widgets/panda_companion.dart';
+import '../../core/theme/game_visual_tokens.dart';
 import '../subscription/controller/subscription_controller.dart';
 import '../../core/helper/upgrade_dialog_helper.dart';
 
@@ -125,7 +128,8 @@ class _HskScreenState extends State<HskScreen> {
           onRetry: controller.loadLevels,
         );
       }
-      final levels = controller.levels;
+      final levels = controller.levels.toList()
+        ..sort((a, b) => a.order.compareTo(b.order));
       if (levels.isEmpty) {
         return const EmptyStateWidget(
           icon: Icons.layers_outlined,
@@ -146,25 +150,36 @@ class _HskScreenState extends State<HskScreen> {
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.only(bottom: 20),
-                    child: _WorldHeader(worldCount: levels.length),
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: AdventureQuestBanner(
+                      eyebrow: 'Hành trình HSK',
+                      title: 'Theo Panda đi từ Làng Trúc đến Long Giới',
+                      description:
+                          'Bắt đầu ở World 1. Mỗi thế giới mở thêm từ vựng, kỹ năng và một cột mốc mới.',
+                      statusLabel: '${levels.length} thế giới',
+                      mood: PandaMood.archer,
+                      compact: true,
+                    ),
                   ),
                 ),
-                SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 450,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    mainAxisExtent: 218,
-                  ),
+                SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => Obx(() {
                       final level = levels[index];
                       final subController = Get.find<SubscriptionController>();
                       final isUnlocked =
                           subController.isLevelUnlocked(level.order);
-                      return _buildLevelMetrics(
-                          context, level, index, isUnlocked);
+                      return _WorldPathItem(
+                        index: index,
+                        isLast: index == levels.length - 1,
+                        isUnlocked: isUnlocked,
+                        child: _buildLevelMetrics(
+                          context,
+                          level,
+                          index,
+                          isUnlocked,
+                        ),
+                      );
                     }),
                     childCount: levels.length,
                   ),
@@ -178,41 +193,74 @@ class _HskScreenState extends State<HskScreen> {
   }
 }
 
-class _WorldHeader extends StatelessWidget {
-  const _WorldHeader({required this.worldCount});
+class _WorldPathItem extends StatelessWidget {
+  const _WorldPathItem({
+    required this.index,
+    required this.isLast,
+    required this.isUnlocked,
+    required this.child,
+  });
 
-  final int worldCount;
+  final int index;
+  final bool isLast;
+  final bool isUnlocked;
+  final Widget child;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: .82),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFFFFD98B)),
-        ),
-        child: Row(children: [
-          const Icon(Icons.map_rounded, size: 42, color: Color(0xFF0F766E)),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('CHỌN ĐIỂM ĐẾN',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 17,
-                        letterSpacing: .4)),
-                const SizedBox(height: 3),
-                Text(
-                  '$worldCount thế giới đang chờ Panda và bạn khám phá.',
-                  style: const TextStyle(color: Color(0xFF776A67), height: 1.3),
+  Widget build(BuildContext context) {
+    final shift = index.isEven ? 0.0 : 28.0;
+    return Padding(
+      padding: EdgeInsets.only(left: shift, right: 28 - shift, bottom: 18),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (!isLast)
+            Positioned(
+              left: index.isEven ? 34 : null,
+              right: index.isEven ? null : 34,
+              top: 198,
+              bottom: -28,
+              child: Container(
+                width: 4,
+                decoration: BoxDecoration(
+                  color: isUnlocked
+                      ? GameVisualTokens.imperialGold
+                      : const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(99),
                 ),
-              ],
+              ),
+            ),
+          SizedBox(height: 218, child: child),
+          Positioned(
+            left: index.isEven ? -7 : null,
+            right: index.isEven ? null : -7,
+            top: 82,
+            child: Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isUnlocked
+                    ? GameVisualTokens.imperialGold
+                    : const Color(0xFF94A3B8),
+                border: Border.all(color: Colors.white, width: 3),
+                boxShadow: GameVisualTokens.softShadow,
+              ),
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
           ),
-        ]),
-      );
+        ],
+      ),
+    );
+  }
 }
 
 class _WorldLoadingState extends StatelessWidget {

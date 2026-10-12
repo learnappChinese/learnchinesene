@@ -8,6 +8,8 @@ import '../../core/theme/game_visual_tokens.dart';
 import '../../core/widgets/learning_scaffold.dart';
 import '../../core/widgets/learning_scene_background.dart';
 import '../../core/widgets/locked_mission_sheet.dart';
+import '../../core/widgets/adventure_quest_banner.dart';
+import '../../core/widgets/panda_companion.dart';
 import 'section_units_screen.dart';
 
 class LearningSectionsScreen extends StatefulWidget {
@@ -157,6 +159,10 @@ class _LearningSectionsScreenState extends State<LearningSectionsScreen> {
       );
     }
 
+    final sections = _sections.toList()
+      ..sort((a, b) => a.sectionNumber.compareTo(b.sectionNumber));
+    final completed = sections.where((section) => section.isCompleted).length;
+
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(
@@ -169,10 +175,23 @@ class _LearningSectionsScreenState extends State<LearningSectionsScreen> {
             ResponsiveHelper.horizontalPadding(context),
             40,
           ),
-          itemCount: _sections.length,
+          itemCount: sections.length + 1,
           separatorBuilder: (_, __) => const SizedBox(height: 14),
           itemBuilder: (context, idx) {
-            final section = _sections[idx];
+            if (idx == 0) {
+              return AdventureQuestBanner(
+                eyebrow: 'Bản đồ curriculum',
+                title: 'Chọn vùng đất tiếp theo',
+                description:
+                    'Mỗi phần là một vùng phiêu lưu. Hoàn thành Unit và Boss để mở đường sang vùng kế tiếp.',
+                progress: sections.isEmpty ? 0 : completed / sections.length,
+                progressLabel: '$completed/${sections.length} phần',
+                statusLabel: 'Dữ liệu thật',
+                mood: PandaMood.archer,
+                compact: true,
+              );
+            }
+            final section = sections[idx - 1];
             return _SectionCard(
               section: section,
               onTap: () {

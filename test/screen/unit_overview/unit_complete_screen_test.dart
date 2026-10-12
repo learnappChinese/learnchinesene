@@ -89,21 +89,22 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Verify celebratory ribbon and text
-    expect(find.text('🏆 BÀI HỌC HOÀN THÀNH 🏆'), findsOneWidget);
-    expect(find.textContaining('GỌI TÊN MÓN ĂN'), findsOneWidget);
-    expect(find.textContaining('Rồng Lửa'), findsOneWidget);
+    // The completion view uses actual unit, reward and next-journey data.
+    expect(find.textContaining('CHẶNG HOÀN THÀNH'), findsOneWidget);
+    expect(find.textContaining('Gọi tên món ăn'), findsWidgets);
+    expect(find.textContaining('Rồng Lửa'), findsWidgets);
     expect(find.text('+50 XP'), findsOneWidget);
-    expect(find.text('100%'), findsOneWidget);
-    expect(find.text('Xuất sắc'), findsOneWidget);
+    expect(find.text('3/3 sao'), findsWidgets);
+    expect(find.text('100%'), findsNothing);
+    expect(find.text('Xuất sắc'), findsNothing);
 
     // Verify primary action button displays next unit title
-    expect(find.textContaining('Hỏi đường và phương tiện'), findsOneWidget);
+    expect(find.textContaining('Hỏi đường và phương tiện'), findsWidgets);
 
     // Verify secondary action button exists
     expect(find.text('Xem lại bài học vừa hoàn thành'), findsOneWidget);
 
-    // Verify Panda Companion speech
-    expect(find.textContaining('Tuyệt đỉnh công phu'), findsOneWidget);
+    // Verify the data-driven continuation preview.
+    expect(find.text('ĐÍCH ĐẾN TIẾP THEO'), findsOneWidget);
   });
 }

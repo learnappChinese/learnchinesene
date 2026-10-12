@@ -66,8 +66,8 @@ void main() {
       await tester.pump();
 
       expect(find.text('你好! 👋'), findsOneWidget);
-      expect(find.text('BÀI HỌC HÔM NAY'), findsOneWidget);
-      expect(find.text('Bắt đầu học'), findsOneWidget);
+      expect(find.text('NHIỆM VỤ TIẾP THEO'), findsOneWidget);
+      expect(find.text('Tiếp tục học'), findsOneWidget);
       expect(find.text('Ngày học'), findsOneWidget);
       expect(find.text('Bài học'), findsOneWidget);
       expect(find.text('Điểm XP'), findsOneWidget);
@@ -109,7 +109,7 @@ void main() {
     await tester.pumpWidget(app(dashboard(onStartLearning: () => starts++)));
     await tester.pump();
 
-    await tester.tap(find.text('Bắt đầu học'));
+    await tester.tap(find.text('Tiếp tục học'));
     expect(starts, 1);
 
     await tester.ensureVisible(find.text('Tiếp tục'));

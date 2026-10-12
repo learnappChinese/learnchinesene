@@ -20,6 +20,8 @@ import '../../../core/learning/model/learning_navigation_outcome.dart';
 import '../../../core/learning/model/learning_source_context.dart';
 import '../../../core/learning/model/learning_stage_models.dart';
 import '../../../core/widgets/segmented_progress_node.dart';
+import '../../../core/widgets/adventure_quest_banner.dart';
+import '../../../core/widgets/panda_companion.dart';
 import '../../hanzi_writing/screens/hanzi_writing_home_screen.dart';
 import '../../hanzi_writing/screens/hanzi_writing_screen.dart';
 import '../../speaking/speaking_screen.dart';
@@ -145,72 +147,24 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
     final unitNum = chapter.chapterNumber;
     final unitTitle = chapter.title;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: GameVisualTokens.imperialGold, width: 1.5),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 16,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: GameVisualTokens.imperialGold,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'PHẦN $secNum • $secName'.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF451A03),
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text('🏮 🐉', style: TextStyle(fontSize: 16)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'BÀI $unitNum: $unitTitle',
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Mục tiêu bài học: ${chapter.objective.isNotEmpty ? chapter.objective : 'Nắm vững từ vựng và mẫu câu giao tiếp cơ bản.'}',
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFFCBD5E1),
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
+    final total = controller.stages.isNotEmpty
+        ? controller.totalStageCount
+        : chapter.missions.length;
+    final completed = controller.stages.isNotEmpty
+        ? controller.completedStageCount
+        : chapter.completedMissions;
+    return AdventureQuestBanner(
+      eyebrow: 'Phần $secNum • $secName',
+      title: 'Bài $unitNum: $unitTitle',
+      description:
+          'Mục tiêu: ${chapter.objective.isNotEmpty ? chapter.objective : 'Nắm vững từ vựng và mẫu câu giao tiếp cơ bản.'}',
+      progress: total == 0 ? 0 : completed / total,
+      progressLabel: '$completed/$total ải',
+      statusLabel: chapter.bossUnlocked ? 'Boss đã mở' : 'Đang phiêu lưu',
+      mood: chapter.bossUnlocked ? PandaMood.archer : PandaMood.happy,
+      accent: chapter.bossUnlocked
+          ? GameVisualTokens.crimson
+          : GameVisualTokens.jade,
     );
   }
 
@@ -507,7 +461,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
           children: [
             Expanded(
               child: Text(
-                hasStages ? 'DANH SÁCH ẢI (STAGES)' : 'LỘ TRÌNH KỸ NĂNG',
+                hasStages ? 'BẢN ĐỒ ẢI HỌC TẬP' : 'BẢN ĐỒ KỸ NĂNG',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -541,21 +495,34 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
             final isTarget = stage.id == controller.nextPlayableStage?.id &&
                 !stage.isCompleted &&
                 stage.isAvailable;
-            return _StageListTile(
-              index: idx + 1,
-              stage: stage,
-              isNextPlayable: isTarget,
-              onTap: () => _openStage(chapter, stage),
+            return _StageTrailEntry(
+              index: idx,
+              isLast:
+                  idx == controller.stages.length - 1 && chapter.boss == null,
+              isActive: isTarget,
+              child: _StageListTile(
+                index: idx + 1,
+                stage: stage,
+                isNextPlayable: isTarget,
+                onTap: () => _openStage(chapter, stage),
+              ),
             );
           }),
         ] else ...[
           ...chapter.missions.asMap().entries.map((entry) {
             final idx = entry.key;
             final mission = entry.value;
-            return _MissionListTile(
-              index: idx + 1,
-              mission: mission,
-              onTap: () => _openMission(chapter, mission),
+            return _StageTrailEntry(
+              index: idx,
+              isLast:
+                  idx == chapter.missions.length - 1 && chapter.boss == null,
+              isActive: mission.state == AdventureNodeState.available ||
+                  mission.state == AdventureNodeState.inProgress,
+              child: _MissionListTile(
+                index: idx + 1,
+                mission: mission,
+                onTap: () => _openMission(chapter, mission),
+              ),
             );
           }),
         ],
@@ -1032,6 +999,51 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
       () => const ChapterAdventureScreen(),
       binding: ChapterAdventureBinding(levelId: chapter.levelId),
     )?.then((_) => controller.loadUnitOverview());
+  }
+}
+
+class _StageTrailEntry extends StatelessWidget {
+  const _StageTrailEntry({
+    required this.index,
+    required this.isLast,
+    required this.isActive,
+    required this.child,
+  });
+
+  final int index;
+  final bool isLast;
+  final bool isActive;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final left = index.isEven ? 0.0 : 30.0;
+    final right = index.isEven ? 30.0 : 0.0;
+    return Padding(
+      padding: EdgeInsets.only(left: left, right: right),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (!isLast)
+            Positioned(
+              left: index.isEven ? 30 : null,
+              right: index.isEven ? null : 30,
+              top: 82,
+              bottom: -20,
+              child: Container(
+                width: 4,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? GameVisualTokens.imperialGold
+                      : GameVisualTokens.jade.withValues(alpha: .28),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+          child,
+        ],
+      ),
+    );
   }
 }
 

@@ -242,10 +242,12 @@ class ProfileAchievements extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Center(
-              child: Text(
-                '🐼',
-                style: TextStyle(fontSize: 34),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Image.asset(
+                'assets/images/characters/panda_avatar.png',
+                fit: BoxFit.contain,
+                semanticLabel: 'Panda đồng hành',
               ),
             ),
           ),

@@ -149,7 +149,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Trung tâm Ôn luyện'), findsOneWidget);
-      expect(find.textContaining('12 MỤC CẦN ÔN HÔM NAY'), findsOneWidget);
+      expect(find.text('12 mục đang chờ'), findsOneWidget);
+      expect(find.text('SRS ưu tiên'), findsOneWidget);
       expect(find.text('Từ vựng'), findsOneWidget);
       expect(find.text('Nghe'), findsOneWidget);
       expect(find.text('Nói'), findsOneWidget);

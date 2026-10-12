@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/theme/game_visual_tokens.dart';
+import '../../../core/widgets/adventure_quest_banner.dart';
 import 'home_illustrated_card.dart';
 import 'shared_tab_background.dart';
 import 'tab_header.dart';
@@ -37,6 +39,18 @@ class HomePersonalTab extends StatelessWidget {
                     122.w + MediaQuery.viewPaddingOf(context).bottom),
                 child: Column(
                   children: [
+                    AdventureQuestBanner(
+                      eyebrow: 'Hồ sơ lữ khách',
+                      title: 'Dấu ấn hành trình của bạn',
+                      description:
+                          'Quản lý hồ sơ, Premium và công cụ học tập trong cùng một trạm nghỉ.',
+                      statusLabel: 'Tài khoản',
+                      actionLabel: 'Mở hồ sơ',
+                      onAction: onProfile,
+                      accent: GameVisualTokens.crimson,
+                      compact: true,
+                    ),
+                    SizedBox(height: 10.w),
                     HomeIllustratedCard(
                       title: 'Hồ sơ người dùng',
                       subtitle: 'Xem thông tin cá nhân\nvà xếp hạng',

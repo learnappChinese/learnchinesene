@@ -9,12 +9,18 @@ class BossVictoryContent extends StatelessWidget {
     required this.onBackToHub,
     this.xpEarned = 0,
     this.stars = 3,
+    this.score = 0,
+    this.accuracy = 0,
+    this.bestCombo = 0,
   });
 
   final VoidCallback onContinue;
   final VoidCallback onBackToHub;
   final int xpEarned;
   final int stars;
+  final int score;
+  final int accuracy;
+  final int bestCombo;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -76,7 +82,17 @@ class BossVictoryContent extends StatelessWidget {
 
           // Reward Card
           _buildRewards(),
-          const SizedBox(height: 28),
+          const SizedBox(height: 12),
+          const Text(
+            'Panda và bạn đã mở đường sang chặng tiếp theo.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              shadows: [Shadow(color: Colors.black, blurRadius: 8)],
+            ),
+          ),
+          const SizedBox(height: 22),
 
           // Primary "Tiếp tục" Button (Green)
           GameButton(
@@ -115,7 +131,7 @@ class BossVictoryContent extends StatelessWidget {
       child: Column(
         children: [
           const Text(
-            'Phần thưởng',
+            'Kết quả trận đấu',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w900,
@@ -130,20 +146,26 @@ class BossVictoryContent extends StatelessWidget {
               runSpacing: 12,
               children: [
                 _RewardBadge(
-                  icon: '🔷',
+                  icon: '⭐',
                   text: '+$xpEarned XP',
                   color: AppColors.primaryBlue,
                 ),
-                const _RewardBadge(
-                  icon: '🪙',
-                  text: '+50 coin',
-                  color: Color(0xFFD97706),
+                _RewardBadge(
+                  icon: '🎯',
+                  text: '$accuracy% đúng',
+                  color: AppColors.jade,
                 ),
-                const _RewardBadge(
-                  icon: '💎',
-                  text: '+1 gem',
-                  color: Colors.purple,
+                _RewardBadge(
+                  icon: '🏆',
+                  text: '$score điểm',
+                  color: const Color(0xFFD97706),
                 ),
+                if (bestCombo > 0)
+                  _RewardBadge(
+                    icon: '🔥',
+                    text: 'Combo x$bestCombo',
+                    color: AppColors.crimson,
+                  ),
               ],
             ),
           ),

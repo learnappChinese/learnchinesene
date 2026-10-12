@@ -164,8 +164,9 @@ void main() {
       await tester.pump();
 
       expect(find.text('你好! 👋'), findsOneWidget);
-      expect(find.text('BÀI HỌC HÔM NAY'), findsOneWidget);
-      expect(find.text('TIẾP TỤC'), findsOneWidget);
+      expect(find.text('NHIỆM VỤ TIẾP THEO'), findsOneWidget);
+      expect(find.text('Luyện phát âm'), findsOneWidget);
+      expect(find.text('TIẾP TỤC'), findsWidgets);
       expect(tester.takeException(), isNull);
     });
   });

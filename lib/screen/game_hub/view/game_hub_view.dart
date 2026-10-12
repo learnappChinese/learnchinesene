@@ -7,6 +7,8 @@ import '../../home/widgets/shared_tab_background.dart';
 import '../../home/widgets/tab_header.dart';
 import '../../home/widgets/tab_card_text.dart';
 import '../../../core/theme/learning_theme.dart';
+import '../../../core/widgets/adventure_quest_banner.dart';
+import '../../../core/widgets/panda_companion.dart';
 import 'game_journey_button.dart';
 
 /// Shared illustrated game menu for the app and the standalone game preview.
@@ -55,6 +57,30 @@ class GameHubView extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(16.w, 4.w, 16.w,
                   122.w + MediaQuery.viewPaddingOf(context).bottom),
               child: Column(children: [
+                AdventureQuestBanner(
+                  eyebrow: chapterNumber == null
+                      ? 'Sân luyện kỹ năng'
+                      : 'Chapter $chapterNumber',
+                  title: 'Panda chọn thử thách cho bạn',
+                  description: totalMissions == null || totalMissions == 0
+                      ? 'Chọn một trò chơi để rèn phản xạ, chữ Hán, thanh điệu hoặc giao tiếp.'
+                      : 'Tiến độ nhiệm vụ quyết định độ khó và phần thưởng thật của từng thử thách.',
+                  progress: totalMissions == null || totalMissions == 0
+                      ? null
+                      : (completedMissions ?? 0) / totalMissions!,
+                  progressLabel: totalMissions == null || totalMissions == 0
+                      ? null
+                      : '${completedMissions ?? 0}/$totalMissions nhiệm vụ',
+                  statusLabel:
+                      stars == null ? null : '${stars!.clamp(0, 3)} sao',
+                  actionLabel:
+                      onStageMap == null ? null : 'Xem hành trình Boss',
+                  onAction: onStageMap,
+                  mood: PandaMood.ninja,
+                  accent: const Color(0xFF7F1D24),
+                  compact: true,
+                ),
+                SizedBox(height: 12.w),
                 _GameCard(
                   title: 'Boss Battle',
                   description: 'Đánh bại Boss bằng\nkiến thức tiếng Trung!',

@@ -470,6 +470,11 @@ class _BossBattleScreenState extends State<BossBattleScreen>
       () => BossBattleVictoryScreen(
         xpEarned: reward.xpEarned,
         stars: reward.stars,
+        score: score,
+        accuracy: correctCount + wrongCount == 0
+            ? 0
+            : ((correctCount / (correctCount + wrongCount)) * 100).round(),
+        bestCombo: maxCombo,
         onContinue: () {
           Get.off(
             () => UnitCompleteScreen(
@@ -513,6 +518,13 @@ class _BossBattleScreenState extends State<BossBattleScreen>
 
     Get.off(
       () => BossBattleDefeatScreen(
+        score: score,
+        correctCount: correctCount,
+        wrongCount: wrongCount,
+        accuracy: correctCount + wrongCount == 0
+            ? 0
+            : ((correctCount / (correctCount + wrongCount)) * 100).round(),
+        bossHp: bossHp,
         onRetry: () {
           Get.off(() => BossBattleScreen(stage: widget.stage));
         },

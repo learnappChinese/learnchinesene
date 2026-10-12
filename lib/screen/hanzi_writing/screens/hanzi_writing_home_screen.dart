@@ -8,7 +8,8 @@ import '../../../core/models/hanzi_character.dart';
 import '../../../core/widgets/learning_scene_background.dart';
 import '../../../core/widgets/learning_scaffold.dart';
 import '../../../core/learning/model/learning_source_context.dart';
-import '../../../core/theme/learning_theme.dart';
+import '../../../core/widgets/adventure_quest_banner.dart';
+import '../../../core/widgets/panda_companion.dart';
 import 'hanzi_writing_screen.dart';
 
 class HanziWritingHomeScreen extends StatefulWidget {
@@ -204,39 +205,20 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
           .length;
       return Column(
         children: [
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            padding: const EdgeInsets.all(LearningSpacing.md),
-            decoration: BoxDecoration(
-              color: LearningColors.jadeDark,
-              borderRadius: LearningRadius.card,
-              boxShadow: LearningShadow.card,
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.gesture_rounded,
-                    color: LearningColors.gold, size: 38),
-                const SizedBox(width: LearningSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('TODAY\'S HANZI MISSION',
-                          style: LearningTypography.eyebrow
-                              .copyWith(color: LearningColors.gold)),
-                      const SizedBox(height: 3),
-                      Text(
-                        due == 0
-                            ? 'Chọn một chữ mới để luyện'
-                            : '$due chữ cần luyện hôm nay',
-                        style: LearningTypography.cardTitle
-                            .copyWith(color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: AdventureQuestBanner(
+              eyebrow: 'Nhiệm vụ Hán tự',
+              title: due == 0
+                  ? 'Chọn một chữ mới để luyện'
+                  : '$due chữ cần luyện hôm nay',
+              description:
+                  'Panda sẽ hướng dẫn theo đúng thứ tự nét. Chọn chữ có dữ liệu thật để bắt đầu.',
+              statusLabel: _selectedHskLevel == null
+                  ? 'Tất cả HSK'
+                  : 'HSK $_selectedHskLevel',
+              mood: PandaMood.thinking,
+              compact: true,
             ),
           ),
           _buildSearchField(),

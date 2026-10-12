@@ -24,6 +24,7 @@ class HomeLearningTab extends StatelessWidget {
     this.onHanzi,
     this.onSpeaking,
     this.onFlashcards,
+    this.onHsk,
   });
 
   final VoidCallback onPractice, onVocabulary, onLessons, onConversation;
@@ -35,6 +36,7 @@ class HomeLearningTab extends StatelessWidget {
   final VoidCallback? onHanzi;
   final VoidCallback? onSpeaking;
   final VoidCallback? onFlashcards;
+  final VoidCallback? onHsk;
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +86,9 @@ class HomeLearningTab extends StatelessWidget {
     final progress = j?.chapterProgress ?? 0.0;
     final completed = j?.completedMissions ?? 0;
     final total = j?.totalMissions ?? 1;
+    final actionLabel = j?.nextAction?.label.trim().isNotEmpty == true
+        ? j!.nextAction!.label.trim().toUpperCase()
+        : 'VÀO BẢN ĐỒ ẢI';
 
     return Container(
       decoration: BoxDecoration(
@@ -200,6 +205,41 @@ class HomeLearningTab extends StatelessWidget {
               ),
             ],
           ),
+          SizedBox(height: 10.w),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.w),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .1),
+              borderRadius: BorderRadius.circular(14.r),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Row(
+              children: [
+                Image.asset(
+                  'assets/images/characters/home_panda_peek.png',
+                  width: 38.w,
+                  height: 38.w,
+                  fit: BoxFit.contain,
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: Text(
+                    j?.nextAction?.description.trim().isNotEmpty == true
+                        ? j!.nextAction!.description.trim()
+                        : 'Panda đã đánh dấu ải phù hợp nhất với tiến độ hiện tại của bạn.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.5.sp,
+                      height: 1.3,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           SizedBox(height: 14.w),
           Row(
             children: [
@@ -228,7 +268,7 @@ class HomeLearningTab extends StatelessWidget {
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
-                            'VÀO BẢN ĐỒ ẢI',
+                            actionLabel,
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 13.sp,
@@ -244,22 +284,29 @@ class HomeLearningTab extends StatelessWidget {
               ),
               if (onSections != null) ...[
                 SizedBox(width: 8.w),
-                OutlinedButton(
+                ElevatedButton.icon(
                   onPressed: onSections,
-                  style: OutlinedButton.styleFrom(
+                  style: ElevatedButton.styleFrom(
                     minimumSize: Size(0, 44.w),
+                    backgroundColor: Colors.white.withValues(alpha: .2),
                     foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white38),
+                    elevation: 0,
+                    side: const BorderSide(color: Colors.white54, width: 1.2),
                     padding:
-                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.w),
+                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.w),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                   ),
-                  child: Text(
-                    'Các vùng',
-                    style:
-                        TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
+                  icon: const Icon(Icons.map_rounded,
+                      size: 16, color: GameVisualTokens.goldLight),
+                  label: Text(
+                    'BẢN ĐỒ THẾ GIỚI',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ],

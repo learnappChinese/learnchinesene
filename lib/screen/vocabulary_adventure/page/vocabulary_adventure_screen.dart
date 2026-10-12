@@ -208,7 +208,14 @@ class _VocabularyMissionComplete extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: GameVisualTokens.night,
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  GameVisualTokens.parchment,
+                  GameVisualTokens.creamStrong,
+                ],
+              ),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(
                 color: isBossGate
@@ -224,8 +231,10 @@ class _VocabularyMissionComplete extends StatelessWidget {
                 Text(
                   isPassed ? 'HOÀN THÀNH NHIỆM VỤ' : 'CHƯA ĐẠT',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: GameVisualTokens.goldLight,
+                  style: TextStyle(
+                    color: isPassed
+                        ? GameVisualTokens.jade
+                        : GameVisualTokens.crimson,
                     fontSize: 23,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.2,
@@ -253,6 +262,33 @@ class _VocabularyMissionComplete extends StatelessWidget {
                           ? 'Cổng Boss đã mở! Hãy chuẩn bị chiến đấu!'
                           : 'Bạn đã biến từ mới thành kỹ năng rồi!')
                       : 'Đừng nản lòng, hãy cùng gấu trúc thử lại nhé!',
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (isPassed
+                            ? GameVisualTokens.jade
+                            : GameVisualTokens.crimson)
+                        .withValues(alpha: .09),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    isPassed
+                        ? 'Panda đã lưu kết quả thật. Hãy xem XP, độ chính xác và từ đã thành thạo trước khi đi tiếp.'
+                        : 'Độ chính xác hiện tại là $accuracy%. Ôn lại các đáp án vừa sai rồi thử lại để đạt mốc nhiệm vụ.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: GameVisualTokens.ink,
+                      fontSize: 12,
+                      height: 1.35,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -294,7 +330,7 @@ class _VocabularyMissionComplete extends StatelessWidget {
                   child: const Text(
                     'VỀ BẢN ĐỒ',
                     style: TextStyle(
-                      color: Colors.white70,
+                      color: GameVisualTokens.templeWood,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.1,
                     ),
@@ -320,9 +356,11 @@ class _RewardMetric extends StatelessWidget {
         width: 112,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: .08),
+          color: Colors.white.withValues(alpha: .78),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white12),
+          border: Border.all(
+            color: GameVisualTokens.imperialGold.withValues(alpha: .28),
+          ),
         ),
         child: Column(
           children: [
@@ -330,7 +368,7 @@ class _RewardMetric extends StatelessWidget {
               label,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Colors.white60,
+                color: GameVisualTokens.muted,
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
               ),
@@ -339,7 +377,7 @@ class _RewardMetric extends StatelessWidget {
             Text(
               value,
               style: const TextStyle(
-                color: GameVisualTokens.goldLight,
+                color: GameVisualTokens.ink,
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
               ),
