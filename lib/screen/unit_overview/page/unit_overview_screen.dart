@@ -328,6 +328,8 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
                 onPressed: () => _openBossGateModal(chapter),
                 style: FilledButton.styleFrom(
                   backgroundColor: GameVisualTokens.crimson,
+                  minimumSize: const Size(0, 36),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
@@ -688,6 +690,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
             gameCode: stage.sourceGameCode ?? 'select_answer',
             levelId: targetLevelId,
             gameName: stage.title,
+            unitId: stage.unitId.isNotEmpty ? stage.unitId : chapter.unitId,
             chapterNumber: chapter.chapterNumber,
             missionNumber: controller.stages.indexOf(stage) + 1,
             missionCount: controller.stages.length,
@@ -777,6 +780,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
         gameCode: mission.gameCode,
         levelId: chapter.levelId,
         gameName: mission.title,
+        unitId: chapter.unitId,
         chapterNumber: chapter.chapterNumber,
         missionNumber: chapter.missions.indexOf(mission) + 1,
         missionCount: chapter.missions.length,
@@ -1170,8 +1174,8 @@ class _MissionListTile extends StatelessWidget {
                     children: [
                       Text(
                         'Mission $index: ${mission.title}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                        softWrap: true,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -1183,10 +1187,10 @@ class _MissionListTile extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         mission.description,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 3,
+                        softWrap: true,
                         style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade600),
+                            fontSize: 12, height: 1.3, color: Colors.grey.shade600),
                       ),
                     ],
                   ),
@@ -1418,7 +1422,11 @@ class _StageListTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
+                      // Hàng nhãn: Ải số và Mục tiêu
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -1446,8 +1454,7 @@ class _StageListTile extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (isNextPlayable) ...[
-                            const SizedBox(width: 6),
+                          if (isNextPlayable)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
@@ -1466,33 +1473,36 @@ class _StageListTile extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          ],
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              stage.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: isLocked
-                                    ? Colors.grey.shade600
-                                    : GameVisualTokens.templeWood,
-                              ),
-                            ),
-                          ),
                         ],
                       ),
+                      const SizedBox(height: 5),
+                      // Tên Ải: đứng riêng một dòng để không bị co ép hay ẩn mất
+                      Text(
+                        stage.title,
+                        maxLines: 2,
+                        softWrap: true,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          height: 1.25,
+                          color: isLocked
+                              ? Colors.grey.shade600
+                              : GameVisualTokens.templeWood,
+                        ),
+                      ),
                       const SizedBox(height: 3),
+                      // Mô tả Ải: cho phép xuống dòng (tối đa 3 dòng) không bị cắt ngắn '...'
                       Text(
                         stage.subtitle.isNotEmpty
                             ? stage.subtitle
                             : stage.learningObjective,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 3,
+                        softWrap: true,
                         style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade600),
+                          fontSize: 12,
+                          height: 1.3,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Wrap(

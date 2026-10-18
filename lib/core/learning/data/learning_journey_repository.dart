@@ -214,6 +214,10 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
           store: _guestStore,
           isSectionUnlocked: isSectionUnlocked,
           previousSectionLastUnitId: prevSectionLastUnitId,
+          masteryLoader: (uId) async {
+            final m = await _progressRepo.fetchUnitMastery(uId);
+            return m.overall;
+          },
         );
       } catch (_) {}
     }

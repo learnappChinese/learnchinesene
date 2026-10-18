@@ -247,6 +247,7 @@ class DuoGameRunnerController extends GetxController {
           reward.score.toInt(),
           reward.stars,
           reward.passed,
+          unitId: resolvedUnitId,
         );
 
         if (reward.passed) await _unlockNextGuestLevel(reward);

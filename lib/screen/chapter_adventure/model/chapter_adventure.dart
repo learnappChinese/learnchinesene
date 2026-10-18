@@ -40,6 +40,38 @@ class ChapterAdventure {
 
   double get progress =>
       missions.isEmpty ? 0 : completedMissions / missions.length;
+
+  ChapterAdventure copyWith({
+    String? levelId,
+    String? unitId,
+    int? regionNumber,
+    int? chapterNumber,
+    String? title,
+    String? objective,
+    List<ChapterMission>? missions,
+    double? overallMastery,
+    bool? bossUnlocked,
+    String? bossLockReason,
+    String? bossRequiredNodeId,
+    double? bossRequiredMastery,
+    BossBattleStage? boss,
+  }) {
+    return ChapterAdventure(
+      levelId: levelId ?? this.levelId,
+      unitId: unitId ?? this.unitId,
+      regionNumber: regionNumber ?? this.regionNumber,
+      chapterNumber: chapterNumber ?? this.chapterNumber,
+      title: title ?? this.title,
+      objective: objective ?? this.objective,
+      missions: missions ?? this.missions,
+      overallMastery: overallMastery ?? this.overallMastery,
+      bossUnlocked: bossUnlocked ?? this.bossUnlocked,
+      bossLockReason: bossLockReason ?? this.bossLockReason,
+      bossRequiredNodeId: bossRequiredNodeId ?? this.bossRequiredNodeId,
+      bossRequiredMastery: bossRequiredMastery ?? this.bossRequiredMastery,
+      boss: boss ?? this.boss,
+    );
+  }
 }
 
 class ChapterMission {

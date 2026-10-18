@@ -23,6 +23,7 @@ class DuoGameRunnerScreen extends StatefulWidget {
   final String gameCode;
   final String levelId;
   final String gameName;
+  final String? unitId;
   final int chapterNumber;
   final int missionNumber;
   final int missionCount;
@@ -33,6 +34,7 @@ class DuoGameRunnerScreen extends StatefulWidget {
     required this.gameCode,
     required this.levelId,
     required this.gameName,
+    this.unitId,
     this.chapterNumber = 1,
     this.missionNumber = 1,
     this.missionCount = 1,
@@ -49,12 +51,15 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
   void initState() {
     super.initState();
     final tag = '${widget.gameId}_${widget.levelId}';
+    final resolvedUnit = widget.unitId != null && widget.unitId!.isNotEmpty
+        ? widget.unitId!
+        : 'unit_${widget.chapterNumber}';
     controller = Get.put(
       DuoGameRunnerController(
         gameId: widget.gameId,
         gameCode: widget.gameCode,
         levelId: widget.levelId,
-        unitId: 'unit_${widget.chapterNumber}',
+        unitId: resolvedUnit,
       ),
       tag: tag,
     );
@@ -294,11 +299,27 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
           if (controller.isAnsweredCorrectly.value != null)
             DuoAnswerFeedback(
                 correct: controller.isAnsweredCorrectly.value!,
-                solution:
-                    challenge is DuoChallenge ? challenge.solutions : null,
+                solution: _resolveSolution(challenge),
                 onContinue: controller.nextChallenge),
         ],
       );
     });
+  }
+
+  String? _resolveSolution(dynamic challenge) {
+    if (challenge is! DuoChallenge) return null;
+    if (challenge.solutions != null && challenge.solutions!.trim().isNotEmpty) {
+      return challenge.solutions;
+    }
+    if (challenge.tokensText != null && challenge.tokensText!.isNotEmpty) {
+      final text = challenge.tokensText!
+          .where((t) => t.trim().isNotEmpty)
+          .join('');
+      if (text.isNotEmpty) return text;
+    }
+    if (challenge.prompt != null && challenge.prompt!.trim().isNotEmpty) {
+      return challenge.prompt;
+    }
+    return null;
   }
 }

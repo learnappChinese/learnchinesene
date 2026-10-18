@@ -476,13 +476,73 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
   Future<UnitMastery> _fetchLocalUnitMastery(String unitId) async {
     final prefs = await _getPrefs;
     final attempts = _readJsonList(prefs, _localAttemptsKey);
+    final normUnit =
+        unitId.replaceAll('unit_', '').replaceAll('_duo', '').trim();
     final unitAttempts = attempts.where((row) {
-      final matchesUnit = row['unit_id'] == unitId;
       final status = '${row['status'] ?? ''}';
-      return matchesUnit && (status == 'passed' || status == 'failed');
+      if (status != 'passed' && status != 'failed') return false;
+      final storedUnit = '${row['unit_id'] ?? ''}'.trim();
+      if (storedUnit.isNotEmpty) {
+        if (storedUnit == unitId) return true;
+        final normStored =
+            storedUnit.replaceAll('unit_', '').replaceAll('_duo', '').trim();
+        if (normStored == normUnit) return true;
+      }
+      final levelId = '${row['level_id'] ?? ''}'.trim();
+      if (levelId.startsWith(unitId) ||
+          (normUnit.isNotEmpty &&
+              (levelId.startsWith('unit_$normUnit') ||
+                  levelId.startsWith('${normUnit}_')))) {
+        return true;
+      }
+      return false;
     }).toList();
 
-    if (unitAttempts.isEmpty) return const UnitMastery();
+    if (unitAttempts.isEmpty) {
+      final passedKeys = await _guestStore.getAllPassedStageKeys();
+      final stages = <Map<String, dynamic>>[];
+      for (final key in passedKeys) {
+        final parts = key.split(':');
+        if (parts.length == 2) {
+          final gId = int.tryParse(parts[0]) ?? 0;
+          final lId = parts[1];
+          final rec = await _guestStore.getStageRecord(gId, lId);
+          if (rec != null) {
+            final storedUnit = '${rec['unit_id'] ?? ''}'.trim();
+            final normStored = storedUnit
+                .replaceAll('unit_', '')
+                .replaceAll('_duo', '')
+                .trim();
+            if (storedUnit == unitId ||
+                (normUnit.isNotEmpty && normStored == normUnit) ||
+                lId.startsWith(unitId) ||
+                (normUnit.isNotEmpty &&
+                    (lId.startsWith('unit_$normUnit') ||
+                        lId.startsWith('${normUnit}_')))) {
+              stages.add(rec);
+            }
+          }
+        }
+      }
+      if (stages.isNotEmpty) {
+        final avgScore = stages
+                .map((s) => (s['score'] as num?)?.toDouble() ?? 70.0)
+                .reduce((a, b) => a + b) /
+            stages.length;
+        final derivedMastery = (avgScore / 100).clamp(0.0, 1.0);
+        final bossWon = await _guestStore.isBossWon(unitId);
+        return UnitMastery(
+          overall: derivedMastery,
+          vocabulary: derivedMastery,
+          allRequiredMissionsPassed: false,
+          bossWon: bossWon,
+          state: bossWon
+              ? UnitCompletionState.completed
+              : UnitCompletionState.inProgress,
+        );
+      }
+      return const UnitMastery();
+    }
 
     final bestBySource = <String, double>{};
     final sourceSkill = <String, String>{};

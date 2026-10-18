@@ -937,8 +937,8 @@ class LearningStageGroupingService {
     final bossName = '${rawBossStage['boss_name'] ?? 'Thần Thú Bảo Vệ'}';
     final questionCount =
         (rawBossStage['question_count'] as num?)?.toInt() ?? 8;
-    final bossHp = (rawBossStage['boss_hp'] as num?)?.toInt() ?? 100;
-    final playerHp = (rawBossStage['player_hp'] as num?)?.toInt() ?? 100;
+    final bossHp = (rawBossStage['boss_hp'] as num?)?.toInt() ?? 300;
+    final playerHp = (rawBossStage['player_hp'] as num?)?.toInt() ?? 200;
     final difficulty = (rawBossStage['difficulty'] as num?)?.toInt() ?? 1;
 
     final bossStageData = BossBattleStage(

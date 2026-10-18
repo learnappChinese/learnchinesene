@@ -330,9 +330,27 @@ class GuestLearningProgressStore {
     await ensureMigrated();
     final prefs = await _getPrefs;
     final stageMap = _readMap(prefs, _completedStagesKey);
-    return stageMap.values
-        .where((v) => v is Map && v['unit_id'] == unitId && v['passed'] == true)
-        .length;
+    final normUnit = unitId.replaceAll('unit_', '').replaceAll('_duo', '').trim();
+
+    return stageMap.values.where((v) {
+      if (v is! Map || v['passed'] != true) return false;
+      final storedUnit = '${v['unit_id'] ?? ''}'.trim();
+      if (storedUnit.isNotEmpty) {
+        if (storedUnit == unitId) return true;
+        final normStored =
+            storedUnit.replaceAll('unit_', '').replaceAll('_duo', '').trim();
+        if (normStored == normUnit) return true;
+      }
+      // Fallback check level_id (e.g. 'unit_1_stage_2' or '1_2')
+      final levelId = '${v['level_id'] ?? ''}'.trim();
+      if (levelId.startsWith(unitId) ||
+          (normUnit.isNotEmpty &&
+              (levelId.startsWith('unit_$normUnit') ||
+                  levelId.startsWith('${normUnit}_')))) {
+        return true;
+      }
+      return false;
+    }).length;
   }
 
   Map<String, dynamic> _readMap(SharedPreferences prefs, String key) {

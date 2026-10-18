@@ -352,40 +352,44 @@ class _UnitCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          '${unit.completedMissionCount} / ${unit.missionCount} nhiệm vụ',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isLocked
-                                ? Colors.grey
-                                : GameVisualTokens.templeWood,
-                          ),
-                        ),
-                        if (!isLocked) ...[
-                          const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: GameVisualTokens.imperialGold
-                                  .withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            '${unit.completedMissionCount} / ${unit.missionCount} nhiệm vụ',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isLocked
+                                  ? Colors.grey
+                                  : GameVisualTokens.templeWood,
                             ),
-                            child: Text(
-                              'Mastery ${(unit.mastery * 100).round()}%',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                                color: GameVisualTokens.gold,
+                          ),
+                          if (!isLocked)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: GameVisualTokens.imperialGold
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'Mastery ${(unit.mastery * 100).round()}%',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  color: GameVisualTokens.gold,
+                                ),
                               ),
                             ),
-                          ),
                         ],
-                      ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     _buildActionButton(),
                   ],
                 ),

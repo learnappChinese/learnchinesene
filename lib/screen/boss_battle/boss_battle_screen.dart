@@ -8,11 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
+import '../../core/database/db_helper.dart';
 import '../../core/learning/model/learning_navigation_outcome.dart';
 import '../../core/learning/service/learning_reward_service.dart';
-import 'model/boss_battle_stage.dart';
+import '../../core/models/speaking_practice_item.dart';
+import '../dragon_panda/screens/boss_battle/view/boss_battle_arena.dart';
 import '../dragon_panda/screens/boss_battle/widgets/boss_battle_gameplay_widgets.dart';
 import '../unit_overview/page/unit_complete_screen.dart';
+import 'model/boss_battle_stage.dart';
 
 enum _ActorState { idle, attacking, hurt }
 
@@ -83,6 +86,9 @@ class _BossBattleScreenState extends State<BossBattleScreen>
   late final AnimationController _ticker;
   double _gameTime = 0.0;
 
+  final BossBattleArenaController _arenaController =
+      BossBattleArenaController();
+
   ui.Image? _bgImage;
   ui.Image? _pandaImage;
   ui.Image? _dragonImage;
@@ -109,11 +115,16 @@ class _BossBattleScreenState extends State<BossBattleScreen>
       ),
     );
     _initQuestions();
-    maxBossHp = widget.stage != null ? widget.stage!.bossHp : 500;
-    bossHp = widget.stage != null ? (widget.stage!.bossHp * 0.64).toInt() : 320;
-    playerHp = widget.stage != null ? widget.stage!.playerHp : 180;
+    final int stageLevel =
+        widget.stage?.stageOrder ?? widget.stage?.difficulty ?? 1;
+    maxBossHp = 250 + (stageLevel * 60);
+    bossHp = maxBossHp;
+    playerHp = maxPlayerHp;
+    combo = 0;
+    maxCombo = 0;
     _initTts();
     _loadImages();
+    _loadQuestionsFromDb();
 
     _ticker = AnimationController(
       vsync: this,
@@ -215,6 +226,62 @@ class _BossBattleScreenState extends State<BossBattleScreen>
     ];
   }
 
+  Future<void> _loadQuestionsFromDb() async {
+    try {
+      final List<SpeakingPracticeItem> items =
+          await DbHelper.instance.getRandomSpeakingItems(limit: 30);
+      if (items.length >= 4) {
+        final random = math.Random();
+        final List<_BattleQuestion> dynamicQuestions = [];
+
+        for (int i = 0; i < items.length; i++) {
+          final target = items[i];
+          final otherItems = items
+              .where((it) => it.targetText != target.targetText)
+              .toList()
+            ..shuffle(random);
+
+          if (otherItems.length >= 3) {
+            final opts = [
+              _BattleAnswer(hanzi: target.targetText, pinyin: target.pinyin),
+              _BattleAnswer(
+                hanzi: otherItems[0].targetText,
+                pinyin: otherItems[0].pinyin,
+              ),
+              _BattleAnswer(
+                hanzi: otherItems[1].targetText,
+                pinyin: otherItems[1].pinyin,
+              ),
+              _BattleAnswer(
+                hanzi: otherItems[2].targetText,
+                pinyin: otherItems[2].pinyin,
+              ),
+            ]..shuffle(random);
+
+            final correctIdx =
+                opts.indexWhere((o) => o.hanzi == target.targetText);
+
+            dynamicQuestions.add(_BattleQuestion(
+              prompt: target.meaning.isNotEmpty
+                  ? target.meaning
+                  : target.targetText,
+              answers: opts,
+              correctIndex: correctIdx >= 0 ? correctIdx : 0,
+            ));
+          }
+          if (dynamicQuestions.length >= 10) break;
+        }
+
+        if (dynamicQuestions.isNotEmpty && mounted) {
+          setState(() {
+            _questions.clear();
+            _questions.addAll(dynamicQuestions);
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
   Future<void> _initTts() async {
     try {
       await _tts.setLanguage('zh-CN');
@@ -247,7 +314,6 @@ class _BossBattleScreenState extends State<BossBattleScreen>
     });
 
     if (isCorrect) {
-      // PANDA SHOOTS ARROW TO DRAGON (-120)
       setState(() {
         combo += 1;
         if (combo > maxCombo) maxCombo = combo;
@@ -256,6 +322,7 @@ class _BossBattleScreenState extends State<BossBattleScreen>
         feedbackText = 'Chính xác!';
         pandaState = _ActorState.attacking;
       });
+      _arenaController.playBearAttack();
 
       Timer(const Duration(milliseconds: 220), () {
         if (!mounted) return;
@@ -271,13 +338,15 @@ class _BossBattleScreenState extends State<BossBattleScreen>
           currentStep++;
           if (currentStep >= steps) {
             timer.cancel();
+            final damage = (90 + (combo * 15)).clamp(80, 220);
             setState(() {
               arrowProgress = 1.0;
               isArrowActive = false;
               pandaState = _ActorState.idle;
               dragonState = _ActorState.hurt;
-              bossHp = (bossHp - 120).clamp(0, maxBossHp);
-              _addFloatingDamage('-120', const Color(0xFFFFD54F), true);
+              cameraShakeOffset = const Offset(5, -4);
+              bossHp = (bossHp - damage).clamp(0, maxBossHp);
+              _addFloatingDamage('-$damage', const Color(0xFFFFD54F), true);
             });
 
             _runCameraShake(7.0, 200);
@@ -312,13 +381,15 @@ class _BossBattleScreenState extends State<BossBattleScreen>
         });
       });
     } else {
-      // DRAGON BREATHES FIRE TO PANDA (-30)
+      final int stageLevel =
+          widget.stage?.stageOrder ?? widget.stage?.difficulty ?? 1;
       setState(() {
         combo = 0;
         wrongCount += 1;
         feedbackText = 'Sai rồi!';
         dragonMouthGlow = 0.8;
       });
+      _arenaController.playDragonAttack();
 
       // Dragon Charge -> Fire Stream
       Timer(const Duration(milliseconds: 200), () {
@@ -338,13 +409,14 @@ class _BossBattleScreenState extends State<BossBattleScreen>
           currentStep++;
           if (currentStep >= steps) {
             timer.cancel();
+            final dragonDmg = (25 + (stageLevel * 5)).clamp(25, 60);
             setState(() {
               fireProgress = 1.0;
               isFireActive = false;
               dragonState = _ActorState.idle;
               pandaState = _ActorState.hurt;
-              playerHp = (playerHp - 30).clamp(0, maxPlayerHp);
-              _addFloatingDamage('-30', const Color(0xFFFF5252), false);
+              playerHp = (playerHp - dragonDmg).clamp(0, maxPlayerHp);
+              _addFloatingDamage('-$dragonDmg', const Color(0xFFFF5252), false);
             });
 
             _runCameraShake(11.0, 220);
@@ -555,6 +627,7 @@ class _BossBattleScreenState extends State<BossBattleScreen>
     battleTimer?.cancel();
     _damageTimer?.cancel();
     _ticker.dispose();
+    _arenaController.dispose();
     _bgImage?.dispose();
     _pandaImage?.dispose();
     _dragonImage?.dispose();
@@ -596,21 +669,25 @@ class _BossBattleScreenState extends State<BossBattleScreen>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          CustomPaint(
-            painter: _BattleArenaCanvasPainter(
-              bgImage: _bgImage,
-              pandaImage: _pandaImage,
-              dragonImage: _dragonImage,
-              pandaState: pandaState,
-              dragonState: dragonState,
-              isArrowActive: isArrowActive,
-              arrowProgress: arrowProgress,
-              isFireActive: isFireActive,
-              fireProgress: fireProgress,
-              dragonMouthGlow: dragonMouthGlow,
-              cameraShakeOffset: cameraShakeOffset,
-              floatingDamages: _floatingDamages,
-              gameTime: _gameTime,
+          BossBattleArena(
+            controller: _arenaController,
+            cameraShakeOffset: cameraShakeOffset,
+            fallback: CustomPaint(
+              painter: _BattleArenaCanvasPainter(
+                bgImage: _bgImage,
+                pandaImage: _pandaImage,
+                dragonImage: _dragonImage,
+                pandaState: pandaState,
+                dragonState: dragonState,
+                isArrowActive: isArrowActive,
+                arrowProgress: arrowProgress,
+                isFireActive: isFireActive,
+                fireProgress: fireProgress,
+                dragonMouthGlow: dragonMouthGlow,
+                cameraShakeOffset: cameraShakeOffset,
+                floatingDamages: _floatingDamages,
+                gameTime: _gameTime,
+              ),
             ),
           ),
 

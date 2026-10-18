@@ -151,8 +151,20 @@ class DuoGameRepository {
 
   // --- LƯU TRỮ TIẾN TRÌNH ---
   Future<void> saveProgress(
-      int gameId, String levelId, int score, int stars, bool passed) async {
-    await DuoDbHelper.instance
-        .saveLevelProgress(gameId, levelId, score, stars, passed);
+    int gameId,
+    String levelId,
+    int score,
+    int stars,
+    bool passed, {
+    String? unitId,
+  }) async {
+    await DuoDbHelper.instance.saveLevelProgress(
+      gameId,
+      levelId,
+      score,
+      stars,
+      passed,
+      unitId: unitId,
+    );
   }
 }

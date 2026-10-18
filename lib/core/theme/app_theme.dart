@@ -79,7 +79,7 @@ abstract final class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.jade,
           foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(50),
+          minimumSize: const Size(64, 48),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(GameVisualTokens.radiusM),
@@ -183,7 +183,7 @@ abstract final class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: const Color(0xFFFFA329),
           foregroundColor: const Color(0xFF3E2100),
-          minimumSize: const Size.fromHeight(50),
+          minimumSize: const Size(64, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(GameVisualTokens.radiusM),
           ),

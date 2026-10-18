@@ -1,7 +1,7 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import '../../../core/models/duo_challenge.dart';
 import '../../../core/theme/app_colors.dart';
-import 'package:get/get.dart';
 
 class DuoSentenceBuilderWidget extends StatefulWidget {
   final DuoChallenge challenge;
@@ -22,12 +22,41 @@ class DuoSentenceBuilderWidget extends StatefulWidget {
 
 class _DuoSentenceBuilderWidgetState extends State<DuoSentenceBuilderWidget> {
   final List<int> selectedIndices = [];
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.challenge.type == 'listenTap') {
+      _playAudio();
+    }
+  }
 
   @override
   void didUpdateWidget(DuoSentenceBuilderWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.challenge.id != widget.challenge.id) {
       selectedIndices.clear();
+      if (widget.challenge.type == 'listenTap') {
+        _playAudio();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _playAudio() async {
+    final tts = widget.challenge.tts;
+    if (tts == null || tts.trim().isEmpty) return;
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.play(UrlSource(tts.trim()));
+    } catch (e) {
+      debugPrint('[DuoSentenceBuilderWidget] Failed to play audio: $e');
     }
   }
 
@@ -75,67 +104,92 @@ class _DuoSentenceBuilderWidgetState extends State<DuoSentenceBuilderWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 10),
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 10),
 
-          if (widget.challenge.type == 'translate' ||
-              widget.challenge.type == 'orderTapComplete') ...[
-            const Text('Dịch câu sau:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Text(
-              widget.challenge.prompt ?? widget.challenge.solutions ?? '',
-              style: const TextStyle(fontSize: 24, color: AppColors.red),
-            ),
-          ] else if (widget.challenge.type == 'listenTap') ...[
-            const Text('Nghe và xếp câu:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            Center(
-              child: InkWell(
-                onTap: () {
-                  Get.snackbar(
-                      'Audio', 'Phát âm thanh từ: ${widget.challenge.tts}',
-                      snackPosition: SnackPosition.TOP);
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                      color: AppColors.orange, shape: BoxShape.circle),
-                  child: const Icon(Icons.volume_up_rounded,
-                      color: Colors.white, size: 48),
-                ),
+                  if (widget.challenge.type == 'translate' ||
+                      widget.challenge.type == 'orderTapComplete') ...[
+                    const Text(
+                      'Dịch câu sau:',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      widget.challenge.prompt ??
+                          widget.challenge.solutions ??
+                          '',
+                      style:
+                          const TextStyle(fontSize: 24, color: AppColors.red),
+                    ),
+                  ] else if (widget.challenge.type == 'listenTap') ...[
+                    const Text(
+                      'Nghe và xếp câu:',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: InkWell(
+                        onTap: _playAudio,
+                        borderRadius: BorderRadius.circular(40),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: const BoxDecoration(
+                            color: AppColors.orange,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.volume_up_rounded,
+                            color: Colors.white,
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 20),
+
+                  // Vùng xếp từ (Selected Words)
+                  _buildSelectedWords(choices),
+
+                  const SizedBox(height: 24),
+
+                  // Vùng Word Bank (Available Words)
+                  _buildWordBank(choices),
+
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
-          ],
-
-          const SizedBox(height: 40),
-
-          // Vùng xếp từ (Selected Words)
-          _buildSelectedWords(choices),
-
-          const SizedBox(height: 40),
-
-          // Vùng Word Bank (Available Words)
-          _buildWordBank(choices),
-
-          const Spacer(),
+          ),
 
           if (!widget.isAnswered)
             ElevatedButton(
               onPressed: selectedIndices.isNotEmpty ? handleCheck : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
-                minimumSize: const Size(double.infinity, 56),
+                minimumSize: const Size(double.infinity, 54),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
-              child: const Text('Kiểm tra',
-                  style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Kiểm tra',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -143,7 +197,7 @@ class _DuoSentenceBuilderWidgetState extends State<DuoSentenceBuilderWidget> {
 
   Widget _buildSelectedWords(List<String> choices) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 100),
+      constraints: const BoxConstraints(minHeight: 70),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         border:
@@ -176,13 +230,17 @@ class _DuoSentenceBuilderWidgetState extends State<DuoSentenceBuilderWidget> {
         return InkWell(
           onTap: isSelected ? null : () => toggleSelection(idx),
           child: Chip(
-            label: Text(choices[idx],
-                style: TextStyle(
-                    fontSize: 18,
-                    color: isSelected ? Colors.transparent : Colors.black)),
+            label: Text(
+              choices[idx],
+              style: TextStyle(
+                fontSize: 18,
+                color: isSelected ? Colors.transparent : Colors.black,
+              ),
+            ),
             backgroundColor: isSelected ? Colors.grey.shade200 : Colors.white,
             side: BorderSide(
-                color: isSelected ? Colors.transparent : Colors.grey),
+              color: isSelected ? Colors.transparent : Colors.grey,
+            ),
           ),
         );
       }),

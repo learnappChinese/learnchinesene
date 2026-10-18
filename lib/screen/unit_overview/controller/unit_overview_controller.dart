@@ -90,7 +90,20 @@ class UnitOverviewController extends GetxController {
         errorMessage.value = 'Không tìm thấy dữ liệu cho bài học này.';
       } else {
         if (journey != null) {
-          chapter.value = journey;
+          double effectiveMastery = journey.overallMastery;
+          if (effectiveMastery <= 0.0 && loadedStages.isNotEmpty) {
+            final completed =
+                loadedStages.where((s) => s.isCompleted).toList();
+            if (completed.isNotEmpty) {
+              final sumMastery = completed.fold<double>(
+                0.0,
+                (sum, s) => sum + (s.mastery > 0 ? s.mastery : 0.7),
+              );
+              effectiveMastery =
+                  (sumMastery / completed.length).clamp(0.0, 1.0);
+            }
+          }
+          chapter.value = journey.copyWith(overallMastery: effectiveMastery);
           if (unitTitle.isEmpty) {
             unitTitle = journey.title;
           }
@@ -104,9 +117,15 @@ class UnitOverviewController extends GetxController {
           final allReqDone = loadedStages
               .where((s) => s.isRequired)
               .every((s) => s.isCompleted);
-          final avgMastery =
-              loadedStages.map((s) => s.mastery).reduce((a, b) => a + b) /
-                  loadedStages.length;
+          final completedStages =
+              loadedStages.where((s) => s.isCompleted).toList();
+          final avgMastery = completedStages.isNotEmpty
+              ? (completedStages
+                          .map((s) => s.mastery)
+                          .reduce((a, b) => a + b) /
+                      completedStages.length)
+                  .clamp(0.0, 1.0)
+              : 0.0;
           chapter.value = ChapterAdventure(
             levelId: unitId,
             unitId: unitId,

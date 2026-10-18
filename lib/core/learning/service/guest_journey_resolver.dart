@@ -89,9 +89,27 @@ class GuestJourneyResolver {
         'attempts': stageRecord?['attempts'] ?? row['attempts'] ?? 0,
         'best_score': stageRecord?['score'] ?? row['best_score'] ?? 0,
         'stars': stageRecord?['stars'] ?? row['stars'] ?? 0,
-        'overall_mastery': overallMastery,
         if (lockReason != null) 'lock_reason': lockReason,
       });
+    }
+
+    // Derive effective mastery if overallMastery was not supplied or <= 0
+    double effectiveMastery = overallMastery;
+    if (effectiveMastery <= 0.0 && updatedLearningRows.isNotEmpty) {
+      final completedRows =
+          updatedLearningRows.where((r) => r['is_completed'] == true).toList();
+      if (completedRows.isNotEmpty) {
+        final totalScore = completedRows.fold<double>(
+          0.0,
+          (sum, r) => sum + ((r['best_score'] as num?)?.toDouble() ?? 70.0),
+        );
+        effectiveMastery =
+            (totalScore / (completedRows.length * 100)).clamp(0.0, 1.0);
+      }
+    }
+
+    for (int i = 0; i < updatedLearningRows.length; i++) {
+      updatedLearningRows[i]['overall_mastery'] = effectiveMastery;
     }
 
     // Pass 2: compute Boss availability
@@ -112,7 +130,7 @@ class GuestJourneyResolver {
       } else if (!allLearningPassed) {
         isBossUnlocked = false;
         lockReason = 'complete_previous';
-      } else if (overallMastery < 0.70 && overallMastery > 0.0) {
+      } else if (effectiveMastery < 0.70 && effectiveMastery > 0.0) {
         // All stages done but mastery too low
         isBossUnlocked = false;
         lockReason = 'mastery_too_low';
@@ -129,7 +147,7 @@ class GuestJourneyResolver {
         'attempts': bossRecord?['attempts'] ?? bRow['attempts'] ?? 0,
         'best_score': bossRecord?['score'] ?? bRow['best_score'] ?? 0,
         'stars': bossRecord?['stars'] ?? bRow['stars'] ?? 0,
-        'overall_mastery': overallMastery,
+        'overall_mastery': effectiveMastery,
         if (lockReason != null) 'lock_reason': lockReason,
       });
     }
@@ -218,6 +236,7 @@ class GuestJourneyResolver {
     required GuestLearningProgressStore store,
     required bool isSectionUnlocked,
     String? previousSectionLastUnitId,
+    Future<double> Function(String unitId)? masteryLoader,
   }) async {
     if (units.isEmpty) return const [];
 
@@ -269,12 +288,23 @@ class GuestJourneyResolver {
               ? UnitCompletionState.bossPending
               : UnitCompletionState.inProgress);
 
+      double unitMastery = unit.mastery;
+      if (masteryLoader != null) {
+        try {
+          unitMastery = await masteryLoader(unit.id);
+        } catch (_) {}
+      }
+      if (unitMastery <= 0.0 && completedCount > 0) {
+        unitMastery = 0.70;
+      }
+
       result.add(
         unit.copyWith(
           isUnlocked: isUnlocked,
           bossWon: isBossWon,
           bossAvailable: bossAvailable,
           completedMissionCount: completedCount,
+          mastery: unitMastery,
           state: unitState,
           lockReason: lockReason,
         ),
