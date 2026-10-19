@@ -280,71 +280,107 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
   @override
   Future<List<LearningStageViewModel>> getUnitStages(String unitId) async {
     try {
-      final pathRows = List<Map<String, dynamic>>.from(
-        await _client.rpc(
-          'unit_learning_path_v2',
-          params: <String, dynamic>{'p_unit_id': unitId},
-        ),
-      );
-      if (pathRows.isEmpty) return const [];
-
-      final levelRows = List<Map<String, dynamic>>.from(
-        await _client
-            .from('duo_levels')
-            .select('id, level_index')
-            .eq('unit_id', unitId)
-            .order('level_index', ascending: true),
-      );
-      final levelIds = levelRows.map((l) => '${l['id']}').toList();
-
+      // One read-only RPC replaces four separate network round trips.
+      // The existing path remains as a safe fallback during rollout.
+      List<Map<String, dynamic>> pathRows = const [];
       List<Map<String, dynamic>> rawChallenges = const [];
-      if (levelIds.isNotEmpty) {
-        final sessionRows = List<Map<String, dynamic>>.from(
-          await _client
-              .from('duo_sessions')
-              .select('id, level_id')
-              .inFilter('level_id', levelIds),
+      Map<String, dynamic>? rawBossStage;
+      var loadedBundle = false;
+      try {
+        final response = await _client.rpc(
+          'learning_unit_bundle_v1',
+          params: <String, dynamic>{'p_unit_id': unitId},
         );
-        final sessionIds = sessionRows
-            .map((s) => (s['id'] as num?)?.toInt())
-            .whereType<int>()
-            .toList();
-        final levelBySession = <int, String>{
-          for (final session in sessionRows)
-            if ((session['id'] as num?) != null)
-              (session['id'] as num).toInt(): '${session['level_id'] ?? ''}',
-        };
-
-        if (sessionIds.isNotEmpty) {
-          final challengeRows = List<Map<String, dynamic>>.from(
-            await _client
-                .from('duo_challenges')
-                .select(
-                  'id, session_id, type, prompt, tts, slow_tts, choices_text, solutions, tokens_text',
-                )
-                .inFilter('session_id', sessionIds)
-                .order('id', ascending: true),
-          );
-          rawChallenges = challengeRows
-              .map((challenge) => <String, dynamic>{
-                    ...challenge,
-                    '_level_id': levelBySession[
-                        (challenge['session_id'] as num?)?.toInt()],
-                  })
+        if (response is Map &&
+            response['path_rows'] is List &&
+            response['raw_challenges'] is List) {
+          pathRows = (response['path_rows'] as List)
+              .map((row) => Map<String, dynamic>.from(row as Map))
               .toList(growable: false);
+          rawChallenges = (response['raw_challenges'] as List)
+              .map((row) => Map<String, dynamic>.from(row as Map))
+              .toList(growable: false);
+          final boss = response['boss_stage'];
+          rawBossStage =
+              boss is Map ? Map<String, dynamic>.from(boss) : null;
+          loadedBundle = true;
         }
+      } catch (error) {
+        debugPrint(
+          '[LearningJourneyRepository] learning_unit_bundle_v1 unavailable; '
+          'using legacy read: $error',
+        );
       }
 
-      final bossRows = List<Map<String, dynamic>>.from(
-        await _client
-            .from('boss_stages')
-            .select(
-              'id, unit_id, stage_order, title, question_count, difficulty, boss_name, boss_hp, player_hp, theme_code',
-            )
-            .eq('unit_id', unitId)
-            .limit(1),
-      );
-      final rawBossStage = bossRows.isNotEmpty ? bossRows.first : null;
+      if (!loadedBundle) {
+        pathRows = List<Map<String, dynamic>>.from(
+          await _client.rpc(
+            'unit_learning_path_v2',
+            params: <String, dynamic>{'p_unit_id': unitId},
+          ),
+        );
+        if (pathRows.isEmpty) return const [];
+  
+        final levelRows = List<Map<String, dynamic>>.from(
+          await _client
+              .from('duo_levels')
+              .select('id, level_index')
+              .eq('unit_id', unitId)
+              .order('level_index', ascending: true),
+        );
+        final levelIds = levelRows.map((l) => '${l['id']}').toList();
+  
+        rawChallenges = const [];
+        if (levelIds.isNotEmpty) {
+          final sessionRows = List<Map<String, dynamic>>.from(
+            await _client
+                .from('duo_sessions')
+                .select('id, level_id')
+                .inFilter('level_id', levelIds),
+          );
+          final sessionIds = sessionRows
+              .map((s) => (s['id'] as num?)?.toInt())
+              .whereType<int>()
+              .toList();
+          final levelBySession = <int, String>{
+            for (final session in sessionRows)
+              if ((session['id'] as num?) != null)
+                (session['id'] as num).toInt(): '${session['level_id'] ?? ''}',
+          };
+  
+          if (sessionIds.isNotEmpty) {
+            final challengeRows = List<Map<String, dynamic>>.from(
+              await _client
+                  .from('duo_challenges')
+                  .select(
+                    'id, session_id, type, prompt, tts, slow_tts, choices_text, solutions, tokens_text',
+                  )
+                  .inFilter('session_id', sessionIds)
+                  .order('id', ascending: true),
+            );
+            rawChallenges = challengeRows
+                .map((challenge) => <String, dynamic>{
+                      ...challenge,
+                      '_level_id': levelBySession[
+                          (challenge['session_id'] as num?)?.toInt()],
+                    })
+                .toList(growable: false);
+          }
+        }
+  
+        final bossRows = List<Map<String, dynamic>>.from(
+          await _client
+              .from('boss_stages')
+              .select(
+                'id, unit_id, stage_order, title, question_count, difficulty, boss_name, boss_hp, player_hp, theme_code',
+              )
+              .eq('unit_id', unitId)
+              .limit(1),
+        );
+        rawBossStage = bossRows.isNotEmpty ? bossRows.first : null;
+  
+      }
+      if (pathRows.isEmpty) return const [];
 
       var resolvedPathRows = pathRows;
       if (_client.auth.currentUser == null) {
