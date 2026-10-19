@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:flash_learn_chinese/core/learning/data/learning_progress_repository.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_activity_submission.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_navigation_outcome.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_result.dart';
-import 'package:flash_learn_chinese/core/learning/model/mission_state_machine.dart';
-import 'package:flash_learn_chinese/core/learning/service/learning_progress_sync_service.dart';
-import 'package:flash_learn_chinese/core/learning/service/learning_reward_service.dart';
-import 'package:flash_learn_chinese/core/widgets/adventure_node.dart';
+import 'package:pandarin/core/learning/data/learning_progress_repository.dart';
+import 'package:pandarin/core/learning/model/learning_activity_submission.dart';
+import 'package:pandarin/core/learning/model/learning_navigation_outcome.dart';
+import 'package:pandarin/core/learning/model/learning_result.dart';
+import 'package:pandarin/core/learning/model/mission_state_machine.dart';
+import 'package:pandarin/core/learning/service/learning_progress_sync_service.dart';
+import 'package:pandarin/core/learning/service/learning_reward_service.dart';
+import 'package:pandarin/core/widgets/adventure_node.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

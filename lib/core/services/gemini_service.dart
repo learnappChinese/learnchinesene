@@ -11,7 +11,7 @@ import '../config/app_config.dart';
 /// In accordance with PR 05 Security Standards:
 /// 1. No Google Gemini API key or secret exists on the client.
 /// 2. All requests are routed through Supabase Edge Function [gemini-ai-gateway].
-/// 3. Rate limits, user quota, and premium entitlement checks are executed server-side.
+/// 3. Rate limits and daily user quota are enforced server-side.
 /// 4. Structured error codes ([AiGatewayException]) allow UI to provide helpful feedback.
 class GeminiService {
   GeminiService({

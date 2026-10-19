@@ -1,8 +1,8 @@
-import 'package:flash_learn_chinese/screen/home/widgets/home_bottom_navigation.dart';
-import 'package:flash_learn_chinese/screen/home/widgets/home_learning_tab.dart';
-import 'package:flash_learn_chinese/screen/home/model/home_journey.dart';
-import 'package:flash_learn_chinese/screen/review/model/review_item.dart';
-import 'package:flash_learn_chinese/core/theme/app_theme.dart';
+import 'package:pandarin/features/home/widgets/home_bottom_navigation.dart';
+import 'package:pandarin/features/home/widgets/home_learning_tab.dart';
+import 'package:pandarin/features/home/model/home_journey.dart';
+import 'package:pandarin/features/review/model/review_item.dart';
+import 'package:pandarin/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';

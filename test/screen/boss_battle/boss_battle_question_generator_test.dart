@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flash_learn_chinese/screen/boss_battle/domain/boss_battle_question_generator.dart';
-import 'package:flash_learn_chinese/screen/boss_battle/model/boss_battle_question.dart';
+import 'package:pandarin/features/boss_battle/domain/boss_battle_question_generator.dart';
+import 'package:pandarin/features/boss_battle/model/boss_battle_question.dart';
 
 void main() {
   test('generator preserves correct answer and avoids duplicate question ids',

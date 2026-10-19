@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:flash_learn_chinese/core/widgets/adventure_node.dart';
-import 'package:flash_learn_chinese/screen/chapter_adventure/controller/chapter_adventure_controller.dart';
-import 'package:flash_learn_chinese/screen/chapter_adventure/data/chapter_adventure_repository.dart';
-import 'package:flash_learn_chinese/screen/chapter_adventure/model/chapter_adventure.dart';
-import 'package:flash_learn_chinese/screen/chapter_adventure/widget/adventure_map.dart';
+import 'package:pandarin/core/widgets/adventure_node.dart';
+import 'package:pandarin/features/chapter_adventure/controller/chapter_adventure_controller.dart';
+import 'package:pandarin/features/chapter_adventure/data/chapter_adventure_repository.dart';
+import 'package:pandarin/features/chapter_adventure/model/chapter_adventure.dart';
+import 'package:pandarin/features/chapter_adventure/widget/adventure_map.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';

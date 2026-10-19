@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/learning_theme.dart';
+import 'app_green_button.dart';
+import 'learning_scene_background.dart';
 
 class LearningAppBar extends StatelessWidget implements PreferredSizeWidget {
   const LearningAppBar({
@@ -74,7 +76,15 @@ class LearningScaffold extends StatelessWidget {
             leading: leading,
             bottom: bottom,
           ),
-          body: useSafeArea ? SafeArea(top: false, child: body) : body,
+          body: useSafeArea
+              ? Builder(
+                  // Ghi lại phần đáy trước khi SafeArea cắt để nền vẽ tràn.
+                  builder: (context) => BottomBleedScope(
+                    bleed: MediaQuery.paddingOf(context).bottom,
+                    child: SafeArea(top: false, child: body),
+                  ),
+                )
+              : body,
           bottomNavigationBar: bottomNavigationBar,
           floatingActionButton: floatingActionButton,
         ),
@@ -94,38 +104,11 @@ class LearningPrimaryButton extends StatelessWidget {
   final IconData icon;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        width: double.infinity,
+  Widget build(BuildContext context) => AppGreenButton(
+        label: label,
+        icon: icon,
+        onPressed: onPressed,
         height: 50,
-        child: FilledButton(
-          onPressed: onPressed,
-          style: FilledButton.styleFrom(
-            backgroundColor: LearningColors.jade,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: LearningColors.locked,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            textStyle: const TextStyle(
-              fontWeight: FontWeight.w900,
-              letterSpacing: .4,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(LearningRadius.md),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 22),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
+        expand: true,
       );
 }

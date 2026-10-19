@@ -3,17 +3,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
-import 'package:flash_learn_chinese/core/learning/data/learning_journey_repository.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_journey_models.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_stage_models.dart';
-import 'package:flash_learn_chinese/core/widgets/adventure_node.dart';
-import 'package:flash_learn_chinese/screen/chapter_adventure/model/chapter_adventure.dart';
-import 'package:flash_learn_chinese/screen/dragon_panda/screens/chinese_restaurant/chinese_restaurant_screen.dart';
-import 'package:flash_learn_chinese/screen/dragon_panda/screens/quick_answer/quick_answer_screen.dart';
-import 'package:flash_learn_chinese/screen/dragon_panda/screens/radical_builder/radical_builder_screen.dart';
-import 'package:flash_learn_chinese/screen/dragon_panda/screens/tone_ninja/tone_ninja_screen.dart';
-import 'package:flash_learn_chinese/screen/game_hub/game_hub_screen.dart';
-import 'package:flash_learn_chinese/screen/hanzi_writing/screens/hanzi_writing_home_screen.dart';
+import 'package:pandarin/core/learning/data/learning_journey_repository.dart';
+import 'package:pandarin/core/learning/model/learning_journey_models.dart';
+import 'package:pandarin/core/learning/model/learning_stage_models.dart';
+import 'package:pandarin/core/widgets/adventure_node.dart';
+import 'package:pandarin/features/chapter_adventure/model/chapter_adventure.dart';
+import 'package:pandarin/features/dragon_panda/screens/chinese_restaurant/chinese_restaurant_screen.dart';
+import 'package:pandarin/features/dragon_panda/screens/quick_answer/quick_answer_screen.dart';
+import 'package:pandarin/features/dragon_panda/screens/radical_builder/radical_builder_screen.dart';
+import 'package:pandarin/features/dragon_panda/screens/tone_ninja/tone_ninja_screen.dart';
+import 'package:pandarin/features/game_hub/game_hub_screen.dart';
+import 'package:pandarin/features/hanzi_writing/screens/hanzi_writing_home_screen.dart';
 
 class StubLearningJourneyRepository implements LearningJourneyRepository {
   StubLearningJourneyRepository({
@@ -350,6 +350,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Quick Answer card when no curriculum stage exists
+      await tester.ensureVisible(find.text('Trả lời nhanh'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Trả lời nhanh'));
       await tester.pumpAndSettle();
       expect(find.byType(QuickAnswerScreen), findsOneWidget);

@@ -1,7 +1,7 @@
-import 'package:flash_learn_chinese/core/learning/model/learning_result.dart';
-import 'package:flash_learn_chinese/core/theme/learning_theme.dart';
-import 'package:flash_learn_chinese/core/widgets/learning_scaffold.dart';
-import 'package:flash_learn_chinese/core/widgets/mission_complete_overlay.dart';
+import 'package:pandarin/core/learning/model/learning_result.dart';
+import 'package:pandarin/core/theme/learning_theme.dart';
+import 'package:pandarin/core/widgets/learning_scaffold.dart';
+import 'package:pandarin/core/widgets/mission_complete_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

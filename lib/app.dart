@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import 'core/theme/app_theme.dart';
-import 'screen/splash/splash_screen.dart';
+import 'features/splash/splash_screen.dart';
 
 class ChineseMasterApp extends StatelessWidget {
   const ChineseMasterApp({super.key});
@@ -16,7 +16,7 @@ class ChineseMasterApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (_, __) => GetMaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Học tiếng Trung',
+        title: 'Pandarin: Learn Chinese & HSK',
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flash_learn_chinese/core/learning/data/learning_history_repository.dart';
-import 'package:flash_learn_chinese/core/services/history_service.dart';
-import 'package:flash_learn_chinese/screen/history/controller/history_controller.dart';
+import 'package:pandarin/core/learning/data/learning_history_repository.dart';
+import 'package:pandarin/core/services/history_service.dart';
+import 'package:pandarin/features/history/controller/history_controller.dart';
 import 'package:get/get.dart';
 
 class FakeLearningHistoryRepo implements LearningHistoryRepository {

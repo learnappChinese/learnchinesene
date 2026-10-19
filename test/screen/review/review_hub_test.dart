@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:flash_learn_chinese/screen/review/controller/review_controller.dart';
-import 'package:flash_learn_chinese/screen/review/data/review_repository.dart';
-import 'package:flash_learn_chinese/screen/review/model/review_item.dart';
-import 'package:flash_learn_chinese/screen/review/review_screen.dart';
+import 'package:pandarin/features/review/controller/review_controller.dart';
+import 'package:pandarin/features/review/data/review_repository.dart';
+import 'package:pandarin/features/review/model/review_item.dart';
+import 'package:pandarin/features/review/review_screen.dart';
 
 class FakeReviewRepository implements ReviewRepository {
   @override

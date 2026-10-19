@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../widgets/adventure_node.dart';
-import '../../../screen/boss_battle/model/boss_battle_stage.dart';
+import '../../../features/boss_battle/model/boss_battle_stage.dart';
 
 /// Semantic activity type for a learning stage / ải.
 enum LearningStageActivityType {

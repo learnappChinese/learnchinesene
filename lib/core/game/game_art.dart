@@ -19,13 +19,6 @@ abstract final class GameArt {
   static const pandaDizzy = '$_root/characters/panda_dizzy.png';
   static const dragonFire = '$_root/characters/dragon_fire.png';
 
-  static const arrow = '$_root/effects/arrow.png';
-  static const fireCore = '$_root/effects/fire_core.png';
-  static const fireParticle = '$_root/effects/fire_particle.png';
-  static const hitFlash = '$_root/effects/hit_flash.png';
-  static const smoke = '$_root/effects/smoke.png';
-  static const spark = '$_root/effects/spark.png';
-
   static const dumplings = '$_root/foods/dumplings.png';
   static const noodles = '$_root/foods/noodles.png';
   static const rice = '$_root/foods/rice.png';

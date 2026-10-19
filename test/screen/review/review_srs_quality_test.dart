@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_result.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_source_context.dart';
-import 'package:flash_learn_chinese/core/learning/service/learning_reward_service.dart';
-import 'package:flash_learn_chinese/core/models/speaking_practice_item.dart';
-import 'package:flash_learn_chinese/screen/hanzi_writing/controller/hanzi_writing_controller.dart';
-import 'package:flash_learn_chinese/screen/review/controller/review_controller.dart';
-import 'package:flash_learn_chinese/screen/review/data/review_repository.dart';
-import 'package:flash_learn_chinese/screen/review/model/review_item.dart';
-import 'package:flash_learn_chinese/screen/review/review_screen.dart';
-import 'package:flash_learn_chinese/screen/speaking/controller/speaking_controller.dart';
-import 'package:flash_learn_chinese/screen/speaking/widget/speaking_cards.dart';
-import 'package:flash_learn_chinese/core/services/speech_service.dart';
+import 'package:pandarin/core/learning/model/learning_result.dart';
+import 'package:pandarin/core/learning/model/learning_source_context.dart';
+import 'package:pandarin/core/learning/service/learning_reward_service.dart';
+import 'package:pandarin/core/models/speaking_practice_item.dart';
+import 'package:pandarin/features/hanzi_writing/controller/hanzi_writing_controller.dart';
+import 'package:pandarin/features/review/controller/review_controller.dart';
+import 'package:pandarin/features/review/data/review_repository.dart';
+import 'package:pandarin/features/review/model/review_item.dart';
+import 'package:pandarin/features/review/review_screen.dart';
+import 'package:pandarin/features/speaking/controller/speaking_controller.dart';
+import 'package:pandarin/features/speaking/widget/speaking_cards.dart';
+import 'package:pandarin/core/services/speech_service.dart';
 
 class StubRewardService extends LearningRewardService {
   String? lastStartedUnitId;

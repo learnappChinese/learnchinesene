@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flash_learn_chinese/screen/home/widgets/home_bottom_navigation.dart';
-import 'package:flash_learn_chinese/screen/home/widgets/home_progress_tab.dart';
+import 'package:pandarin/features/home/widgets/home_bottom_navigation.dart';
+import 'package:pandarin/features/home/widgets/home_progress_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';

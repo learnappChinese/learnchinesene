@@ -1,8 +1,8 @@
-import 'package:flash_learn_chinese/screen/game_hub/view/game_hub_view.dart';
-import 'package:flash_learn_chinese/screen/home/widgets/home_learning_tab.dart';
-import 'package:flash_learn_chinese/screen/home/widgets/home_personal_tab.dart';
-import 'package:flash_learn_chinese/screen/home/widgets/home_progress_tab.dart';
-import 'package:flash_learn_chinese/screen/home/widgets/tab_header.dart';
+import 'package:pandarin/features/game_hub/view/game_hub_view.dart';
+import 'package:pandarin/features/home/widgets/home_learning_tab.dart';
+import 'package:pandarin/features/home/widgets/home_personal_tab.dart';
+import 'package:pandarin/features/home/widgets/home_progress_tab.dart';
+import 'package:pandarin/features/home/widgets/tab_header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,10 +89,9 @@ void main() {
         'Lịch Sử Dịch & Hội Thoại',
       );
       final personal = await measure(
-        HomePersonalTab(
-            onProfile: () {}, onPremium: () {}, onDictionary: () {}),
+        HomePersonalTab(onProfile: () {}, onDictionary: () {}),
         'Hồ sơ người dùng',
-        'Nâng cấp Premium',
+        'Từ điển Việt ↔ Trung',
       );
       for (final tab in [games, progress, personal]) {
         expect(tab.header, learning.header);

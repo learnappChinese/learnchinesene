@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../auth/controller/auth_controller.dart';
+import 'app_green_button.dart';
 import '../learning/model/learning_result.dart';
 import '../theme/game_visual_tokens.dart';
-import '../../screen/auth/widget/guest_save_prompt_sheet.dart';
 import 'panda_companion.dart';
 
 class MissionCompleteOverlay extends StatelessWidget {
@@ -50,194 +48,154 @@ class MissionCompleteOverlay extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (i) {
-                final active = i < result.stars;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Text(
-                    active ? '⭐' : '🖤',
-                    style: TextStyle(fontSize: i == 1 ? 46 : 34),
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 10),
-
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: passed
-                      ? const [
-                          GameVisualTokens.crimson,
-                          GameVisualTokens.imperialGold,
-                        ]
-                      : const [Color(0xFF9A3412), Color(0xFFF97316)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                passed ? 'HOÀN THÀNH NHIỆM VỤ' : 'CHƯA ĐẠT',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ),
-            if (passed && (result.perfect || result.firstClear)) ...[
-              const SizedBox(height: 6),
-              const Text(
-                '🏆 KỶ LỤC MỚI!',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  color: GameVisualTokens.goldLight,
-                  letterSpacing: 1.1,
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-
-            PandaCompanion(
-              size: 110,
-              mood: passed ? PandaMood.victory : PandaMood.encourage,
-              speechText: passed
-                  ? (result.bossReady
-                      ? 'Cổng Boss đã mở. Hãy chuẩn bị cho trận quyết đấu!'
-                      : 'Giỏi lắm! Xem báo cáo rồi tiếp tục hành trình nhé.')
-                  : 'Panda đã tìm thấy phần cần luyện lại cho bạn.',
-            ),
-            if (!passed) ...[
-              const SizedBox(height: 8),
-              Text(
-                result.reason.isNotEmpty
-                    ? _reasonCopy(result.reason)
-                    : 'Cần ít nhất 70% để mở nhiệm vụ tiếp theo.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: GameVisualTokens.ink,
-                  height: 1.35,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-
-            // Metrics Grid
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.82),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: GameVisualTokens.goldLight),
-              ),
-              child: Wrap(
-                alignment: WrapAlignment.spaceAround,
-                runAlignment: WrapAlignment.center,
-                spacing: 18,
-                runSpacing: 12,
-                children: [
-                  _metricItem(
-                    'ĐIỂM SỐ',
-                    '${result.score.round()}',
-                    GameVisualTokens.goldLight,
-                  ),
-                  _metricItem(
-                    'CHÍNH XÁC',
-                    '${(result.accuracy * 100).round()}%',
-                    GameVisualTokens.jadeLight,
-                  ),
-                  _metricItem(
-                    'XP NHẬN',
-                    '+${result.xpEarned}',
-                    Colors.amberAccent,
-                  ),
-                  _metricItem(
-                    'MASTERY',
-                    '+$masteryGain%',
-                    GameVisualTokens.jadeLight,
-                  ),
-                  if (result.bestCombo > 0)
-                    _metricItem(
-                      'COMBO',
-                      'x${result.bestCombo}',
-                      const Color(0xFFFF8A80),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(3, (i) {
+                  final active = i < result.stars;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Text(
+                      active ? '⭐' : '🖤',
+                      style: TextStyle(fontSize: i == 1 ? 46 : 34),
                     ),
-                ],
+                  );
+                }),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 10),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: passed
-                      ? (result.bossReady
-                          ? GameVisualTokens.crimson
-                          : GameVisualTokens.jade)
-                      : const Color(0xFFF97316),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: passed
+                        ? const [
+                            GameVisualTokens.crimson,
+                            GameVisualTokens.imperialGold,
+                          ]
+                        : const [Color(0xFF9A3412), Color(0xFFF97316)],
                   ),
-                  elevation: 6,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                onPressed: onNextMission,
-                icon: Icon(_ctaIcon(result), color: Colors.white),
-                label: Text(
-                  _ctaText(result),
+                child: Text(
+                  passed ? 'HOÀN THÀNH NHIỆM VỤ' : 'CHƯA ĐẠT',
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              if (passed && (result.perfect || result.firstClear)) ...[
+                const SizedBox(height: 6),
+                const Text(
+                  '🏆 KỶ LỤC MỚI!',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: GameVisualTokens.goldLight,
                     letterSpacing: 1.1,
                   ),
                 ),
+              ],
+              const SizedBox(height: 16),
+
+              PandaCompanion(
+                size: 110,
+                mood: passed ? PandaMood.victory : PandaMood.encourage,
+                speechText: passed
+                    ? (result.bossReady
+                        ? 'Cổng Boss đã mở. Hãy chuẩn bị cho trận quyết đấu!'
+                        : 'Giỏi lắm! Xem báo cáo rồi tiếp tục hành trình nhé.')
+                    : 'Panda đã tìm thấy phần cần luyện lại cho bạn.',
               ),
-            ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: onBackToMap,
-              child: const Text(
-                'Về bản đồ phiêu lưu',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: GameVisualTokens.jadeDark,
+              if (!passed) ...[
+                const SizedBox(height: 8),
+                Text(
+                  result.reason.isNotEmpty
+                      ? _reasonCopy(result.reason)
+                      : 'Cần ít nhất 70% để mở nhiệm vụ tiếp theo.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: GameVisualTokens.ink,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+
+              // Metrics Grid
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.82),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: GameVisualTokens.goldLight),
+                ),
+                child: Wrap(
+                  alignment: WrapAlignment.spaceAround,
+                  runAlignment: WrapAlignment.center,
+                  spacing: 18,
+                  runSpacing: 12,
+                  children: [
+                    _metricItem(
+                      'ĐIỂM SỐ',
+                      '${result.score.round()}',
+                      GameVisualTokens.goldLight,
+                    ),
+                    _metricItem(
+                      'CHÍNH XÁC',
+                      '${(result.accuracy * 100).round()}%',
+                      GameVisualTokens.jadeLight,
+                    ),
+                    _metricItem(
+                      'XP NHẬN',
+                      '+${result.xpEarned}',
+                      Colors.amberAccent,
+                    ),
+                    _metricItem(
+                      'MASTERY',
+                      '+$masteryGain%',
+                      GameVisualTokens.jadeLight,
+                    ),
+                    if (result.bestCombo > 0)
+                      _metricItem(
+                        'COMBO',
+                        'x${result.bestCombo}',
+                        const Color(0xFFFF8A80),
+                      ),
+                  ],
                 ),
               ),
-            ),
-            if (Get.isRegistered<AuthController>() &&
-                Get.find<AuthController>().isGuest &&
-                passed) ...[
-              const SizedBox(height: 4),
-              TextButton.icon(
-                onPressed: () => GuestSavePromptSheet.show(context),
-                icon: const Icon(
-                  Icons.cloud_upload_outlined,
-                  size: 16,
-                  color: GameVisualTokens.gold,
-                ),
-                label: const Text(
-                  'Lưu tiến độ vào Cloud',
+              const SizedBox(height: 24),
+
+              AppGreenButton(
+                label: _ctaText(result),
+                icon: _ctaIcon(result),
+                onPressed: onNextMission,
+                height: 52,
+                expand: true,
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: onBackToMap,
+                child: const Text(
+                  'Về bản đồ phiêu lưu',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: GameVisualTokens.gold,
+                    color: GameVisualTokens.jadeDark,
                   ),
                 ),
               ),
             ],
-          ],
+          ),
         ),
       ),
-    ),
-  );
+    );
   }
 
   String _ctaText(LearningResult result) {

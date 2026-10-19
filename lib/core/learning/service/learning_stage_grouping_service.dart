@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import '../../presentation/learning_presentation_mapper.dart';
 import '../../widgets/adventure_node.dart';
-import '../../../screen/boss_battle/model/boss_battle_stage.dart';
+import '../../../features/boss_battle/model/boss_battle_stage.dart';
 import '../model/learning_stage_models.dart';
 
 /// Service responsible for adaptively grouping raw curriculum data and user progress

@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flash_learn_chinese/screen/home/widgets/home_bottom_navigation.dart';
-import 'package:flash_learn_chinese/screen/home/widgets/home_personal_tab.dart';
+import 'package:pandarin/features/home/widgets/home_bottom_navigation.dart';
+import 'package:pandarin/features/home/widgets/home_personal_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -58,7 +58,6 @@ void main() {
               extendBody: true,
               body: HomePersonalTab(
                 onProfile: () => actions.add('profile'),
-                onPremium: () => actions.add('premium'),
                 onDictionary: () => actions.add('dictionary'),
               ),
               bottomNavigationBar: HomeBottomNavigation(
@@ -71,7 +70,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Cá nhân'), findsNWidgets(2));
       expect(find.text('Cài đặt hệ thống'), findsNothing);
-      expect(find.byIcon(Icons.chevron_right_rounded), findsNWidgets(3));
+      expect(find.byIcon(Icons.chevron_right_rounded), findsNWidgets(2));
       expect(tester.getTopLeft(find.text('Cá nhân').first).dy, greaterThan(62));
 
       if (capture) {
@@ -89,7 +88,6 @@ void main() {
 
       for (final title in [
         'Hồ sơ người dùng',
-        'Nâng cấp Premium',
         'Từ điển Việt ↔ Trung',
       ]) {
         final card = find
@@ -103,7 +101,7 @@ void main() {
             closeTo(tester.getRect(card).center.dy, .1));
         await tester.tapAt(tester.getCenter(arrow));
       }
-      expect(actions, ['profile', 'premium', 'dictionary']);
+      expect(actions, ['profile', 'dictionary']);
       await tester.tap(find.text('Học tập'));
       await tester.tap(find.byTooltip('Trang chủ'));
       expect(destinations, [1, 0]);
@@ -127,7 +125,6 @@ void main() {
           child: Scaffold(
             body: HomePersonalTab(
               onProfile: () => actions.add('profile'),
-              onPremium: () => actions.add('premium'),
               onDictionary: () => actions.add('dictionary'),
             ),
           ),
@@ -137,7 +134,6 @@ void main() {
     await tester.pumpAndSettle();
     for (final description in [
       'Xem thông tin cá nhân\nvà xếp hạng',
-      'Mở khóa toàn bộ tính\nnăng và bài học HSK',
       'Tra cứu từ bằng AI,\nhỗ trợ giọng nói',
     ]) {
       final finder = find.text(description);
@@ -151,7 +147,7 @@ void main() {
               paragraph.getMaxIntrinsicHeight(paragraph.size.width) - .1));
       await tester.tap(finder);
     }
-    expect(actions, ['profile', 'premium', 'dictionary']);
+    expect(actions, ['profile', 'dictionary']);
     expect(tester.takeException(), isNull);
   });
 }

@@ -5,11 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:flash_learn_chinese/core/auth/controller/auth_controller.dart';
-import 'package:flash_learn_chinese/core/auth/data/auth_repository.dart';
-import 'package:flash_learn_chinese/core/auth/model/auth_state.dart';
-import 'package:flash_learn_chinese/core/auth/service/guest_progress_migration_service.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_activity_submission.dart';
+import 'package:pandarin/core/auth/controller/auth_controller.dart';
+import 'package:pandarin/core/auth/data/auth_repository.dart';
+import 'package:pandarin/core/auth/model/auth_state.dart';
+import 'package:pandarin/core/auth/service/guest_progress_migration_service.dart';
+import 'package:pandarin/core/learning/model/learning_activity_submission.dart';
 
 class MockAuthRepository implements AuthRepository {
   MockAuthRepository({

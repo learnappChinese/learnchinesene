@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:flash_learn_chinese/core/learning/data/learning_journey_repository.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_journey_models.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_stage_models.dart';
-import 'package:flash_learn_chinese/screen/chapter_adventure/model/chapter_adventure.dart';
-import 'package:flash_learn_chinese/screen/unit_overview/page/unit_complete_screen.dart';
+import 'package:pandarin/core/learning/data/learning_journey_repository.dart';
+import 'package:pandarin/core/learning/model/learning_journey_models.dart';
+import 'package:pandarin/core/learning/model/learning_stage_models.dart';
+import 'package:pandarin/features/chapter_adventure/model/chapter_adventure.dart';
+import 'package:pandarin/features/unit_overview/page/unit_complete_screen.dart';
 
 class _StubJourneyRepo implements LearningJourneyRepository {
   _StubJourneyRepo({this.nextUnit});

@@ -32,8 +32,15 @@ class AdventureQuestBanner extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
   final PandaMood mood;
+
+  /// Giữ để tương thích; thẻ dùng màu chủ đạo xanh lá của Home.
   final Color accent;
   final bool compact;
+
+  static const _ink = Color(0xFF342E10);
+  static const _muted = Color(0xFF5D5C54);
+  static const _brown = Color(0xFF57300A);
+  static const _line = Color(0xFFF1E6CF);
 
   @override
   Widget build(BuildContext context) {
@@ -49,31 +56,31 @@ class AdventureQuestBanner extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFFFFBEB), Color(0xFFFFEBC7)],
+            colors: [Color(0xFFFFFDF6), Color(0xFFFFF1D6)],
           ),
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(
-            color: GameVisualTokens.imperialGold.withValues(alpha: .66),
-            width: 1.5,
-          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white, width: 4),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x1F6B421A),
-              blurRadius: 20,
-              offset: Offset(0, 8),
+              color: Color(0x24635D3B),
+              blurRadius: 16,
+              offset: Offset(0, 7),
             ),
           ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
-            const Positioned(
-              right: -34,
-              top: -38,
-              child: Icon(
-                Icons.cloud_rounded,
-                size: 150,
-                color: Color(0x1A0F766E),
+            Positioned(
+              right: -4,
+              top: -34,
+              child: Text(
+                '学',
+                style: TextStyle(
+                  fontSize: compact ? 120 : 140,
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFF8B5E1A).withValues(alpha: .06),
+                ),
               ),
             ),
             if (!largeText)
@@ -90,8 +97,8 @@ class AdventureQuestBanner extends StatelessWidget {
               ),
             Padding(
               padding: EdgeInsets.fromLTRB(
-                compact ? 16 : 20,
-                compact ? 14 : 18,
+                compact ? 16 : 18,
+                compact ? 14 : 16,
                 largeText ? 16 : (compact ? 92 : 116),
                 compact ? 14 : 18,
               ),
@@ -104,24 +111,20 @@ class AdventureQuestBanner extends StatelessWidget {
                     runSpacing: 6,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      _StatusPill(
-                        label: eyebrow.toUpperCase(),
-                        color: accent,
-                        solid: true,
-                      ),
+                      _StatusPill(label: eyebrow.toUpperCase(), solid: true),
                       if (statusLabel != null && statusLabel!.isNotEmpty)
-                        _StatusPill(label: statusLabel!, color: accent),
+                        _StatusPill(label: statusLabel!),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Text(
                     title,
-                    maxLines: compact ? 1 : 2,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: GameVisualTokens.ink,
-                      fontSize: compact ? 19 : 23,
-                      height: 1.08,
+                      color: _ink,
+                      fontSize: compact ? 19 : 22,
+                      height: 1.15,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -131,25 +134,24 @@ class AdventureQuestBanner extends StatelessWidget {
                     maxLines: compact ? 2 : 3,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: GameVisualTokens.muted,
+                      color: _muted,
                       fontSize: 12.5,
                       height: 1.35,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   if (effectiveProgress != null) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(99),
                             child: LinearProgressIndicator(
                               value: effectiveProgress,
-                              minHeight: 8,
-                              backgroundColor:
-                                  Colors.white.withValues(alpha: .75),
-                              color: accent,
+                              minHeight: 9,
+                              backgroundColor: _line,
+                              color: GameVisualTokens.primaryGreen,
                             ),
                           ),
                         ),
@@ -157,9 +159,9 @@ class AdventureQuestBanner extends StatelessWidget {
                           const SizedBox(width: 9),
                           Text(
                             progressLabel!,
-                            style: TextStyle(
-                              color: accent,
-                              fontSize: 11,
+                            style: const TextStyle(
+                              color: GameVisualTokens.primaryGreenDark,
+                              fontSize: 11.5,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -168,30 +170,12 @@ class AdventureQuestBanner extends StatelessWidget {
                     ),
                   ],
                   if (actionLabel != null && onAction != null) ...[
-                    const SizedBox(height: 10),
-                    if (compact)
-                      FilledButton(
-                        onPressed: onAction,
-                        style: _actionStyle(),
-                        child: Text(
-                          actionLabel!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w900),
-                        ),
-                      )
-                    else
-                      FilledButton.icon(
-                        onPressed: onAction,
-                        style: _actionStyle(),
-                        icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                        label: Text(
-                          actionLabel!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w900),
-                        ),
-                      ),
+                    const SizedBox(height: 14),
+                    _GreenActionButton(
+                      label: actionLabel!,
+                      showArrow: !compact,
+                      onTap: onAction!,
+                    ),
                   ],
                 ],
               ),
@@ -201,41 +185,124 @@ class AdventureQuestBanner extends StatelessWidget {
       ),
     );
   }
-
-  ButtonStyle _actionStyle() => FilledButton.styleFrom(
-        minimumSize: const Size(0, 44),
-        backgroundColor: accent,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      );
 }
 
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({
+/// Nút xanh lá nổi khối, cùng kiểu với nút chính ở màn Home.
+class _GreenActionButton extends StatelessWidget {
+  const _GreenActionButton({
     required this.label,
-    required this.color,
-    this.solid = false,
+    required this.onTap,
+    this.showArrow = false,
   });
 
   final String label;
-  final Color color;
+  final VoidCallback onTap;
+  final bool showArrow;
+
+  @override
+  Widget build(BuildContext context) {
+    const primary = GameVisualTokens.primaryGreen;
+    final radius = BorderRadius.circular(22);
+    return Semantics(
+      button: true,
+      child: Container(
+        padding: const EdgeInsets.only(bottom: 3),
+        decoration: BoxDecoration(
+          color: Color.lerp(primary, Colors.black, .24),
+          borderRadius: radius,
+          boxShadow: [
+            BoxShadow(
+              color: primary.withValues(alpha: .28),
+              blurRadius: 8,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: radius,
+          clipBehavior: Clip.antiAlias,
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color.lerp(primary, Colors.white, .14)!, primary],
+              ),
+              borderRadius: radius,
+              border: Border.all(
+                color: Color.lerp(primary, Colors.white, .32)!,
+                width: 1.5,
+              ),
+            ),
+            child: InkWell(
+              onTap: onTap,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 40),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      if (showArrow) ...[
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_forward_rounded,
+                            color: Colors.white, size: 18),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, this.solid = false});
+
+  final String label;
   final bool solid;
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: solid ? color : color.withValues(alpha: .12),
+          gradient: solid
+              ? const LinearGradient(
+                  colors: [
+                    GameVisualTokens.primaryGreenLight,
+                    GameVisualTokens.primaryGreen,
+                  ],
+                )
+              : null,
+          color: solid ? null : Colors.white,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: color.withValues(alpha: .36)),
+          border: solid ? null : Border.all(color: AdventureQuestBanner._line),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: solid ? Colors.white : color,
-            fontSize: 9.5,
+            color: solid ? Colors.white : AdventureQuestBanner._brown,
+            fontSize: 10,
             fontWeight: FontWeight.w900,
-            letterSpacing: .7,
+            letterSpacing: .6,
           ),
         ),
       );

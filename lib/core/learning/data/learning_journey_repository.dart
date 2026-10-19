@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../presentation/learning_presentation_mapper.dart';
 import '../../widgets/adventure_node.dart';
-import '../../../screen/chapter_adventure/data/chapter_adventure_repository.dart';
-import '../../../screen/chapter_adventure/model/chapter_adventure.dart';
-import '../../../screen/review/data/review_repository.dart';
+import '../../../features/chapter_adventure/data/chapter_adventure_repository.dart';
+import '../../../features/chapter_adventure/model/chapter_adventure.dart';
+import '../../../features/review/data/review_repository.dart';
 import '../model/learning_journey_models.dart';
 import '../model/unit_mastery.dart';
 

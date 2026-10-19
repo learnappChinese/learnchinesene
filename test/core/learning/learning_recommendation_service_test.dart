@@ -1,11 +1,11 @@
-import 'package:flash_learn_chinese/core/learning/data/learning_journey_repository.dart';
-import 'package:flash_learn_chinese/core/learning/data/learning_progress_repository.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_journey_models.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_stage_models.dart';
-import 'package:flash_learn_chinese/core/learning/model/recommended_next_action.dart';
-import 'package:flash_learn_chinese/core/learning/model/unit_mastery.dart';
-import 'package:flash_learn_chinese/core/learning/service/learning_recommendation_service.dart';
-import 'package:flash_learn_chinese/screen/chapter_adventure/model/chapter_adventure.dart';
+import 'package:pandarin/core/learning/data/learning_journey_repository.dart';
+import 'package:pandarin/core/learning/data/learning_progress_repository.dart';
+import 'package:pandarin/core/learning/model/learning_journey_models.dart';
+import 'package:pandarin/core/learning/model/learning_stage_models.dart';
+import 'package:pandarin/core/learning/model/recommended_next_action.dart';
+import 'package:pandarin/core/learning/model/unit_mastery.dart';
+import 'package:pandarin/core/learning/service/learning_recommendation_service.dart';
+import 'package:pandarin/features/chapter_adventure/model/chapter_adventure.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

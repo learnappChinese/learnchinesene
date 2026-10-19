@@ -1,4 +1,4 @@
-import 'package:flash_learn_chinese/screen/boss_battle/model/boss_battle_stage.dart';
+import 'package:pandarin/features/boss_battle/model/boss_battle_stage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

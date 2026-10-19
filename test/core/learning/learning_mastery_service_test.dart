@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flash_learn_chinese/core/learning/service/learning_mastery_service.dart';
-import 'package:flash_learn_chinese/core/learning/model/unit_mastery.dart';
-import 'package:flash_learn_chinese/core/learning/data/learning_progress_repository.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_activity_submission.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_result.dart';
+import 'package:pandarin/core/learning/service/learning_mastery_service.dart';
+import 'package:pandarin/core/learning/model/unit_mastery.dart';
+import 'package:pandarin/core/learning/data/learning_progress_repository.dart';
+import 'package:pandarin/core/learning/model/learning_activity_submission.dart';
+import 'package:pandarin/core/learning/model/learning_result.dart';
 
 class _FakeProgressRepo implements LearningProgressRepository {
   @override

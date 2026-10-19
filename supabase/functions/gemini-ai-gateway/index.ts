@@ -53,7 +53,6 @@ serve(async (req) => {
     });
 
     let userId: string | null = null;
-    let isPremium = false;
 
     if (authHeader) {
       const {
@@ -61,22 +60,6 @@ serve(async (req) => {
       } = await supabaseClient.auth.getUser();
       if (user) {
         userId = user.id;
-
-        // Check if user is premium
-        const { data: entitlement } = await supabaseClient
-          .from("app_user_entitlements")
-          .select("product_id, status, expires_at")
-          .eq("user_id", userId)
-          .eq("status", "active")
-          .single();
-
-        if (
-          entitlement &&
-          (!entitlement.expires_at ||
-            new Date(entitlement.expires_at) > new Date())
-        ) {
-          isPremium = true;
-        }
       }
     }
 
@@ -96,22 +79,6 @@ serve(async (req) => {
       );
     }
 
-    // Quota and feature authorization checks
-    const premiumActions = ["hsk_exam_analysis", "conversation_continuation"];
-    if (premiumActions.includes(action) && !isPremium) {
-      return new Response(
-        JSON.stringify({
-          error: "premium_required",
-          message:
-            "Tính năng này yêu cầu gói tài khoản Premium. Vui lòng nâng cấp để tiếp tục.",
-        }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
     // Check & increment daily quota if user is authenticated
     if (userId && supabaseServiceKey) {
       const adminClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -119,7 +86,6 @@ serve(async (req) => {
         "check_and_increment_ai_quota",
         {
           p_user_id: userId,
-          p_is_premium: isPremium,
           p_tokens: 100,
         }
       );
@@ -130,7 +96,7 @@ serve(async (req) => {
             JSON.stringify({
               error: "quota_exceeded",
               message:
-                "Bạn đã đạt giới hạn lượt sử dụng AI trong ngày. Vui lòng thử lại vào ngày mai hoặc nâng cấp Premium.",
+                "Bạn đã đạt giới hạn lượt sử dụng AI trong ngày. Vui lòng thử lại vào ngày mai.",
             }),
             {
               status: 429,

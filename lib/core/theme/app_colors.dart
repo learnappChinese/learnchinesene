@@ -13,7 +13,7 @@ abstract final class AppColors {
   static const red = Color(0xFFB4232C);
   static const redDark = Color(0xFF7F1520);
   static const orange = Color(0xFFF58A45);
-  static const background = Color(0xFFF8F5F2);
+  static const background = Color(0xFFFFFAF0);
   static const ink = Color(0xFF241F20);
   static const muted = Color(0xFF756C6E);
   static const success = Color(0xFF26956A);
@@ -21,11 +21,11 @@ abstract final class AppColors {
   static const card = Colors.white;
 
   // Chinese Fantasy Tokens
-  static const Color jade = Color(0xFF0F766E);
-  static const Color jadeDark = Color(0xFF064E3B);
-  static const Color jadeGreen = Color(0xFF10B981);
-  static const Color jadeLight = Color(0xFF10B981);
-  static const Color jadeMint = Color(0xFFD1FAE5);
+  static const Color jade = Color(0xFF2E8A04);
+  static const Color jadeDark = Color(0xFF1F6B02);
+  static const Color jadeGreen = Color(0xFF45BC09);
+  static const Color jadeLight = Color(0xFF45BC09);
+  static const Color jadeMint = Color(0xFFE3F7D3);
   static const Color imperialGold = Color(0xFFF59E0B);
   static const Color primaryGold = Color(0xFFFFC533);
   static const Color lightGold = Color(0xFFFFF275);
@@ -63,7 +63,7 @@ abstract final class AppColors {
   );
 
   static const LinearGradient jadeGradient = LinearGradient(
-    colors: [Color(0xFF10B981), Color(0xFF0F766E)],
+    colors: [Color(0xFF6BD12A), Color(0xFF45BC09)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );

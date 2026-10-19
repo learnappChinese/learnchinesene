@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:flash_learn_chinese/core/database/db_helper.dart';
-import 'package:flash_learn_chinese/core/models/hsk_level.dart';
-import 'package:flash_learn_chinese/core/models/unit_model.dart';
-import 'package:flash_learn_chinese/screen/hsk/controller/hsk_controller.dart';
-import 'package:flash_learn_chinese/screen/unit/controller/unit_controller.dart';
+import 'package:pandarin/core/database/db_helper.dart';
+import 'package:pandarin/core/models/hsk_level.dart';
+import 'package:pandarin/core/models/unit_model.dart';
+import 'package:pandarin/features/hsk/controller/hsk_controller.dart';
+import 'package:pandarin/features/unit/controller/unit_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 

@@ -1,11 +1,11 @@
-import 'package:flash_learn_chinese/core/models/word.dart';
-import 'package:flash_learn_chinese/core/theme/app_colors.dart';
-import 'package:flash_learn_chinese/core/theme/app_theme.dart';
-import 'package:flash_learn_chinese/core/widgets/learning_scaffold.dart';
-import 'package:flash_learn_chinese/core/widgets/locked_mission_sheet.dart';
-import 'package:flash_learn_chinese/core/widgets/panda_companion.dart';
-import 'package:flash_learn_chinese/screen/flashcards/controller/flashcards_controller.dart';
-import 'package:flash_learn_chinese/screen/flashcards/flashcards_screen.dart';
+import 'package:pandarin/core/models/word.dart';
+import 'package:pandarin/core/theme/app_colors.dart';
+import 'package:pandarin/core/theme/app_theme.dart';
+import 'package:pandarin/core/widgets/learning_scaffold.dart';
+import 'package:pandarin/core/widgets/locked_mission_sheet.dart';
+import 'package:pandarin/core/widgets/panda_companion.dart';
+import 'package:pandarin/features/flashcards/controller/flashcards_controller.dart';
+import 'package:pandarin/features/flashcards/flashcards_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -94,8 +94,9 @@ void main() {
 
   group('PR 10 Design Tokens & Theme Specification', () {
     test('AppColors provides canonical Chinese Fantasy tokens', () {
-      expect(AppColors.jade, const Color(0xFF0F766E));
-      expect(AppColors.jadeDark, const Color(0xFF064E3B));
+      // jade được đồng bộ với màu xanh lá chủ đạo của Home.
+      expect(AppColors.jade, const Color(0xFF2E8A04));
+      expect(AppColors.jadeDark, const Color(0xFF1F6B02));
       expect(AppColors.imperialGold, const Color(0xFFF59E0B));
       expect(AppColors.crimson, const Color(0xFFDC2626));
       expect(AppColors.parchment, const Color(0xFFFFFBEB));

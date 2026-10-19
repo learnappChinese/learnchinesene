@@ -1,5 +1,5 @@
-import 'package:flash_learn_chinese/core/models/hsk_level.dart';
-import 'package:flash_learn_chinese/screen/hsk/widget/hsk_level_card.dart';
+import 'package:pandarin/core/models/hsk_level.dart';
+import 'package:pandarin/features/hsk/widget/hsk_level_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

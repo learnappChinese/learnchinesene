@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flash_learn_chinese/core/learning/model/composed_learning_session.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_source_context.dart';
-import 'package:flash_learn_chinese/core/learning/service/learning_session_composer.dart';
-import 'package:flash_learn_chinese/core/learning/service/unit_bridge_resolver.dart';
-import 'package:flash_learn_chinese/core/models/duo_challenge.dart';
+import 'package:pandarin/core/learning/model/composed_learning_session.dart';
+import 'package:pandarin/core/learning/model/learning_source_context.dart';
+import 'package:pandarin/core/learning/service/learning_session_composer.dart';
+import 'package:pandarin/core/learning/service/unit_bridge_resolver.dart';
+import 'package:pandarin/core/models/duo_challenge.dart';
 
 void main() {
   group('LearningSourceContext Tests', () {

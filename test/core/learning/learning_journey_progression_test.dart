@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flash_learn_chinese/core/presentation/learning_presentation_mapper.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_journey_models.dart';
-import 'package:flash_learn_chinese/core/learning/model/unit_mastery.dart';
+import 'package:pandarin/core/presentation/learning_presentation_mapper.dart';
+import 'package:pandarin/core/learning/model/learning_journey_models.dart';
+import 'package:pandarin/core/learning/model/unit_mastery.dart';
 
 void main() {
   group('LearningPresentationMapper Tests', () {
