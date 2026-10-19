@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flash_learn_chinese/core/widgets/adventure_node.dart';
-import 'package:flash_learn_chinese/core/widgets/segmented_progress_node.dart';
+import 'package:pandarin/core/widgets/adventure_node.dart';
+import 'package:pandarin/core/widgets/segmented_progress_node.dart';
 
 void main() {
   Widget wrapWidget(Widget child) {

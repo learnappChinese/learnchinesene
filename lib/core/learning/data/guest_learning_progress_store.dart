@@ -330,7 +330,8 @@ class GuestLearningProgressStore {
     await ensureMigrated();
     final prefs = await _getPrefs;
     final stageMap = _readMap(prefs, _completedStagesKey);
-    final normUnit = unitId.replaceAll('unit_', '').replaceAll('_duo', '').trim();
+    final normUnit =
+        unitId.replaceAll('unit_', '').replaceAll('_duo', '').trim();
 
     return stageMap.values.where((v) {
       if (v is! Map || v['passed'] != true) return false;

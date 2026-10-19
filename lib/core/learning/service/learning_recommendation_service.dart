@@ -8,7 +8,7 @@ import '../model/recommended_next_action.dart';
 import '../model/unit_mastery.dart';
 import '../data/guest_learning_progress_store.dart';
 import 'guest_journey_resolver.dart';
-import '../../../screen/review/data/review_repository.dart';
+import '../../../features/review/data/review_repository.dart';
 
 abstract interface class LearningRecommendationService {
   Future<RecommendedNextAction?> recommend({

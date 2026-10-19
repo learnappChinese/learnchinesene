@@ -70,12 +70,14 @@ class AdventureNode extends StatelessWidget {
     }
   }
 
-  (Color, Color, Color) _getNodeColors() {
+  /// (nền node, viền node, màu icon, màu bóng/nhấn)
+  (Color, Color, Color, Color) _getNodeColors() {
     if (state == AdventureNodeState.locked) {
       return (
-        const Color(0xFFE2E8F0),
-        const Color(0xFF94A3B8),
-        const Color(0xFF64748B),
+        const Color(0xFFF1EDE4),
+        const Color(0xFFD9D2C3),
+        const Color(0xFFA39C8C),
+        const Color(0xFFB8B0A0),
       );
     }
 
@@ -84,6 +86,7 @@ class AdventureNode extends StatelessWidget {
         const Color(0xFFFFE4E6),
         GameVisualTokens.crimson,
         GameVisualTokens.crimsonDark,
+        GameVisualTokens.crimson,
       );
     }
 
@@ -93,176 +96,246 @@ class AdventureNode extends StatelessWidget {
           const Color(0xFFFEF3C7),
           GameVisualTokens.imperialGold,
           const Color(0xFFB45309),
+          GameVisualTokens.imperialGold,
         );
       case AdventureNodeState.completed:
         return (
-          GameVisualTokens.jadeMint,
-          GameVisualTokens.jadeLight,
-          GameVisualTokens.jade,
+          GameVisualTokens.primaryGreen,
+          GameVisualTokens.primaryGreenLight,
+          Colors.white,
+          GameVisualTokens.primaryGreenDark,
         );
       case AdventureNodeState.inProgress:
       case AdventureNodeState.paused:
       case AdventureNodeState.available:
         return (
-          const Color(0xFFE0F2FE),
-          GameVisualTokens.blue,
-          const Color(0xFF0369A1),
+          Colors.white,
+          GameVisualTokens.primaryGreen,
+          GameVisualTokens.primaryGreen,
+          GameVisualTokens.primaryGreen,
         );
       case AdventureNodeState.failed:
         return (
           const Color(0xFFFFF7ED),
           const Color(0xFFF97316),
           const Color(0xFFC2410C),
+          const Color(0xFFF97316),
         );
       case AdventureNodeState.locked:
         return (
-          const Color(0xFFE2E8F0),
-          const Color(0xFF94A3B8),
-          const Color(0xFF64748B),
+          const Color(0xFFF1EDE4),
+          const Color(0xFFD9D2C3),
+          const Color(0xFFA39C8C),
+          const Color(0xFFB8B0A0),
         );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final (bgColor, borderColor, glowColor) = _getNodeColors();
+    final (bgColor, borderColor, iconColor, accent) = _getNodeColors();
     final bool isLocked = state == AdventureNodeState.locked;
     final bool isBoss = type == AdventureNodeType.boss;
+    final bool isDone = state == AdventureNodeState.completed ||
+        state == AdventureNodeState.perfect;
     final double nodeSize = isBoss ? 82.0 : 68.0;
+    // Nút hành động nổi bật cho chặng đang chơi được.
+    final bool primaryCta = !isLocked && !isDone;
+
+    final node = Semantics(
+      button: true,
+      enabled: true,
+      label: '$title, ${state.name}',
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          width: nodeSize,
+          height: nodeSize,
+          decoration: BoxDecoration(
+            color: bgColor,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: borderColor,
+              width: isActive ? 5.0 : 4.0,
+            ),
+            boxShadow: [
+              // Đế nổi khối
+              BoxShadow(
+                color: Color.lerp(accent, Colors.black, .25)!
+                    .withValues(alpha: isLocked ? .35 : .55),
+                offset: const Offset(0, 5),
+              ),
+              if (isActive)
+                BoxShadow(
+                  color: accent.withValues(alpha: .45),
+                  blurRadius: 22,
+                  spreadRadius: 2,
+                ),
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              isLocked ? Icons.lock_rounded : _getIcon(),
+              color: iconColor,
+              size: isBoss ? 38 : 30,
+            ),
+          ),
+        ),
+      ),
+    );
 
     return Transform.translate(
       offset: Offset(horizontalOffset, 0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (isActive)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: PandaCompanion(
-                    size: 54,
-                    mood: isBoss ? PandaMood.archer : PandaMood.happy,
-                  ),
-                ),
-              Semantics(
-                button: true,
-                enabled: true,
-                label: '$title, ${state.name}',
-                child: GestureDetector(
-                  onTap: onTap,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    width: nodeSize,
-                    height: nodeSize,
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: borderColor,
-                        width: isActive ? 4.0 : 3.0,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: glowColor.withValues(
-                              alpha: isActive ? 0.45 : 0.2),
-                          blurRadius: isActive ? 16 : 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Icon(
-                        isLocked ? Icons.lock_rounded : _getIcon(),
-                        color: isLocked ? const Color(0xFF94A3B8) : glowColor,
-                        size: isBoss ? 38 : 30,
+          // Panda đứng cạnh node nhưng không đẩy node lệch khỏi đường đi.
+          SizedBox(
+            width: nodeSize,
+            height: nodeSize + 5,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                if (isActive)
+                  Positioned(
+                    right: nodeSize + 2,
+                    bottom: 0,
+                    child: ExcludeSemantics(
+                      child: PandaCompanion(
+                        size: 54,
+                        mood: isBoss ? PandaMood.archer : PandaMood.happy,
                       ),
                     ),
                   ),
-                ),
-              ),
-            ],
+                node,
+              ],
+            ),
           ),
-          const SizedBox(height: 6),
-          // Star indicators for completed nodes
-          if (stars > 0)
+          if (stars > 0) ...[
+            const SizedBox(height: 4),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: List.generate(3, (i) {
                 return Icon(
                   Icons.star_rounded,
-                  size: 14,
-                  color:
-                      i < stars ? GameVisualTokens.gold : Colors.grey.shade300,
+                  size: 16,
+                  color: i < stars
+                      ? GameVisualTokens.gold
+                      : const Color(0xFFE2DCCD),
                 );
               }),
             ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: isLocked ? const Color(0xFF94A3B8) : GameVisualTokens.ink,
+          ],
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: isLocked ? .82 : .95),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isActive
+                    ? accent.withValues(alpha: .45)
+                    : const Color(0xFFF1E6CF),
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14635D3B),
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w900,
+                    color: isLocked
+                        ? const Color(0xFF8C8577)
+                        : const Color(0xFF342E10),
+                  ),
+                ),
+                if (progressLabel != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    progressLabel!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFF8C8577),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+                if (ctaLabel != null) ...[
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: onTap,
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 26),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 5),
+                      decoration: BoxDecoration(
+                        gradient: primaryCta
+                            ? LinearGradient(
+                                colors: isBoss
+                                    ? const [
+                                        Color(0xFFEF4444),
+                                        GameVisualTokens.crimson,
+                                      ]
+                                    : const [
+                                        GameVisualTokens.primaryGreenLight,
+                                        GameVisualTokens.primaryGreen,
+                                      ],
+                              )
+                            : null,
+                        color: primaryCta ? null : Colors.transparent,
+                        borderRadius: BorderRadius.circular(99),
+                        border: primaryCta
+                            ? null
+                            : Border.all(
+                                color: isLocked
+                                    ? const Color(0xFFD9D2C3)
+                                    : GameVisualTokens.primaryGreen),
+                      ),
+                      child: Text(
+                        ctaLabel!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: primaryCta
+                              ? Colors.white
+                              : isLocked
+                                  ? const Color(0xFF8C8577)
+                                  : GameVisualTokens.primaryGreenDark,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: .35,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                if (rewardPreview != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    rewardPreview!,
+                    style: const TextStyle(
+                      color: Color(0xFFB45309),
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          if (progressLabel != null) ...[
-            const SizedBox(height: 3),
-            Text(
-              progressLabel!,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isLocked
-                    ? const Color(0xFF64748B)
-                    : GameVisualTokens.templeWood,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-          if (ctaLabel != null) ...[
-            const SizedBox(height: 5),
-            Container(
-              constraints: const BoxConstraints(minHeight: 24),
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-              decoration: BoxDecoration(
-                color: borderColor.withValues(alpha: .14),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: borderColor.withValues(alpha: .35)),
-              ),
-              child: Text(
-                ctaLabel!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: glowColor,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: .35,
-                ),
-              ),
-            ),
-          ],
-          if (rewardPreview != null) ...[
-            const SizedBox(height: 3),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: GameVisualTokens.imperialGold.withValues(alpha: .12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                rewardPreview!,
-                style: const TextStyle(
-                  color: GameVisualTokens.templeWood,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );

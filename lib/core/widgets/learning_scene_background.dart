@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/game_visual_tokens.dart';
 
 enum LearningSceneTheme {
-  bambooVillage, // Jade & emerald morning
+  bambooVillage, // Cream morning with soft green hills
   lanternTown, // Amber gold & festival lanterns
   shanghaiCity, // Sapphire blue & modern mist
   mountainTemple, // Mystical purple & mountain clouds
@@ -11,6 +11,29 @@ enum LearningSceneTheme {
   dragonRealm, // Night obsidian & dragon fire
   neutralCream, // Warm parchment default
 }
+
+/// Chiều cao vùng đáy (home indicator) mà màn cha đã cắt bằng SafeArea.
+///
+/// [LearningScaffold] ghi lại giá trị này *trước* khi bọc SafeArea (vì
+/// SafeArea xoá cả padding lẫn viewPadding khỏi MediaQuery), để các nền
+/// có thể vẽ tràn xuống tận mép màn hình.
+class BottomBleedScope extends InheritedWidget {
+  const BottomBleedScope({
+    super.key,
+    required this.bleed,
+    required super.child,
+  });
+
+  final double bleed;
+
+  @override
+  bool updateShouldNotify(BottomBleedScope oldWidget) =>
+      oldWidget.bleed != bleed;
+}
+
+/// Phần nền cần vẽ tràn xuống dưới vùng an toàn (0 nếu không bị cắt).
+double bottomBleed(BuildContext context) =>
+    context.dependOnInheritedWidgetOfExactType<BottomBleedScope>()?.bleed ?? 0;
 
 /// Reusable multi-layered Chinese Fantasy Adventure background
 class LearningSceneBackground extends StatelessWidget {
@@ -30,14 +53,15 @@ class LearningSceneBackground extends StatelessWidget {
   (List<Color>, Color, Color) _getThemeColors() {
     switch (theme) {
       case LearningSceneTheme.bambooVillage:
+        // Nền kem đồng bộ với Home, núi xanh lá rất nhạt làm điểm nhấn.
         return (
           [
-            const Color(0xFFF0FDF4),
-            const Color(0xFFDCFCE7),
-            const Color(0xFFBBF7D0)
+            const Color(0xFFFFFAF0),
+            const Color(0xFFFFF7E8),
+            const Color(0xFFFFF1DC)
           ],
-          const Color(0xFF0F766E).withValues(alpha: 0.12),
-          const Color(0xFF10B981).withValues(alpha: 0.08),
+          GameVisualTokens.primaryGreen.withValues(alpha: 0.10),
+          GameVisualTokens.primaryGreenLight.withValues(alpha: 0.07),
         );
       case LearningSceneTheme.lanternTown:
         return (
@@ -105,24 +129,38 @@ class LearningSceneBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bgColors, mountainColor, mistColor) = _getThemeColors();
+    // Khi màn bọc SafeArea ở đáy, nền vẫn vẽ tràn xuống vùng home indicator
+    // để không lộ vạch cắt; nội dung (child) vẫn nằm trong vùng an toàn.
+    final bleed = bottomBleed(context);
 
     return Stack(
       fit: StackFit.expand,
+      clipBehavior: Clip.none,
       children: [
         // 1. Base scenic gradient
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: bgColors,
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: -bleed,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: bgColors,
+              ),
             ),
           ),
         ),
 
         // 2. Far mountain silhouette & oriental clouds
         if (showMountains)
-          Positioned.fill(
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: -bleed,
             child: IgnorePointer(
               child: CustomPaint(
                 painter: _OrientalLandscapePainter(

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:flash_learn_chinese/core/learning/data/learning_journey_repository.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_journey_models.dart';
-import 'package:flash_learn_chinese/core/widgets/adventure_node.dart';
-import 'package:flash_learn_chinese/screen/boss_battle/model/boss_battle_stage.dart';
-import 'package:flash_learn_chinese/screen/chapter_adventure/model/chapter_adventure.dart';
-import 'package:flash_learn_chinese/screen/unit_overview/controller/unit_overview_controller.dart';
-import 'package:flash_learn_chinese/screen/unit_overview/page/unit_overview_screen.dart';
+import 'package:pandarin/core/learning/data/learning_journey_repository.dart';
+import 'package:pandarin/core/learning/model/learning_journey_models.dart';
+import 'package:pandarin/core/widgets/adventure_node.dart';
+import 'package:pandarin/features/boss_battle/model/boss_battle_stage.dart';
+import 'package:pandarin/features/chapter_adventure/model/chapter_adventure.dart';
+import 'package:pandarin/features/unit_overview/controller/unit_overview_controller.dart';
+import 'package:pandarin/features/unit_overview/page/unit_overview_screen.dart';
 
-import 'package:flash_learn_chinese/core/learning/model/learning_stage_models.dart';
+import 'package:pandarin/core/learning/model/learning_stage_models.dart';
 
 class MockLearningJourneyRepository implements LearningJourneyRepository {
   MockLearningJourneyRepository({

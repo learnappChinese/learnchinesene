@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flash_learn_chinese/core/ai/model/ai_gateway_exception.dart';
-import 'package:flash_learn_chinese/core/services/gemini_service.dart';
-import 'package:flash_learn_chinese/core/services/history_service.dart';
-import 'package:flash_learn_chinese/core/services/tts_service.dart';
-import 'package:flash_learn_chinese/screen/hsk_exam/controller/hsk_exam_controller.dart';
+import 'package:pandarin/core/ai/model/ai_gateway_exception.dart';
+import 'package:pandarin/core/services/gemini_service.dart';
+import 'package:pandarin/core/services/history_service.dart';
+import 'package:pandarin/core/services/tts_service.dart';
+import 'package:pandarin/features/hsk_exam/controller/hsk_exam_controller.dart';
 
 class FakeGeminiExamService extends GeminiService {
   bool shouldFailAnalysis = false;

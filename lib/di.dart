@@ -6,19 +6,15 @@ import 'core/auth/controller/auth_controller.dart';
 import 'core/auth/data/auth_repository.dart';
 import 'core/auth/service/guest_progress_migration_service.dart';
 import 'core/backend/supabase_service.dart';
-import 'core/entitlement/data/entitlement_repository.dart';
-import 'core/entitlement/service/premium_access_service.dart';
 import 'core/learning/service/learning_progress_sync_service.dart';
 import 'core/learning/service/learning_session_composer.dart';
 import 'core/learning/service/unit_bridge_resolver.dart';
 import 'core/services/gemini_service.dart';
 import 'core/services/history_service.dart';
-import 'core/services/iap_service.dart';
 import 'core/services/tts_service.dart';
-import 'screen/home/controller/home_controller.dart';
-import 'screen/home/data/home_journey_repository.dart';
-import 'screen/splash/controller/splash_controller.dart';
-import 'screen/subscription/controller/subscription_controller.dart';
+import 'features/home/controller/home_controller.dart';
+import 'features/home/data/home_journey_repository.dart';
+import 'features/splash/controller/splash_controller.dart';
 
 void initDI() {
   Get.lazyPut<SupabaseClient>(() => Supabase.instance.client, fenix: true);
@@ -47,17 +43,6 @@ void initDI() {
     ),
     fenix: true,
   );
-  Get.lazyPut<EntitlementRepository>(
-    () => SupabaseEntitlementRepository(client: Get.find<SupabaseClient>()),
-    fenix: true,
-  );
-  Get.lazyPut<PremiumAccessService>(
-    () => PremiumAccessService(
-      repository: Get.find<EntitlementRepository>(),
-      authController: Get.find<AuthController>(),
-    ),
-    fenix: true,
-  );
   Get.lazyPut(() => SupabaseService(Get.find<SupabaseClient>()), fenix: true);
   Get.lazyPut(() => http.Client(), fenix: true);
   Get.lazyPut(
@@ -76,14 +61,6 @@ void initDI() {
     () => HomeController(
       journeyRepository: Get.find<HomeJourneyRepository>(),
       syncService: Get.find<LearningProgressSyncService>(),
-    ),
-    fenix: true,
-  );
-  Get.lazyPut(() => IAPService(), fenix: true);
-  Get.lazyPut(
-    () => SubscriptionController(
-      Get.find<IAPService>(),
-      premiumAccessService: Get.find<PremiumAccessService>(),
     ),
     fenix: true,
   );

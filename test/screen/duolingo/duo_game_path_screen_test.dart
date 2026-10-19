@@ -1,5 +1,5 @@
-import 'package:flash_learn_chinese/screen/duolingo/controller/duo_game_path_controller.dart';
-import 'package:flash_learn_chinese/screen/duolingo/page/duo_game_path_screen.dart';
+import 'package:pandarin/features/duolingo/controller/duo_game_path_controller.dart';
+import 'package:pandarin/features/duolingo/page/duo_game_path_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';

@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flash_learn_chinese/screen/game_hub/view/game_hub_view.dart';
-import 'package:flash_learn_chinese/screen/home/widgets/home_bottom_navigation.dart';
+import 'package:pandarin/features/game_hub/view/game_hub_view.dart';
+import 'package:pandarin/features/home/widgets/home_bottom_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -81,14 +81,9 @@ void main() {
       expect(tester.getTopLeft(find.text('Trò chơi').first).dy,
           greaterThanOrEqualTo(47));
       final heading = tester.getRect(find.text('Trò chơi').first);
-      final journey = tester.getRect(find.byTooltip('Hành trình Ải'));
       expect(heading.top, lessThanOrEqualTo(47 + 24.w));
-      expect(journey.top, greaterThanOrEqualTo(47 - 12.w));
-      expect(journey.right, lessThanOrEqualTo(size.width));
-      expect(heading.right, lessThan(journey.left));
-      final description = tester
-          .getRect(find.text('Học tiếng Trung qua những trò chơi thú vị!'));
-      expect(description.overlaps(journey), isFalse);
+      // Header không còn nút "Hành trình"; lối vào bản đồ nằm ở banner.
+      expect(find.byTooltip('Hành trình Ải'), findsNothing);
       if (capture) {
         final boundary = boundaryKey.currentContext!.findRenderObject()
             as RenderRepaintBoundary;
@@ -99,7 +94,9 @@ void main() {
           image.dispose();
         });
       }
-      await tester.tap(find.byTooltip('Hành trình Ải'));
+      await tester.ensureVisible(find.text('Xem hành trình Boss'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Xem hành trình Boss'));
       for (final title in [
         'Boss Battle',
         'Xây chữ Hán',

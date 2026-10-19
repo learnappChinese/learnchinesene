@@ -28,7 +28,7 @@ class GameProgressHud extends StatelessWidget {
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return Material(
       color: Colors.transparent,
-      elevation: 3,
+      elevation: 0,
       child: Padding(
         padding: EdgeInsets.zero,
         child: Semantics(
@@ -38,16 +38,9 @@ class GameProgressHud extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.fromLTRB(16, 11, 16, 13),
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [GameVisualTokens.jadeDark, GameVisualTokens.jade],
-              ),
+              color: Color(0xFFFFFAF0),
               border: Border(
-                bottom: BorderSide(
-                  color: GameVisualTokens.imperialGold,
-                  width: 2,
-                ),
+                bottom: BorderSide(color: Color(0xFFF1E6CF), width: 1.5),
               ),
             ),
             child: Column(
@@ -60,9 +53,9 @@ class GameProgressHud extends StatelessWidget {
                       height: 30,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .12),
+                        color: Colors.white,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white24),
+                        border: Border.all(color: const Color(0xFFF1E6CF)),
                       ),
                       child: const Text('🏮', style: TextStyle(fontSize: 16)),
                     ),
@@ -73,7 +66,7 @@ class GameProgressHud extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF57300A),
                           fontSize: 12,
                           fontWeight: FontWeight.w900,
                           letterSpacing: .8,
@@ -82,11 +75,20 @@ class GameProgressHud extends StatelessWidget {
                     ),
                     ComboBadge(combo: combo),
                     if (combo >= 2) const SizedBox(width: 8),
-                    Text(
-                      '+$xp XP',
-                      style: const TextStyle(
-                        color: GameVisualTokens.goldLight,
-                        fontWeight: FontWeight.w900,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 9, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text(
+                        '+$xp XP',
+                        style: const TextStyle(
+                          color: Color(0xFFB45309),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                   ],
@@ -106,8 +108,8 @@ class GameProgressHud extends StatelessWidget {
                               LinearProgressIndicator(
                             value: value,
                             minHeight: 10,
-                            color: GameVisualTokens.imperialGold,
-                            backgroundColor: Colors.white24,
+                            color: GameVisualTokens.primaryGreen,
+                            backgroundColor: const Color(0xFFF1E6CF),
                           ),
                         ),
                       ),
@@ -116,7 +118,7 @@ class GameProgressHud extends StatelessWidget {
                     Text(
                       '$currentStep/$safeTotal',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: GameVisualTokens.primaryGreenDark,
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
                       ),

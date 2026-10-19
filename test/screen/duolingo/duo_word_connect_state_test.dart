@@ -1,4 +1,4 @@
-import 'package:flash_learn_chinese/screen/duolingo/widget/duo_word_connect_widget.dart';
+import 'package:pandarin/features/duolingo/widget/duo_word_connect_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

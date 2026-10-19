@@ -1,6 +1,6 @@
-import 'package:flash_learn_chinese/screen/home/model/home_journey.dart';
-import 'package:flash_learn_chinese/screen/home/widgets/home_practice_tab.dart';
-import 'package:flash_learn_chinese/screen/review/model/review_item.dart';
+import 'package:pandarin/features/home/model/home_journey.dart';
+import 'package:pandarin/features/home/widgets/home_practice_tab.dart';
+import 'package:pandarin/features/review/model/review_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

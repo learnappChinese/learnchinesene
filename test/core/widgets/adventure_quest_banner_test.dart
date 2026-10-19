@@ -1,4 +1,4 @@
-import 'package:flash_learn_chinese/core/widgets/adventure_quest_banner.dart';
+import 'package:pandarin/core/widgets/adventure_quest_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

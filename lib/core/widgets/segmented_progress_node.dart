@@ -101,18 +101,18 @@ class SegmentedProgressNode extends StatelessWidget {
     }
     if (state == AdventureNodeState.completed) {
       return (
-        GameVisualTokens.jade,
-        GameVisualTokens.jadeLight.withValues(alpha: 0.3),
-        const Color(0xFFECFDF5),
-        GameVisualTokens.jade.withValues(alpha: 0.3),
+        GameVisualTokens.primaryGreen,
+        GameVisualTokens.primaryGreenLight.withValues(alpha: 0.3),
+        const Color(0xFFF1FBE9),
+        GameVisualTokens.primaryGreen.withValues(alpha: 0.3),
       );
     }
     if (isInProgress || isActive) {
       return (
-        GameVisualTokens.blue,
-        const Color(0xFFE0F2FE),
-        const Color(0xFFF0F9FF),
-        GameVisualTokens.blue.withValues(alpha: 0.3),
+        GameVisualTokens.primaryGreen,
+        GameVisualTokens.primaryGreenSoft,
+        const Color(0xFFF1FBE9),
+        GameVisualTokens.primaryGreen.withValues(alpha: 0.4),
       );
     }
     if (state == AdventureNodeState.failed) {
@@ -125,10 +125,10 @@ class SegmentedProgressNode extends StatelessWidget {
     }
     // Available state
     return (
-      GameVisualTokens.jade,
+      GameVisualTokens.primaryGreen,
       const Color(0xFFE2E8F0),
       Colors.white,
-      GameVisualTokens.jade.withValues(alpha: 0.2),
+      GameVisualTokens.primaryGreen.withValues(alpha: 0.2),
     );
   }
 
@@ -217,7 +217,7 @@ class SegmentedProgressNode extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: state == AdventureNodeState.perfect
                             ? GameVisualTokens.imperialGold
-                            : GameVisualTokens.jade,
+                            : GameVisualTokens.primaryGreen,
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
                       ),

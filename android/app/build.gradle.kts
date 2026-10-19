@@ -14,7 +14,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
 
-    namespace = "com.stallion.chinesemaster"
+    namespace = "com.stallion.pandarin"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -28,7 +28,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.stallion.chinesemaster"
+        applicationId = "com.stallion.pandarin"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

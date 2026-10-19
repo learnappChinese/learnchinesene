@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flash_learn_chinese/core/learning/model/learning_stage_models.dart';
-import 'package:flash_learn_chinese/core/learning/service/learning_stage_grouping_service.dart';
-import 'package:flash_learn_chinese/core/widgets/adventure_node.dart';
+import 'package:pandarin/core/learning/model/learning_stage_models.dart';
+import 'package:pandarin/core/learning/service/learning_stage_grouping_service.dart';
+import 'package:pandarin/core/widgets/adventure_node.dart';
 
 void main() {
   const service = LearningStageGroupingService();

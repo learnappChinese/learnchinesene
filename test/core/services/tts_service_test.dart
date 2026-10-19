@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:flash_learn_chinese/core/services/tts_service.dart';
+import 'package:pandarin/core/services/tts_service.dart';
 
 class MockFlutterTts extends FlutterTts {
   String? spokenText;

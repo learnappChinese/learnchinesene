@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flash_learn_chinese/core/services/history_service.dart';
-import 'package:flash_learn_chinese/screen/hsk_quiz/controller/hsk_quiz_controller.dart';
-import 'package:flash_learn_chinese/screen/hsk_quiz/data/hsk_quiz_repository.dart';
-import 'package:flash_learn_chinese/screen/hsk_quiz/domain/hsk_quiz_question_generator.dart';
+import 'package:pandarin/core/services/history_service.dart';
+import 'package:pandarin/features/hsk_quiz/controller/hsk_quiz_controller.dart';
+import 'package:pandarin/features/hsk_quiz/data/hsk_quiz_repository.dart';
+import 'package:pandarin/features/hsk_quiz/domain/hsk_quiz_question_generator.dart';
 
 class MockHskQuizRepository implements HskQuizRepository {
   MockHskQuizRepository({this.vocabulary});

@@ -1,4 +1,4 @@
-import 'package:flash_learn_chinese/screen/boss_battle/animation/boss_battle_rive_contract.dart';
+import 'package:pandarin/features/boss_battle/animation/boss_battle_rive_contract.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

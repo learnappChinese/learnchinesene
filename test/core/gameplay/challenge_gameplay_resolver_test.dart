@@ -1,8 +1,8 @@
-import 'package:flash_learn_chinese/core/gameplay/challenge_gameplay_resolver.dart';
-import 'package:flash_learn_chinese/core/gameplay/gameplay_type.dart';
-import 'package:flash_learn_chinese/core/models/duo_challenge.dart';
-import 'package:flash_learn_chinese/core/models/example_sentence.dart';
-import 'package:flash_learn_chinese/core/models/word.dart';
+import 'package:pandarin/core/gameplay/challenge_gameplay_resolver.dart';
+import 'package:pandarin/core/gameplay/gameplay_type.dart';
+import 'package:pandarin/core/models/duo_challenge.dart';
+import 'package:pandarin/core/models/example_sentence.dart';
+import 'package:pandarin/core/models/word.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

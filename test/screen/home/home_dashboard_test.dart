@@ -1,5 +1,5 @@
-import 'package:flash_learn_chinese/screen/home/model/home_journey.dart';
-import 'package:flash_learn_chinese/screen/home/widgets/home_dashboard.dart';
+import 'package:pandarin/features/home/model/home_journey.dart';
+import 'package:pandarin/features/home/widgets/home_dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';

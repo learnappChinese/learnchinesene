@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/game_visual_tokens.dart';
+import 'panda_companion.dart';
 
+/// Thẻ đầu trang của một bài/chương theo theme kem + xanh lá của Home.
 class ChapterHeaderBanner extends StatelessWidget {
   const ChapterHeaderBanner({
     super.key,
@@ -9,7 +11,7 @@ class ChapterHeaderBanner extends StatelessWidget {
     required this.vietnameseTitle,
     this.badgeLabel,
     this.objectives = const [],
-    this.backgroundAsset = 'assets/images/backgrounds/learning_practice.png',
+    this.footer,
   });
 
   final int chapterNumber;
@@ -17,159 +19,176 @@ class ChapterHeaderBanner extends StatelessWidget {
   final String vietnameseTitle;
   final String? badgeLabel;
   final List<String> objectives;
-  final String backgroundAsset;
+
+  /// Nội dung phụ hiển thị cuối thẻ (ví dụ thanh tiến độ).
+  final Widget? footer;
+
+  static const _ink = Color(0xFF342E10);
+  static const _brown = Color(0xFF57300A);
+  static const _muted = Color(0xFF5D5C54);
 
   @override
   Widget build(BuildContext context) {
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.25;
+    // Mục tiêu trùng tên bài thì không cần lặp lại.
+    final visibleObjectives = objectives
+        .where((o) =>
+            o.trim().isNotEmpty &&
+            o.trim().toLowerCase() != vietnameseTitle.trim().toLowerCase())
+        .toList();
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: GameVisualTokens.imperialGold, width: 2),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFFDF6), Color(0xFFFFF1D6)],
+        ),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: Colors.white, width: 4),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x33000000),
+            color: Color(0x24635D3B),
             blurRadius: 16,
-            offset: Offset(0, 6),
+            offset: Offset(0, 7),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: Stack(
-          children: [
-            // Scenic backdrop
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.28,
-                child: Image.asset(
-                  backgroundAsset,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox(),
-                ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned(
+            right: -6,
+            top: -36,
+            child: Text(
+              '学',
+              style: TextStyle(
+                fontSize: 140,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF8B5E1A).withValues(alpha: 0.06),
               ),
             ),
-            // Chinese cloud vignette
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF0F172A).withValues(alpha: 0.90),
-                      const Color(0xFF1E293B).withValues(alpha: 0.85),
-                    ],
-                  ),
-                ),
+          ),
+          if (!largeText)
+            const Positioned(
+              right: 0,
+              top: 18,
+              child: ExcludeSemantics(
+                child: PandaCompanion(mood: PandaMood.happy, size: 96),
               ),
             ),
-            // Header content
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(right: largeText ? 0 : 92),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: GameVisualTokens.imperialGold,
-                          borderRadius: BorderRadius.circular(8),
+                          gradient: const LinearGradient(
+                            colors: [
+                              GameVisualTokens.primaryGreenLight,
+                              GameVisualTokens.primaryGreen,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(99),
                         ),
                         child: Text(
                           badgeLabel ?? 'BÀI $chapterNumber',
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
-                            color: Color(0xFF451A03),
-                            letterSpacing: 1.2,
+                            color: Colors.white,
+                            letterSpacing: 1,
                           ),
                         ),
                       ),
-                      const Text(
-                        '🏮 📜 🐉',
-                        style: TextStyle(fontSize: 16),
+                      const SizedBox(height: 10),
+                      Text(
+                        chineseTitle,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: _brown,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        vietnameseTitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          height: 1.2,
+                          fontWeight: FontWeight.w900,
+                          color: _ink,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    chineseTitle,
-                    style: const TextStyle(
-                      fontSize: 26,
+                ),
+                if (visibleObjectives.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'MỤC TIÊU PHIÊU LƯU',
+                    style: TextStyle(
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: 1.5,
-                      shadows: [
-                        Shadow(color: Colors.black, blurRadius: 8),
-                      ],
+                      color: _brown,
+                      letterSpacing: 1,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    vietnameseTitle,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: GameVisualTokens.goldLight,
-                    ),
-                  ),
-                  if (objectives.isNotEmpty) ...[
-                    const SizedBox(height: 14),
-                    const Divider(color: Colors.white24, height: 1),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'MỤC TIÊU PHIÊU LƯU:',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white70,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: objectives.map((obj) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.check_circle_rounded,
-                                  color: GameVisualTokens.jadeLight, size: 13),
-                              const SizedBox(width: 5),
-                              Text(
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: visibleObjectives.map((obj) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFF1E6CF)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.check_circle_rounded,
+                                color: GameVisualTokens.primaryGreen, size: 14),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
                                 obj,
                                 style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11.5,
+                                  color: _muted,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ],
-              ),
+                if (footer != null) ...[
+                  const SizedBox(height: 14),
+                  footer!,
+                ],
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

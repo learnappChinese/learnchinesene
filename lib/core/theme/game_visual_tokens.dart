@@ -18,11 +18,17 @@ abstract final class GameVisualTokens {
   static const burgundy = Color(0xFF7D1D24);
   static const night = Color(0xFF241728);
 
+  // Màu chủ đạo của màn Home (nút, tab, điều hướng).
+  static const primaryGreen = Color(0xFF45BC09);
+  static const primaryGreenLight = Color(0xFF6BD12A);
+  static const primaryGreenDark = Color(0xFF2E8A04);
+  static const primaryGreenSoft = Color(0xFFE3F7D3);
+
   // Chinese Fantasy Adventure palette
-  static const jade = Color(0xFF0F766E);
-  static const jadeDark = Color(0xFF064E3B);
-  static const jadeLight = Color(0xFF10B981);
-  static const jadeMint = Color(0xFFD1FAE5);
+  static const jade = Color(0xFF2E8A04);
+  static const jadeDark = Color(0xFF1F6B02);
+  static const jadeLight = Color(0xFF45BC09);
+  static const jadeMint = Color(0xFFE3F7D3);
   static const imperialGold = Color(0xFFF59E0B);
   static const goldLight = Color(0xFFFDE68A);
   static const crimson = Color(0xFFDC2626);

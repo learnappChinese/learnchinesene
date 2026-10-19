@@ -1,6 +1,5 @@
 enum AiGatewayErrorCode {
   authenticationRequired,
-  premiumRequired,
   quotaExceeded,
   invalidInput,
   aiTemporarilyUnavailable,
@@ -11,8 +10,6 @@ enum AiGatewayErrorCode {
     switch (code) {
       case 'authentication_required':
         return AiGatewayErrorCode.authenticationRequired;
-      case 'premium_required':
-        return AiGatewayErrorCode.premiumRequired;
       case 'quota_exceeded':
         return AiGatewayErrorCode.quotaExceeded;
       case 'invalid_input':
@@ -40,7 +37,6 @@ class AiGatewayException implements Exception {
   final dynamic details;
 
   bool get isQuotaExceeded => code == AiGatewayErrorCode.quotaExceeded;
-  bool get isPremiumRequired => code == AiGatewayErrorCode.premiumRequired;
   bool get isAuthRequired => code == AiGatewayErrorCode.authenticationRequired;
 
   @override

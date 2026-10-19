@@ -1,4 +1,4 @@
-import 'package:flash_learn_chinese/core/backend/supabase_config.dart';
+import 'package:pandarin/core/backend/supabase_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flash_learn_chinese/screen/boss_battle/controller/boss_battle_controller.dart';
-import 'package:flash_learn_chinese/screen/boss_battle/data/boss_battle_repository.dart';
-import 'package:flash_learn_chinese/screen/boss_battle/domain/boss_battle_question_generator.dart';
-import 'package:flash_learn_chinese/screen/boss_battle/model/boss_battle_question.dart';
+import 'package:pandarin/features/boss_battle/controller/boss_battle_controller.dart';
+import 'package:pandarin/features/boss_battle/data/boss_battle_repository.dart';
+import 'package:pandarin/features/boss_battle/domain/boss_battle_question_generator.dart';
+import 'package:pandarin/features/boss_battle/model/boss_battle_question.dart';
 
 class _FakeQuestionSource implements BossBattleQuestionSource {
   _FakeQuestionSource(this.questions);

@@ -1,10 +1,10 @@
-import 'package:flash_learn_chinese/core/learning/data/learning_history_repository.dart';
-import 'package:flash_learn_chinese/core/learning/service/learning_mastery_service.dart';
-import 'package:flash_learn_chinese/screen/home/controller/home_controller.dart';
-import 'package:flash_learn_chinese/screen/home/data/home_journey_repository.dart';
-import 'package:flash_learn_chinese/screen/home/model/home_journey.dart';
-import 'package:flash_learn_chinese/screen/review/data/review_repository.dart';
-import 'package:flash_learn_chinese/screen/review/model/review_item.dart';
+import 'package:pandarin/core/learning/data/learning_history_repository.dart';
+import 'package:pandarin/core/learning/service/learning_mastery_service.dart';
+import 'package:pandarin/features/home/controller/home_controller.dart';
+import 'package:pandarin/features/home/data/home_journey_repository.dart';
+import 'package:pandarin/features/home/model/home_journey.dart';
+import 'package:pandarin/features/review/data/review_repository.dart';
+import 'package:pandarin/features/review/model/review_item.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

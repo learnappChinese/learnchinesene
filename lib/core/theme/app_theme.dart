@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../widgets/app_back_button.dart';
 import 'app_colors.dart';
 import 'game_visual_tokens.dart';
 
@@ -19,9 +20,12 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: GameVisualTokens.cream,
+      scaffoldBackgroundColor: const Color(0xFFFFFAF0),
       fontFamily: 'sans-serif',
       splashFactory: InkSparkle.splashFactory,
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (_) => const AppBackButtonFace(size: 40),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -88,6 +92,37 @@ abstract final class AppTheme {
             fontSize: 15,
             fontWeight: FontWeight.w900,
           ),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: const Color(0xFFFFFCF4),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+          side: const BorderSide(color: Colors.white, width: 3),
+        ),
+        titleTextStyle: const TextStyle(
+          color: Color(0xFF342E10),
+          fontSize: 20,
+          fontWeight: FontWeight.w900,
+        ),
+        contentTextStyle: const TextStyle(
+          color: Color(0xFF5D5C54),
+          fontSize: 14,
+          height: 1.45,
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Color(0xFFFFFCF4),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.jade,
+          textStyle: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -158,6 +193,9 @@ abstract final class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: GameVisualTokens.night,
       fontFamily: 'sans-serif',
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (_) => const AppBackButtonFace(size: 40),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,

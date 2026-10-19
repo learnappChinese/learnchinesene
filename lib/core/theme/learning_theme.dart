@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 abstract final class LearningColors {
-  static const background = Color(0xFFFFF8ED);
+  // Cùng màu kem với nền Home để AppBar và thân màn đồng bộ.
+  static const background = Color(0xFFFFFAF0);
   static const surface = Color(0xFFFFFBF3);
   static const surfaceStrong = Color(0xFFFFEED4);
-  static const jade = Color(0xFF0F766E);
-  static const jadeDark = Color(0xFF064E3B);
-  static const jadeSoft = Color(0xFFD1FAE5);
+  static const jade = Color(0xFF2E8A04);
+  static const jadeDark = Color(0xFF1F6B02);
+  static const jadeSoft = Color(0xFFE3F7D3);
   static const gold = Color(0xFFF59E0B);
   static const goldDark = Color(0xFF9A6A0A);
   static const goldSoft = Color(0xFFFDE68A);
