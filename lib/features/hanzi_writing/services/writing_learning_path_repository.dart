@@ -138,7 +138,7 @@ class WritingLearningPathRepository {
     );
     final sources = await _loadRowsInChunks(
       table: 'lexicon_word_sources',
-      select: 'word_id,unit_id,source_row',
+      select: 'word_id,unit_id,topic_id,source_row',
       filterColumn: 'unit_id',
       values: unitIds,
     );
@@ -161,14 +161,61 @@ class WritingLearningPathRepository {
         if (row['id'] is num) (row['id'] as num).toInt(): row,
     };
     final minSource = <String, int>{};
+    final topicIds = <int>{};
+    final topicStats = <String, _TopicStat>{};
     for (final row in sources) {
       final unitId = (row['unit_id'] as num?)?.toInt();
       final wordId = (row['word_id'] as num?)?.toInt();
+      final topicId = (row['topic_id'] as num?)?.toInt();
       final sourceRow = (row['source_row'] as num?)?.toInt();
-      if (unitId == null || wordId == null || sourceRow == null) continue;
-      final key = '$unitId:$wordId';
-      final current = minSource[key];
-      if (current == null || sourceRow < current) minSource[key] = sourceRow;
+      if (unitId != null && wordId != null && sourceRow != null) {
+        final key = '$unitId:$wordId';
+        final current = minSource[key];
+        if (current == null || sourceRow < current) minSource[key] = sourceRow;
+      }
+      if (unitId != null && topicId != null) {
+        topicIds.add(topicId);
+        final key = '$unitId:$topicId';
+        final current = topicStats[key];
+        topicStats[key] = _TopicStat(
+          unitId: unitId,
+          topicId: topicId,
+          count: (current?.count ?? 0) + 1,
+          firstSourceRow: current == null
+              ? (sourceRow ?? 1 << 30)
+              : (sourceRow != null && sourceRow < current.firstSourceRow
+                  ? sourceRow
+                  : current.firstSourceRow),
+        );
+      }
+    }
+
+    final topicRows = await _loadRowsInChunks(
+      table: 'lexicon_topics',
+      select: 'id,name_vi',
+      filterColumn: 'id',
+      values: topicIds.toList(),
+    );
+    final topicNames = <int, String>{
+      for (final row in topicRows)
+        if (row['id'] is num && '${row['name_vi'] ?? ''}'.trim().isNotEmpty)
+          (row['id'] as num).toInt(): '${row['name_vi']}',
+    };
+    final semanticTitleByUnit = <int, String>{};
+    final bestStatByUnit = <int, _TopicStat>{};
+    for (final stat in topicStats.values) {
+      final existing = bestStatByUnit[stat.unitId];
+      final better = existing == null ||
+          stat.count > existing.count ||
+          (stat.count == existing.count &&
+              stat.firstSourceRow < existing.firstSourceRow) ||
+          (stat.count == existing.count &&
+              stat.firstSourceRow == existing.firstSourceRow &&
+              stat.topicId < existing.topicId);
+      if (better && topicNames.containsKey(stat.topicId)) {
+        bestStatByUnit[stat.unitId] = stat;
+        semanticTitleByUnit[stat.unitId] = topicNames[stat.topicId]!;
+      }
     }
 
     final unitById = <int, Map<String, dynamic>>{
@@ -193,7 +240,8 @@ class WritingLearningPathRepository {
         characterStrings.add(char);
         candidates.add(_CharacterCandidate(
           unitId: unitId,
-          unitTitle: '${unit['title'] ?? 'Section'}',
+          unitTitle: semanticTitleByUnit[unitId] ??
+              '${unit['title'] ?? 'Section'}',
           unitOrder: (unit['sort_order'] as num?)?.toInt() ??
               (unit['unit_number'] as num?)?.toInt() ??
               unitId,
@@ -423,6 +471,20 @@ class _CharacterCandidate {
   final int sourceRow;
   final int charPosition;
   final String character;
+}
+
+class _TopicStat {
+  const _TopicStat({
+    required this.unitId,
+    required this.topicId,
+    required this.count,
+    required this.firstSourceRow,
+  });
+
+  final int unitId;
+  final int topicId;
+  final int count;
+  final int firstSourceRow;
 }
 
 class _LastGuestScore {
