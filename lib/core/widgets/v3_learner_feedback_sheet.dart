@@ -47,6 +47,8 @@ class V3LearnerFeedbackStore {
 }
 
 const _issueCategories = <String, String>{
+  'lesson_ok': 'Bài học hợp lý, không phát hiện vấn đề',
+  'missing_lesson_content': 'Thiếu từ vựng, ví dụ hoặc ngữ pháp',
   'wrong_translation': 'Bản dịch / nghĩa chưa đúng',
   'wrong_answer': 'Đáp án hoặc lựa chọn không hợp lý',
   'missing_audio': 'Âm thanh thiếu / không phát',
@@ -68,7 +70,8 @@ Future<void> showV3LearnerFeedbackSheet(
   int? challengeIndex,
 }) async {
   var notes = '';
-  var category = 'wrong_translation';
+  var category = screen == 'unit_overview' ? 'lesson_ok' : 'wrong_translation';
+  var lessonRating = 3.0;
   var submitting = false;
   await showModalBottomSheet<void>(
       context: context,
@@ -94,7 +97,20 @@ Future<void> showV3LearnerFeedbackSheet(
                       '${challengeId == null ? "" : " • Câu: $challengeId"}',
                       style: const TextStyle(fontSize: 12)),
                   const SizedBox(height: 12),
-                  const Text('Bạn nhận thấy điều gì chưa hợp lý?'),
+                  if (screen == 'unit_overview') ...[
+                    Text('Mức độ hợp lý của toàn bài: ${lessonRating.toInt()}/5'),
+                    Slider(
+                      value: lessonRating,
+                      min: 1,
+                      max: 5,
+                      divisions: 4,
+                      label: '${lessonRating.toInt()}/5',
+                      onChanged: submitting ? null : (value) {
+                        setSheetState(() => lessonRating = value);
+                      },
+                    ),
+                  ],
+                  const Text('Đánh giá hoặc báo nội dung chưa hợp lý:'),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     value: category,
@@ -144,6 +160,8 @@ Future<void> showV3LearnerFeedbackSheet(
                           if (challengeIndex != null)
                             'challenge_index': challengeIndex,
                           'category': category,
+                          if (screen == 'unit_overview')
+                            'lesson_rating': lessonRating.toInt(),
                           'notes': notes.trim(),
                           'review_status': 'needs_review',
                         });
