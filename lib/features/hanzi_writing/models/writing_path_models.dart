@@ -185,6 +185,9 @@ class WritingPathSection {
       .where((node) => node.state == WritingPathNodeState.completed)
       .length;
   int get requiredCount => nodes.where((node) => node.hasStrokeData).length;
+  int get metadataIssueCount => nodes
+      .where((node) => !node.hasStrokeData || !node.hasCharacterMetadata)
+      .length;
   bool get completed =>
       requiredCount > 0 && completedCount >= requiredCount;
 }
