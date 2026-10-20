@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../../../core/widgets/v3_learner_feedback_sheet.dart';
 import 'package:get/get.dart';
 import '../../../core/widgets/app_green_button.dart';
 import '../../../core/presentation/learning_presentation_mapper.dart';
@@ -53,6 +55,16 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
     return LearningScaffold(
       title: 'Tổng quan bài học',
       actions: [
+        if (kDebugMode)
+          IconButton(
+            tooltip: 'Đánh giá chất lượng Unit (V3 QA)',
+            icon: const Icon(Icons.fact_check_outlined),
+            onPressed: () => showV3LearnerFeedbackSheet(
+              context,
+              unitId: controller.unitId,
+              screen: 'unit_overview',
+            ),
+          ),
         IconButton(
           tooltip: 'Bản đồ phiêu lưu',
           icon: const Icon(Icons.map_rounded,
