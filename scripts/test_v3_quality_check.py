@@ -1,7 +1,7 @@
 """Unit tests for the read-only V3 candidate scanner."""
 import json
 import unittest
-from scripts.v3_quality_check import inspect, scan, translation_buildable
+from scripts.v3_quality_check import inspect, scan, translation_buildable, scoring_sequence_matches
 
 class ContentQualityScannerTests(unittest.TestCase):
     def test_missing_word_pinyin_is_flagged(self):
@@ -48,6 +48,30 @@ class ContentQualityScannerTests(unittest.TestCase):
     def test_reuse_of_tile_is_not_silently_allowed(self):
         self.assertFalse(translation_buildable("trà trà", ["trà"]))
         self.assertTrue(translation_buildable("trà trà", ["trà", "trà"]))
+
+    def test_actual_flutter_ranked_scoring_matches_translation(self):
+        row = {"source_table": "duo_challenges", "id": "from-unit-1",
+               "type": "translate", "prompt": "米饭和豆腐",
+               "choices_text": ["và", "đậu", "cháo", "phụ", "cơm", "nóng"],
+               "choices_correct": [2, 3, 0, 4, 1, 0],
+               "solutions": ["cơm và đậu phụ"]}
+        self.assertTrue(scoring_sequence_matches(row))
+        self.assertEqual(inspect(row), [])
+
+    def test_scoring_mismatch_catches_incorrect_key(self):
+        row = {"source_table": "duo_challenges", "id": "bad-order",
+               "type": "translate", "prompt": "米饭和豆腐",
+               "choices_text": ["và", "đậu", "cháo", "phụ", "cơm", "nóng"],
+               "choices_correct": [1, 3, 0, 4, 2, 0],
+               "solutions": ["cơm và đậu phụ"]}
+        self.assertFalse(scoring_sequence_matches(row))
+        self.assertIn("translation_scorer_solution_mismatch_candidate",
+                      [x["issue_code"] for x in inspect(row)])
+
+    def test_scoring_sequence_must_be_contiguous(self):
+        row = {"type": "translate", "choices_text": ["我", "你"],
+               "choices_correct": [1, 3], "solutions": ["我你"]}
+        self.assertFalse(scoring_sequence_matches(row))
 
     def test_stream_counts_multiple_sources(self):
         report = scan([json.dumps({"source_table":"lexicon_words","id":1,
