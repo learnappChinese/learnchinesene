@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/game_visual_tokens.dart';
@@ -87,6 +88,29 @@ class HskWritingSectionBanner extends StatelessWidget {
                 ),
               ],
             ),
+            if (kDebugMode && section.metadataIssueCount > 0) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.data_object_rounded,
+                    color: Color(0xFFFFF3C4),
+                    size: 15,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${section.metadataIssueCount} chữ cần kiểm duyệt metadata',
+                      style: const TextStyle(
+                        color: Color(0xFFFFF3C4),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             if (!section.unlocked) ...[
               const SizedBox(height: 8),
               const Row(
