@@ -16,6 +16,34 @@ ARRAY_FIELDS = ("choices_text", "choices_correct", "tokens_text", "solutions")
 def is_blank(x):
     return x is None or isinstance(x, str) and not x.strip()
 
+def translation_buildable(solution, choices):
+    """Can target be assembled from each available answer-bank tile at most once?
+
+    Conservative review heuristic only: answer scoring may allow other
+    representations or punctuation. Skip long banks to avoid exponential work.
+    """
+    if not isinstance(solution, str) or not isinstance(choices, list):
+        return None
+    if len(choices) > 16 or any(not isinstance(c, str) for c in choices):
+        return None
+    normal = lambda text: "".join(text.casefold().split())
+    target = normal(solution)
+    options = [normal(choice) for choice in choices]
+    if not target or not options or any(not x for x in options):
+        return None
+    states = {(0, 0)}
+    while states:
+        next_states = set()
+        for offset, used in states:
+            if offset == len(target):
+                return True
+            for i, token in enumerate(options):
+                if not used & (1 << i) and target.startswith(token, offset):
+                    next_states.add((offset + len(token), used | (1 << i)))
+        states = next_states
+    return False
+
+
 def inspect(row):
     source = row.get("source_table", "")
     item_id = str(row.get("id", ""))
@@ -58,6 +86,14 @@ def inspect(row):
                 flag("translate_missing_solutions", "critical", {})
             if not isinstance(row.get("choices_text"), list) or not row["choices_text"]:
                 flag("translate_missing_choices", "critical", {})
+            if isinstance(row.get("solutions"), list) and isinstance(row.get("choices_text"), list):
+                checked = [
+                    translation_buildable(sol, row["choices_text"])
+                    for sol in row["solutions"]
+                ]
+                if checked and all(value is False for value in checked):
+                    flag("translation_token_bank_not_buildable_candidate", "high",
+                         {"type": typ, "hint": "Review tile split, punctuation and alternate scoring"})
         elif typ in ("assist", "select", "listenTap"):
             if not isinstance(row.get("choices_correct"), list) or not row["choices_correct"]:
                 flag("choice_missing_correct", "critical", {"type": typ})
