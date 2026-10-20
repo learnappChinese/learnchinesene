@@ -82,6 +82,36 @@ void main() {
     expect(entries.single['notes'], 'Thiếu lời giải thích');
   });
 
+  testWidgets('Unit overview can record an OK rating', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showV3LearnerFeedbackSheet(
+                context,
+                unitId: 'sec_1_unit_1',
+                screen: 'unit_overview',
+              ),
+              child: const Text('Review Unit'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Review Unit'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Mức độ hợp lý của toàn bài'), findsOneWidget);
+    await tester.ensureVisible(find.text('Lưu đánh giá'));
+    await tester.tap(find.text('Lưu đánh giá'));
+    await tester.pumpAndSettle();
+
+    final reports = await V3LearnerFeedbackStore.load();
+    expect(reports, hasLength(1));
+    expect(reports.single['lesson_rating'], 3);
+    expect(reports.single['category'], 'lesson_ok');
+  });
+
   test('local review queue can be copied as JSON', () async {
     await V3LearnerFeedbackStore.save(<String, dynamic>{
       'unit_id': 'sec_1_unit_1',
