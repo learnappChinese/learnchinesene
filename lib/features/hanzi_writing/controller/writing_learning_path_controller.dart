@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../models/writing_path_models.dart';
 import '../services/writing_learning_path_repository.dart';
+import '../services/writing_recommendation_engine.dart';
 
 class WritingLearningPathController extends GetxController {
   WritingLearningPathController({WritingLearningPathRepository? repository})
@@ -132,27 +133,8 @@ class WritingLearningPathController extends GetxController {
     }
   }
 
-  WritingPathNode? get recommendedNode {
-    final now = DateTime.now();
-    for (final path in loadedPaths) {
-      for (final section in path.sections) {
-        for (final node in section.nodes) {
-          final due = node.progress.nextReviewAt;
-          if (node.state == WritingPathNodeState.completed &&
-              due != null &&
-              !due.isAfter(now)) {
-            return node;
-          }
-        }
-      }
-    }
-    for (final path in loadedPaths) {
-      for (final section in path.sections) {
-        for (final node in section.nodes) {
-          if (node.state == WritingPathNodeState.current) return node;
-        }
-      }
-    }
-    return null;
-  }
+  WritingPathRecommendation? get recommendation =>
+      recommendWritingNode(loadedPaths);
+
+  WritingPathNode? get recommendedNode => recommendation?.node;
 }
