@@ -87,8 +87,19 @@ void main() {
       'unit_id': 'sec_1_unit_1',
       'category': 'locked_progress',
     });
+    String? copied;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        copied = (call.arguments as Map)['text'] as String?;
+      }
+      return null;
+    });
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    });
     await V3LearnerFeedbackStore.copyAll();
-    final result = await Clipboard.getData('text/plain');
-    expect(result?.text, contains('locked_progress'));
+    expect(copied, contains('locked_progress'));
   });
 }
