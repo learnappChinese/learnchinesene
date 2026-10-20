@@ -48,6 +48,33 @@ class HanziCharacter {
     return HanziLearningState.fresh;
   }
 
+  HanziCharacter copyWithProgress({
+    required int practiceCount,
+    required double bestScore,
+    required double lastScore,
+    DateTime? nextReviewAt,
+  }) {
+    return HanziCharacter(
+      id: id,
+      character: character,
+      pinyin: pinyin,
+      meaning: meaning,
+      audioUrl: audioUrl,
+      contextWord: contextWord,
+      contextPinyin: contextPinyin,
+      contextMeaning: contextMeaning,
+      hskLevel: hskLevel,
+      strokePathData: strokePathData,
+      viewBoxWidth: viewBoxWidth,
+      viewBoxHeight: viewBoxHeight,
+      strokeCount: strokeCount,
+      practiceCount: practiceCount,
+      bestScore: bestScore,
+      lastScore: lastScore,
+      nextReviewAt: nextReviewAt,
+    );
+  }
+
   factory HanziCharacter.fromMap(Map<String, Object?> map) {
     return HanziCharacter(
       id: map['id'] as int,
