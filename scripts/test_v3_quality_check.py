@@ -33,6 +33,11 @@ class ContentQualityScannerTests(unittest.TestCase):
         self.assertFalse(translation_buildable("cơm và nước",
                           ["và", "đậu", "cháo", "phụ", "cơm", "nóng"]))
 
+    def test_punctuation_differences_are_not_false_flags(self):
+        self.assertTrue(translation_buildable("Cơm, nước", ["Cơm", "nước"]))
+        self.assertTrue(translation_buildable("茶、咖啡", ["茶", "咖啡"]))
+        self.assertTrue(translation_buildable("Đây là cháo.", ["Đây", "là", "cháo"]))
+
     def test_unbuildable_translation_flag_needs_review(self):
         issues = inspect({"source_table": "duo_challenges", "id": "broken",
             "type": "translate", "prompt": "你好",
