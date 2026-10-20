@@ -8,6 +8,7 @@ Output: JSON issue candidates; human approval required.
 import argparse
 import json
 import pathlib
+import unicodedata
 from collections import Counter
 
 TABLES = {"lexicon_words", "lexicon_examples", "duo_challenges"}
@@ -26,7 +27,10 @@ def translation_buildable(solution, choices):
         return None
     if len(choices) > 16 or any(not isinstance(c, str) for c in choices):
         return None
-    normal = lambda text: "".join(text.casefold().split())
+    def normal(text):
+        return "".join(ch for ch in text.casefold()
+                       if not ch.isspace()
+                       and not unicodedata.category(ch).startswith("P"))
     target = normal(solution)
     options = [normal(choice) for choice in choices]
     if not target or not options or any(not x for x in options):
