@@ -1,0 +1,56 @@
+name: V3 Learning Content QA
+
+on:
+  pull_request:
+    branches: [hieu]
+    paths:
+      - 'scripts/**'
+      - 'lib/core/widgets/v3_learner_feedback_sheet.dart'
+      - 'lib/features/duolingo/page/duo_game_runner_screen.dart'
+      - 'lib/features/unit_overview/page/unit_overview_screen.dart'
+      - 'lib/core/learning/data/v3_unit_content_preview_repository.dart'
+      - 'test/core/widgets/v3_learner_feedback_sheet_test.dart'
+      - 'supabase/audits/**'
+      - 'supabase/migrations/*v3*'
+      - '.github/workflows/v3_quality_pr.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  corpus-audit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python V3 quality tests
+        run: python3 -m unittest discover -s scripts -p 'test_v3*.py' -v
+
+  flutter-content-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Analyze V3 QA production integration
+        run: >-
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          lib/core/widgets/v3_learner_feedback_sheet.dart
+          lib/features/unit_overview/page/unit_overview_screen.dart
+          lib/features/duolingo/page/duo_game_runner_screen.dart
+          lib/core/learning/data/v3_unit_content_preview_repository.dart
+          test/core/widgets/v3_learner_feedback_sheet_test.dart
+      - name: Learner feedback widget tests
+        run: flutter test test/core/widgets/v3_learner_feedback_sheet_test.dart
+      - name: Compile Android debug APK
+        run: flutter build apk --debug -t lib/main.dart
