@@ -73,6 +73,8 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   bool _isRoundCompleted = false;
   bool _isSessionCompleted = false;
   Timer? _autoNextRoundTimer;
+  Timer? _hintTimer;
+  bool _showTemporaryHint = false;
 
   @override
   void initState() {
@@ -93,6 +95,7 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.characterId != widget.characterId) {
       _autoNextRoundTimer?.cancel();
+      _hintTimer?.cancel();
       _snapAnimationController.stop();
       _loadCharacter();
     }
@@ -102,6 +105,7 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   void dispose() {
     Get.delete<HanziWritingController>(tag: _controllerTag);
     _autoNextRoundTimer?.cancel();
+    _hintTimer?.cancel();
     _snapAnimationController.dispose();
     unawaited(_pronunciationPlayer.dispose());
     unawaited(_ttsService.stop());
@@ -194,6 +198,8 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     _totalAttempts = 0;
     _failedAttemptsThisStroke = 0;
     _animatingStrokeIndex = null;
+    _showTemporaryHint = false;
+    _hintTimer?.cancel();
     _roundStartedAt = DateTime.now();
     _isRoundCompleted = false;
 
@@ -662,6 +668,58 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     );
   }
 
+  void _clearCurrentStroke() {
+    if (_isRoundCompleted || _isSessionCompleted) return;
+    _userStrokeNotifier.value =
+        const UserStroke(points: [], color: Colors.blue);
+    setState(() {
+      _validationFeedback =
+          'Đã xóa nét đang viết. Hãy thử lại nét ${_currentStrokeIndex + 1}/${_strokePaths.length}.';
+      _feedbackColor = Colors.grey;
+    });
+  }
+
+  void _undoAcceptedStroke() {
+    if (_isRoundCompleted ||
+        _isSessionCompleted ||
+        _roundConfigs.isEmpty ||
+        _currentStrokeIndex <= 0) {
+      _clearCurrentStroke();
+      return;
+    }
+    final config = _roundConfigs[_currentRoundIndex];
+    if (_currentStrokeIndex <= config.prefilledStrokeCount) {
+      _clearCurrentStroke();
+      return;
+    }
+    setState(() {
+      _currentStrokeIndex--;
+      _completedStrokeIndexes.remove(_currentStrokeIndex);
+      if (_currentRoundStrokeScores.isNotEmpty) {
+        _currentRoundStrokeScores.removeLast();
+      }
+      _animatingStrokeIndex = null;
+      _userStrokeNotifier.value =
+          const UserStroke(points: [], color: Colors.blue);
+      _validationFeedback =
+          'Đã hoàn tác. Viết lại nét ${_currentStrokeIndex + 1}/${_strokePaths.length}.';
+      _feedbackColor = Colors.grey;
+    });
+  }
+
+  void _showHintForCurrentStroke() {
+    if (_isRoundCompleted ||
+        _isSessionCompleted ||
+        _currentStrokeIndex >= _strokePaths.length) {
+      return;
+    }
+    _hintTimer?.cancel();
+    setState(() => _showTemporaryHint = true);
+    _hintTimer = Timer(const Duration(milliseconds: 1800), () {
+      if (mounted) setState(() => _showTemporaryHint = false);
+    });
+  }
+
   Widget _buildDrawingSurface(
       BoxConstraints constraints, HanziPracticeRoundConfig currentConfig) {
     return GestureDetector(
@@ -687,10 +745,15 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
                 currentIndex: _currentStrokeIndex,
                 viewBoxWidth: _character!.viewBoxWidth,
                 viewBoxHeight: _character!.viewBoxHeight,
-                guideOpacity: currentConfig.guideOpacity,
-                showCurrentStroke: currentConfig.showCurrentStroke,
-                showStartPoint: currentConfig.showStartPoint,
-                showDirectionArrow: currentConfig.showDirectionArrow,
+                guideOpacity: _showTemporaryHint
+                    ? math.max(currentConfig.guideOpacity, 0.20)
+                    : currentConfig.guideOpacity,
+                showCurrentStroke:
+                    currentConfig.showCurrentStroke || _showTemporaryHint,
+                showStartPoint:
+                    currentConfig.showStartPoint || _showTemporaryHint,
+                showDirectionArrow:
+                    currentConfig.showDirectionArrow || _showTemporaryHint,
                 animatingStrokeIndex: _animatingStrokeIndex,
                 snapAnimationValue: _snapAnimationController.value,
               ),
@@ -721,6 +784,51 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
                         _currentRoundStrokeScores.length,
                 currentRoundIndex: _currentRoundIndex,
                 onContinue: _goToNextRound),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWritingTools(HanziPracticeRoundConfig currentConfig) {
+    final canUndo = !_isRoundCompleted &&
+        !_isSessionCompleted &&
+        _currentStrokeIndex > currentConfig.prefilledStrokeCount;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 22),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Tooltip(
+            message: 'Hoàn tác nét vừa hoàn thành',
+            child: IconButton.filledTonal(
+              onPressed: canUndo ? _undoAcceptedStroke : null,
+              icon: const Icon(Icons.undo_rounded),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Tooltip(
+            message: 'Xóa nét đang viết',
+            child: IconButton.filledTonal(
+              onPressed: _isRoundCompleted || _isSessionCompleted
+                  ? null
+                  : _clearCurrentStroke,
+              icon: const Icon(Icons.delete_sweep_outlined),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Tooltip(
+            message: 'Gợi ý nét hiện tại',
+            child: IconButton.filledTonal(
+              onPressed: _isRoundCompleted || _isSessionCompleted
+                  ? null
+                  : _showHintForCurrentStroke,
+              icon: Icon(
+                _showTemporaryHint
+                    ? Icons.lightbulb_rounded
+                    : Icons.lightbulb_outline_rounded,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -798,7 +906,10 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
 
           // Status feedback above the board (using AnimatedSwitcher)
           _buildStrokeFeedback(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
+
+          _buildWritingTools(currentConfig),
+          const SizedBox(height: 10),
 
           // Writing Canvas Area
           _buildWritingCanvas(currentConfig),
