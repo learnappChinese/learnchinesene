@@ -1,9 +1,10 @@
 import 'package:audioplayers/audioplayers.dart';
 
 class AudioService {
-  AudioService() : _player = AudioPlayer();
+  AudioService({AudioPlayer? player}) : _player = player;
 
-  final AudioPlayer _player;
+  AudioPlayer? _player;
+  AudioPlayer _getPlayer() => _player ??= AudioPlayer();
 
   Future<void> playUrl(String url) async {
     if (url.trim().isEmpty) {
@@ -11,8 +12,9 @@ class AudioService {
     }
 
     try {
-      await _player.stop();
-      await _player.play(UrlSource(url));
+      final p = _getPlayer();
+      await p.stop();
+      await p.play(UrlSource(url));
     } catch (_) {
       throw Exception('Không thể phát âm thanh. Vui lòng thử lại.');
     }
@@ -20,13 +22,14 @@ class AudioService {
 
   Future<void> stop() async {
     try {
-      await _player.stop();
+      await _player?.stop();
     } catch (e) {
       // Audio stop failure logged
     }
   }
 
   Future<void> dispose() async {
-    await _player.dispose();
+    await _player?.dispose();
+    _player = null;
   }
 }

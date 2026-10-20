@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:pandarin/features/home/widgets/home_bottom_navigation.dart';
+import 'package:pandarin/core/config/feature_flags.dart';
 import 'package:pandarin/features/home/widgets/home_personal_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -19,6 +20,8 @@ void main() {
     testWidgets(
         'Personal fits ${size.width.toInt()}px and all three cards open',
         (tester) async {
+      FeatureFlags.enableAi = true;
+      addTearDown(() => FeatureFlags.enableAi = false);
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = size;
       tester.view.padding = const FakeViewPadding(top: 62, bottom: 34);
@@ -111,7 +114,9 @@ void main() {
 
   testWidgets('Personal descriptions stay visible with larger text',
       (tester) async {
-    tester.view.devicePixelRatio = 1;
+    FeatureFlags.enableAi = true;
+      addTearDown(() => FeatureFlags.enableAi = false);
+      tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 700);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);

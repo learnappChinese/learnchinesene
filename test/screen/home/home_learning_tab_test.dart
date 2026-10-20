@@ -1,4 +1,5 @@
 import 'package:pandarin/features/home/widgets/home_bottom_navigation.dart';
+import 'package:pandarin/core/config/feature_flags.dart';
 import 'package:pandarin/features/home/widgets/home_learning_tab.dart';
 import 'package:pandarin/features/home/model/home_journey.dart';
 import 'package:pandarin/features/review/model/review_item.dart';
@@ -18,6 +19,8 @@ void main() {
     testWidgets(
         'Learning tab fits ${size.width.toInt()}px and opens all features',
         (tester) async {
+      FeatureFlags.enableAi = true;
+      addTearDown(() => FeatureFlags.enableAi = false);
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = size;
       tester.view.padding = const FakeViewPadding(top: 47, bottom: 34);
@@ -94,7 +97,9 @@ void main() {
   testWidgets(
       'HomeLearningTab renders journey and review summary without overflow',
       (tester) async {
-    tester.view.devicePixelRatio = 1;
+    FeatureFlags.enableAi = true;
+      addTearDown(() => FeatureFlags.enableAi = false);
+      tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 700);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);

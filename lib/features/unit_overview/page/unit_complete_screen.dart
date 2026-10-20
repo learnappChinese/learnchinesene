@@ -9,7 +9,6 @@ import '../../../core/widgets/learning_scaffold.dart';
 import '../../../core/widgets/learning_scene_background.dart';
 import '../../../core/widgets/panda_companion.dart';
 import '../../../core/widgets/adventure_quest_banner.dart';
-import '../../hsk/hsk_screen.dart';
 import '../binding/unit_overview_binding.dart';
 import 'unit_overview_screen.dart';
 
@@ -72,17 +71,21 @@ class _UnitCompleteScreenState extends State<UnitCompleteScreen> {
 
   void _onGoToNextUnit() {
     if (_nextUnit != null) {
-      Get.off(
+      final next = _nextUnit!;
+      // Pop all intermediate screens back to the root tab/screen before pushing the new unit
+      // to prevent unbounded stack accumulation [Home, Unit 1, Boss, Unit 2, Boss, Unit 3...]
+      Get.until((route) => route.isFirst);
+      Get.to(
         () => const UnitOverviewScreen(),
         binding: UnitOverviewBinding(
-          unitId: _nextUnit!.id,
-          unitTitle: _nextUnit!.title,
-          sectionNumber: _nextUnit!.sectionNumber,
-          unitNumber: _nextUnit!.unitNumber,
+          unitId: next.id,
+          unitTitle: next.title,
+          sectionNumber: next.sectionNumber,
+          unitNumber: next.unitNumber,
         ),
       );
     } else {
-      Get.off(() => const HskScreen());
+      Get.until((route) => route.isFirst);
     }
   }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:pandarin/core/database/db_helper.dart';
+import 'package:pandarin/core/learning/service/spaced_repetition_service.dart';
 import 'package:pandarin/core/learning/data/learning_progress_repository.dart';
 import 'package:pandarin/core/learning/model/learning_activity_submission.dart';
 import 'package:pandarin/core/learning/model/learning_result.dart';
@@ -32,7 +33,7 @@ class _Database implements DbHelper {
   Future<HanziCharacter?> getCharacterForWritingById(int id) => character;
 
   @override
-  Future<List<Word>> getReviewWords() => review;
+  Future<List<Word>> getReviewWords({int limit = 30}) => review;
 
   @override
   Future<List<UnitModel>> getUnitsByLevel(int level) =>
@@ -42,13 +43,27 @@ class _Database implements DbHelper {
   Future<List<Word>> getWordsByUnit(int unit) async => words[unit] ?? [];
 
   @override
+  Future<List<Word>> getWordsByHskLevel(int hskLevelId, {int? limit}) async {
+    final list = <Word>[];
+    final uList = await (units[hskLevelId] ?? Future.value([]));
+    for (final u in uList) {
+      final wList = words[u.id] ?? [];
+      list.addAll(wList);
+    }
+    if (limit != null && list.length > limit) {
+      return list.take(limit).toList();
+    }
+    return list;
+  }
+
+  @override
   Future<List<HanziCharacter>> getCharactersForWriting(
-          {String? keyword, int? hskLevel}) =>
+          {String? keyword, int? hskLevel, int? unitId}) =>
       searches[keyword] ?? Future.value([]);
 
   @override
   Future<void> upsertProgress(
-      {required int wordId, required bool isCorrect, int level = 1}) async {
+      {required int wordId, required bool isCorrect, int level = 1, SrsRating? rating}) async {
     ratings.add((wordId, isCorrect));
   }
 

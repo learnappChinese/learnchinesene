@@ -2,6 +2,7 @@ import 'package:pandarin/features/game_hub/view/game_hub_view.dart';
 import 'package:pandarin/features/home/widgets/home_learning_tab.dart';
 import 'package:pandarin/features/home/widgets/home_personal_tab.dart';
 import 'package:pandarin/features/home/widgets/home_progress_tab.dart';
+import 'package:pandarin/core/config/feature_flags.dart';
 import 'package:pandarin/features/home/widgets/tab_header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -17,6 +18,8 @@ void main() {
     testWidgets(
         'All four tabs keep aligned headers and readable cards at ${size.width.toInt()}px',
         (tester) async {
+      FeatureFlags.enableAi = true;
+      addTearDown(() => FeatureFlags.enableAi = false);
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = size;
       tester.view.viewPadding = const FakeViewPadding(top: 47, bottom: 34);

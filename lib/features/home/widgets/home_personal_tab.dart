@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/config/feature_flags.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/widgets/adventure_quest_banner.dart';
 import 'home_illustrated_card.dart';
@@ -62,19 +63,21 @@ class HomePersonalTab extends StatelessWidget {
                       scale: scale,
                       onTap: onProfile,
                     ),
-                    SizedBox(height: 8.w),
-                    HomeIllustratedCard(
-                      title: 'Từ điển Việt ↔ Trung',
-                      subtitle: 'Tra cứu từ bằng AI,\nhỗ trợ giọng nói',
-                      asset: 'personal_dictionary',
-                      ink: const Color(0xFF78300C),
-                      accent: const Color(0xFFFF8A00),
-                      background: const Color(0xFFFFEBD9),
-                      minHeight: 128.w,
-                      textStart: .43,
-                      scale: scale,
-                      onTap: onDictionary,
-                    ),
+                    if (FeatureFlags.enableAi) ...[
+                      SizedBox(height: 8.w),
+                      HomeIllustratedCard(
+                        title: 'Từ điển Việt ↔ Trung',
+                        subtitle: 'Tra cứu từ bằng AI,\nhỗ trợ giọng nói',
+                        asset: 'personal_dictionary',
+                        ink: const Color(0xFF78300C),
+                        accent: const Color(0xFFFF8A00),
+                        background: const Color(0xFFFFEBD9),
+                        minHeight: 128.w,
+                        textStart: .43,
+                        scale: scale,
+                        onTap: onDictionary,
+                      ),
+                    ],
                   ],
                 ),
               ),

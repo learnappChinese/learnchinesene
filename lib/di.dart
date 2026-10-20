@@ -6,6 +6,7 @@ import 'core/auth/controller/auth_controller.dart';
 import 'core/auth/data/auth_repository.dart';
 import 'core/auth/service/guest_progress_migration_service.dart';
 import 'core/backend/supabase_service.dart';
+import 'core/database/app_database.dart';
 import 'core/learning/service/learning_progress_sync_service.dart';
 import 'core/learning/service/learning_session_composer.dart';
 import 'core/learning/service/unit_bridge_resolver.dart';
@@ -17,7 +18,17 @@ import 'features/home/data/home_journey_repository.dart';
 import 'features/splash/controller/splash_controller.dart';
 
 void initDI() {
-  Get.lazyPut<SupabaseClient>(() => Supabase.instance.client, fenix: true);
+  // Database SQLite cục bộ vĩnh viễn (Local-First source of truth)
+  Get.lazyPut<AppDatabase>(() => AppDatabase.instance, fenix: true);
+
+  Get.lazyPut<SupabaseClient>(() {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return SupabaseClient('https://offline.local', 'anon-key-placeholder');
+    }
+  }, fenix: true);
+
   Get.lazyPut<UnitBridgeResolver>(() => UnitBridgeResolver(), fenix: true);
   Get.lazyPut<LearningSessionComposer>(() => LearningSessionComposer(),
       fenix: true);

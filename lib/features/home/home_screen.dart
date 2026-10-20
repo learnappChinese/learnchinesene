@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'widgets/home_practice_tab.dart';
 import 'widgets/home_navigation_rail.dart';
 import 'package:get/get.dart';
+import '../../core/config/feature_flags.dart';
 import '../hsk/hsk_screen.dart';
 import '../speaking/speaking_screen.dart';
 import '../stats/stats_screen.dart';
@@ -25,10 +26,10 @@ import '../hsk_quiz/hsk_quiz_screen.dart';
 import '../system/profile_page.dart';
 import '../unit_overview/binding/unit_overview_binding.dart';
 import '../unit_overview/page/unit_overview_screen.dart';
-import '../game_hub/game_hub_screen.dart';
 import '../review/review_screen.dart';
 import '../sections/learning_sections_screen.dart';
 import '../../core/widgets/learning_scaffold.dart';
+import '../../core/widgets/panda_companion.dart';
 import '../../core/learning/model/recommended_next_action.dart';
 import '../../core/learning/service/learning_progress_sync_service.dart';
 
@@ -86,8 +87,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         onRefresh: controller.refreshStats,
         onRetry: controller.refreshStats,
         onStartLearning: _openCurrentJourney,
-        onGrammar: () => Get.to(() => const LessonsScreen()),
-        onListening: () => Get.to(() => const ConversationsScreen()),
+        onGrammar: () => Get.to(() => const HanziWritingHomeScreen()),
+        onListening: () => Get.to(() => const FlashcardsScreen()),
         onSpeaking: () => Get.to(
           () => const SpeakingScreen(),
           arguments: const {'standalone': true},
@@ -117,8 +118,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         onVocabulary: () => Get.to(() => const LearningSectionsScreen()),
         onSections: () => Get.to(() => const LearningSectionsScreen()),
         onHsk: () => Get.to(() => const HskScreen()),
-        onLessons: () => Get.to(() => const LessonsScreen()),
-        onConversation: () => Get.to(() => const ConversationsScreen()),
+        onLessons: FeatureFlags.enableAi ? () => Get.to(() => const LessonsScreen()) : () {},
+        onConversation: FeatureFlags.enableAi ? () => Get.to(() => const ConversationsScreen()) : () {},
       ));
 
   void _openCurrentJourney() {
@@ -183,18 +184,46 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildGamesTab() {
-    return const GameHubScreen(embedded: true);
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            PandaCompanion(mood: PandaMood.thinking, size: 96),
+            SizedBox(height: 16),
+            Text(
+              'Tính năng Trò chơi đang hoàn thiện',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF342E10),
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Các mini-game vui nhộn đang được cải tiến để mang lại trải nghiệm học tập tốt nhất. Bạn vui lòng quay lại sau nhé!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildProgressTab() => HomeProgressTab(
         onStats: () => Get.to(() => const StatsScreen()),
-        onExam: () => Get.to(() => const HskExamScreen()),
+        onExam: FeatureFlags.enableAi ? () => Get.to(() => const HskExamScreen()) : () {},
         onHistory: () => Get.to(() => const HistoryScreen()),
       );
 
   Widget _buildPersonalTab() => HomePersonalTab(
         onProfile: () => Get.to(() => const ProfilePage()),
-        onDictionary: () => Get.to(() => const DictionaryScreen()),
+        onDictionary: FeatureFlags.enableAi ? () => Get.to(() => const DictionaryScreen()) : () {},
       );
 
   @override

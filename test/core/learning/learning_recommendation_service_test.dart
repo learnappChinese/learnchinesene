@@ -449,7 +449,11 @@ class _MockJourneyRepository implements LearningJourneyRepository {
   Future<List<LearningSectionViewModel>> getSections() async => sections;
 
   @override
-  Future<List<LearningUnitViewModel>> getUnits(String sectionId) async => units;
+  Future<List<LearningUnitViewModel>> getUnits(
+    String sectionId, {
+    bool? isSectionUnlocked,
+  }) async =>
+      units;
 
   @override
   Future<LearningNextAction?> getNextAction() async => null;

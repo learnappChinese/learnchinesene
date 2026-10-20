@@ -6,6 +6,7 @@ import '../../core/theme/learning_theme.dart';
 import '../../core/widgets/chapter_header_banner.dart';
 import '../../core/widgets/learning_scaffold.dart';
 import '../../core/widgets/learning_scene_background.dart';
+import '../../core/config/feature_flags.dart';
 import '../conversations/conversations_screen.dart';
 import '../hanzi_writing/screens/hanzi_writing_home_screen.dart';
 import '../quiz/quiz_screen.dart';
@@ -138,11 +139,13 @@ class _LearningOverviewScreenState extends State<LearningOverviewScreen> {
                       ],
                     );
                   }),
+                  if (FeatureFlags.enableAi) ...[
                   const SizedBox(height: LearningSpacing.md),
                   _DialogueCard(
                     exampleCount: examples,
                     onTap: () => Get.to(() => const ConversationsScreen()),
                   ),
+                  ],
                 ],
               ),
             ),

@@ -11,6 +11,7 @@ import '../painters/hanzi_writing_painter.dart';
 import '../painters/user_stroke_painter.dart';
 import '../services/stroke_validator.dart';
 import '../services/svg_stroke_parser.dart';
+import '../services/hanzi_stroke_cache.dart';
 import '../models/hanzi_practice_config.dart';
 import '../../../core/learning/model/learning_source_context.dart';
 import '../../../core/responsive/responsive_layout.dart';
@@ -19,11 +20,17 @@ import '../../../core/widgets/learning_scaffold.dart';
 class HanziWritingScreen extends StatefulWidget {
   final int characterId;
   final LearningSourceContext? sourceContext;
+  final List<int>? characterSequence;
+  final int? hskLevel;
+  final int? unitId;
 
   const HanziWritingScreen({
     super.key,
     required this.characterId,
     this.sourceContext,
+    this.characterSequence,
+    this.hskLevel,
+    this.unitId,
   });
 
   @override
@@ -73,7 +80,14 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   void initState() {
     super.initState();
     _controllerTag = 'writing-session-${_nextControllerId++}';
-    controller = Get.put(HanziWritingController(), tag: _controllerTag);
+    controller = Get.put(
+      HanziWritingController(
+        characterSequence: widget.characterSequence,
+        hskLevel: widget.hskLevel,
+        unitId: widget.unitId ?? widget.sourceContext?.lexiconUnitId,
+      ),
+      tag: _controllerTag,
+    );
     _snapAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
@@ -130,7 +144,11 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
         return;
       }
 
-      final paths = SvgStrokeParser.parseStrokesToPaths(char.strokePathData);
+      final cachedPaths = HanziStrokeCache.instance.getPaths(char.id);
+      final paths = cachedPaths ?? SvgStrokeParser.parseStrokesToPaths(char.strokePathData);
+      if (cachedPaths == null && paths.isNotEmpty) {
+        HanziStrokeCache.instance.putPaths(char.id, paths);
+      }
       if (paths.isEmpty) {
         setState(() {
           _character = char;
@@ -366,6 +384,9 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
           builder: (_) => HanziWritingScreen(
             characterId: next.id!,
             sourceContext: widget.sourceContext,
+            characterSequence: widget.characterSequence,
+            hskLevel: widget.hskLevel,
+            unitId: widget.unitId,
           ),
         ),
       );

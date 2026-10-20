@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import '../../core/config/feature_flags.dart';
 import '../../core/services/history_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/game_visual_tokens.dart';
@@ -214,6 +215,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               label: 'XP nhận được',
               color: AppColors.orange,
             ),
+            if (FeatureFlags.enableAi) ...[
             const _StatDivider(),
             _HistoryStat(
               emoji: '✨',
@@ -221,6 +223,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               label: 'Công cụ AI',
               color: const Color(0xFF2E93E8),
             ),
+            ],
           ],
         );
       }),
@@ -235,6 +238,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildTabSelector() {
+    if (!FeatureFlags.enableAi) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Obx(() {
@@ -409,7 +413,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildHistoryContent(BuildContext context) {
     return Obx(() {
-      final isOfficialTab = controller.selectedTab.value == 0;
+      final isOfficialTab = !FeatureFlags.enableAi || controller.selectedTab.value == 0;
       final isEmpty = isOfficialTab
           ? controller.learningItems.isEmpty
           : controller.aiHistoryItems.isEmpty;

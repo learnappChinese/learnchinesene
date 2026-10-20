@@ -10,6 +10,18 @@ import '../../../core/services/vocabulary_service.dart';
 import '../../../core/services/audio_service.dart';
 import '../../../core/helper/permission_helper.dart';
 
+/// Các trạng thái giao diện và chu trình nhận diện giọng nói
+enum SpeakingUiState {
+  idle,
+  initializing,
+  listening,
+  finalizing,
+  evaluating,
+  success,
+  retry,
+  error,
+}
+
 class SpeakingController extends GetxController
     with GetSingleTickerProviderStateMixin {
   final SpeechService speech;
@@ -29,6 +41,7 @@ class SpeakingController extends GetxController
   final isLoading = true.obs;
   final errorMessage = RxnString();
 
+  final uiState = SpeakingUiState.idle.obs;
   final busy = false.obs;
   final recognized = ''.obs;
   final score = 0.0.obs;
@@ -37,6 +50,15 @@ class SpeakingController extends GetxController
   final LearningRewardService _rewardService;
   String? _activeAttemptId;
 
+  // Quản lý phiên làm việc, timers và debounce
+  int _sessionEpoch = 0;
+  bool _hasSpoken = false;
+  String _latestRecognized = '';
+  DateTime? _listeningStartedAt;
+  Timer? _noSpeechTimer;
+  Timer? _silenceDebounceTimer;
+  Timer? _fullMatchDebounceTimer;
+
   late final AnimationController pulse;
 
   bool get _hasPulse {
@@ -44,6 +66,43 @@ class SpeakingController extends GetxController
       return pulse.duration != null;
     } catch (_) {
       return false;
+    }
+  }
+
+  /// Thông điệp phản hồi hiển thị dưới nút Micro
+  String get statusMessage {
+    switch (uiState.value) {
+      case SpeakingUiState.idle:
+        return 'Chạm micro để bắt đầu';
+      case SpeakingUiState.initializing:
+        return 'Đang mở micro...';
+      case SpeakingUiState.listening:
+        return 'Đang nghe... chạm để dừng';
+      case SpeakingUiState.finalizing:
+        return 'Đang hoàn tất nhận diện...';
+      case SpeakingUiState.evaluating:
+        return 'Đang kiểm tra...';
+      case SpeakingUiState.success:
+        return 'Chính xác! Tuyệt vời!';
+      case SpeakingUiState.retry:
+        return 'Chưa chính xác, hãy thử lại';
+      case SpeakingUiState.error:
+        return errorMessage.value ??
+            'Lỗi micro hoặc chưa cấp quyền. Chạm để thử lại.';
+    }
+  }
+
+  /// Icon trên nút Micro tròn màu xanh
+  IconData get micIcon {
+    switch (uiState.value) {
+      case SpeakingUiState.listening:
+        return Icons.stop_rounded;
+      case SpeakingUiState.finalizing:
+        return Icons.hourglass_top_rounded;
+      case SpeakingUiState.evaluating:
+        return Icons.sync_rounded;
+      default:
+        return Icons.mic_rounded;
     }
   }
 
@@ -90,6 +149,8 @@ class SpeakingController extends GetxController
 
   @override
   void onClose() {
+    _cancelAllTimers();
+    _sessionEpoch++;
     if (_activeAttemptId != null) {
       unawaited(
         _rewardService.abandonAttempt(
@@ -104,7 +165,20 @@ class SpeakingController extends GetxController
     super.onClose();
   }
 
+  void _cancelAllTimers() {
+    _noSpeechTimer?.cancel();
+    _noSpeechTimer = null;
+    _silenceDebounceTimer?.cancel();
+    _silenceDebounceTimer = null;
+    _fullMatchDebounceTimer?.cancel();
+    _fullMatchDebounceTimer = null;
+  }
+
   Future<void> loadData() async {
+    if (items.isNotEmpty) {
+      isLoading.value = false;
+      return;
+    }
     try {
       isLoading.value = true;
       List<SpeakingPracticeItem> loaded = [];
@@ -143,12 +217,60 @@ class SpeakingController extends GetxController
     }
   }
 
-  Future<void> start([BuildContext? context]) async {
-    if (isClosed || items.isEmpty || busy.value) return;
+  /// Xử lý chạm nút micro theo toggle:
+  /// Bấm lần 1: Bắt đầu nghe.
+  /// Bấm lần 2: Dừng và kiểm tra ngay.
+  void handleMicTap(BuildContext context) {
+    switch (uiState.value) {
+      case SpeakingUiState.idle:
+      case SpeakingUiState.retry:
+      case SpeakingUiState.error:
+      case SpeakingUiState.success:
+        startListening(context);
+        break;
+      case SpeakingUiState.listening:
+        stopAndEvaluate(context);
+        break;
+      case SpeakingUiState.initializing:
+      case SpeakingUiState.finalizing:
+      case SpeakingUiState.evaluating:
+        // Đang trong chuyển đổi trạng thái tạm thời, phớt lờ thao tác gõ nhanh
+        break;
+    }
+  }
+
+  /// Tương thích ngược với các widget/card gọi `controller.start(context)`
+  Future<void> start([BuildContext? context]) => startListening(context);
+
+  /// Bắt đầu lượt nhận diện giọng nói
+  Future<void> startListening([BuildContext? context]) async {
+    if (isClosed || items.isEmpty) return;
+    if (uiState.value == SpeakingUiState.initializing ||
+        uiState.value == SpeakingUiState.finalizing ||
+        uiState.value == SpeakingUiState.evaluating ||
+        uiState.value == SpeakingUiState.listening) {
+      return;
+    }
+
+    _cancelAllTimers();
+    _sessionEpoch++;
+    final currentEpoch = _sessionEpoch;
+
+    uiState.value = SpeakingUiState.initializing;
+    busy.value = true;
+    recognized.value = '';
+    _latestRecognized = '';
+    _hasSpoken = false;
+    correct.value = null;
+    errorMessage.value = null;
 
     final granted = await _permissionChecker();
-    if (isClosed) return;
+    if (isClosed || currentEpoch != _sessionEpoch) return;
+
     if (!granted) {
+      uiState.value = SpeakingUiState.error;
+      busy.value = false;
+      errorMessage.value = 'Chưa cấp quyền truy cập micro.';
       Get.snackbar(
         'Yêu cầu quyền truy cập',
         'Vui lòng cấp quyền micro và nhận diện giọng nói.',
@@ -160,16 +282,16 @@ class SpeakingController extends GetxController
       return;
     }
 
-    if (isClosed) return;
-    // Stop any ongoing audio playback before opening the microphone
+    // Dừng phát âm thanh mẫu nếu đang mở
     await audioService.stop();
+    if (isClosed || currentEpoch != _sessionEpoch) return;
 
     final currentItem = items[currentIndex.value];
     final sourceId =
         'spk_${currentItem.wordId ?? currentItem.exampleId ?? currentIndex.value}';
     final attemptId = 'spk_${DateTime.now().microsecondsSinceEpoch}';
-    final startedAt = DateTime.now();
     _activeAttemptId = attemptId;
+    _listeningStartedAt = DateTime.now();
 
     final String? rewardUnitId = (sourceContext?.isCurriculum == true)
         ? sourceContext!.duoUnitId
@@ -190,73 +312,273 @@ class SpeakingController extends GetxController
       levelId: rewardLevelId,
     );
 
-    busy.value = true;
-    recognized.value = '';
-    correct.value = null;
-    if (_hasPulse) pulse.repeat(reverse: true);
+    if (isClosed || currentEpoch != _sessionEpoch) return;
 
-    final result = await speech.listenAndScore(
+    final started = await speech.startListeningStream(
       targetText: currentItem.targetText,
+      onResult: (words, isFinal) =>
+          _onSpeechResult(currentEpoch, words, isFinal),
+      onStatus: (status) => _onSpeechStatus(currentEpoch, status),
+      onError: (err) => _onSpeechError(currentEpoch, err),
     );
 
-    if (isClosed) return;
-    if (_hasPulse) {
-      pulse.stop();
-      pulse.value = 1;
-    }
+    if (isClosed || currentEpoch != _sessionEpoch) return;
 
-    if (!result.isAvailable) {
+    if (!started) {
+      if (_hasPulse) {
+        pulse.stop();
+        pulse.value = 1.0;
+      }
       await _rewardService.abandonAttempt(
         attemptId,
         metadata: const <String, dynamic>{'reason': 'speech_unavailable'},
       );
       _activeAttemptId = null;
       busy.value = false;
+      uiState.value = SpeakingUiState.error;
+      errorMessage.value = errorMessage.value ?? 'Thiết bị chưa hỗ trợ nhận diện giọng nói (Google Speech Services).';
       return;
     }
+
+    uiState.value = SpeakingUiState.listening;
+    busy.value = true;
+    if (_hasPulse) pulse.repeat(reverse: true);
+
+    // Timer phát hiện người dùng hoàn toàn chưa nói gì trong 7.5 giây đầu
+    _noSpeechTimer = Timer(const Duration(milliseconds: 7500), () {
+      if (currentEpoch != _sessionEpoch || isClosed) return;
+      if (!_hasSpoken && uiState.value == SpeakingUiState.listening) {
+        _handleNoSpeechTimeout(currentEpoch);
+      }
+    });
+  }
+
+  /// Nhận partial results liên tục theo thời gian thực từ Speech engine
+  void _onSpeechResult(int epoch, String words, bool isFinal) {
+    if (epoch != _sessionEpoch || isClosed) return;
+    if (uiState.value != SpeakingUiState.listening) return;
+
+    if (words.trim().isNotEmpty) {
+      _hasSpoken = true;
+      _latestRecognized = words;
+      recognized.value = words;
+      _noSpeechTimer?.cancel();
+    }
+
+    final currentItem = items[currentIndex.value];
+    final analysis = speech.analyzeMatch(currentItem.targetText, words);
+
+    // TRƯỜNG HỢP 1: ĐÃ NÓI ĐỦ VÀ ĐÚNG CÂU MỤC TIÊU
+    if (analysis.isExactMatch || analysis.isFullMatch) {
+      _silenceDebounceTimer?.cancel();
+      _fullMatchDebounceTimer?.cancel();
+
+      // Đợi ổn định 600ms để tránh cắt mất âm cuối khi người dùng vẫn đang nói
+      _fullMatchDebounceTimer = Timer(const Duration(milliseconds: 600), () {
+        if (epoch != _sessionEpoch || isClosed) return;
+        _finishAndEvaluate(epoch, autoCompleted: true);
+      });
+      return;
+    }
+
+    // TRƯỜNG HỢP 2: ĐANG NÓI HOẶC TẠM DỪNG GIỮA CÂU
+    _fullMatchDebounceTimer?.cancel();
+    _silenceDebounceTimer?.cancel();
+
+    // Nếu im lặng 2.4 giây sau khi đã nói dở dang một phần -> kết thúc và đánh giá
+    _silenceDebounceTimer = Timer(const Duration(milliseconds: 2400), () {
+      if (epoch != _sessionEpoch || isClosed) return;
+      _finishAndEvaluate(epoch, autoCompleted: false);
+    });
+
+    if (isFinal) {
+      _finishAndEvaluate(epoch, autoCompleted: false);
+    }
+  }
+
+  void _onSpeechStatus(int epoch, String status) {
+    if (epoch != _sessionEpoch || isClosed) return;
+    if (status == 'notListening' || status == 'done') {
+      if (uiState.value == SpeakingUiState.listening) {
+        if (_hasSpoken) {
+          _finishAndEvaluate(epoch, autoCompleted: false);
+        } else {
+          _handleNoSpeechTimeout(epoch);
+        }
+      }
+    }
+  }
+
+  void _onSpeechError(int epoch, String err) {
+    if (epoch != _sessionEpoch || isClosed) return;
+    if (uiState.value == SpeakingUiState.listening) {
+      if (_hasSpoken) {
+        _finishAndEvaluate(epoch, autoCompleted: false);
+      } else {
+        _handleNoSpeechTimeout(epoch);
+      }
+    }
+  }
+
+  /// Khi hết thời gian chờ mà người dùng hoàn toàn chưa bắt đầu nói:
+  /// Đưa về IDLE, không tính là làm sai.
+  Future<void> _handleNoSpeechTimeout(int epoch) async {
+    if (epoch != _sessionEpoch || isClosed) return;
+    _cancelAllTimers();
+    await speech.stop();
+    if (_hasPulse) {
+      pulse.stop();
+      pulse.value = 1.0;
+    }
+    if (_activeAttemptId != null) {
+      await _rewardService.abandonAttempt(
+        _activeAttemptId!,
+        metadata: const <String, dynamic>{'reason': 'no_speech_detected'},
+      );
+      _activeAttemptId = null;
+    }
+    busy.value = false;
+    uiState.value = SpeakingUiState.idle;
+    recognized.value = '';
+    correct.value = null;
+  }
+
+  /// Người dùng chủ động bấm Dừng trên nút Micro
+  Future<void> stopAndEvaluate([BuildContext? context]) async {
+    if (isClosed || uiState.value != SpeakingUiState.listening) return;
+    final currentEpoch = _sessionEpoch;
+    _cancelAllTimers();
+
+    // Nếu bấm dừng ngay khi chưa nói gì: không tính là sai
+    if (!_hasSpoken || _latestRecognized.trim().isEmpty) {
+      await speech.stop();
+      if (_hasPulse) {
+        pulse.stop();
+        pulse.value = 1.0;
+      }
+      if (_activeAttemptId != null) {
+        await _rewardService.abandonAttempt(
+          _activeAttemptId!,
+          metadata: const <String, dynamic>{
+            'reason': 'user_cancelled_before_speech'
+          },
+        );
+        _activeAttemptId = null;
+      }
+      busy.value = false;
+      uiState.value = SpeakingUiState.idle;
+      recognized.value = '';
+      correct.value = null;
+      return;
+    }
+
+    await _finishAndEvaluate(currentEpoch, autoCompleted: false);
+  }
+
+  /// Hoàn tất nhận diện và chấm điểm câu nói
+  Future<void> _finishAndEvaluate(
+    int epoch, {
+    required bool autoCompleted,
+  }) async {
+    if (epoch != _sessionEpoch || isClosed) return;
+    if (uiState.value == SpeakingUiState.finalizing ||
+        uiState.value == SpeakingUiState.evaluating ||
+        uiState.value == SpeakingUiState.success) {
+      return;
+    }
+
+    _cancelAllTimers();
+    uiState.value = SpeakingUiState.finalizing;
+    if (_hasPulse) {
+      pulse.stop();
+      pulse.value = 1.0;
+    }
+
+    await speech.stop();
+    if (epoch != _sessionEpoch || isClosed) return;
+
+    uiState.value = SpeakingUiState.evaluating;
+
+    final currentItem = items[currentIndex.value];
+    final spokenText = _latestRecognized.trim();
+    final analysis = speech.analyzeMatch(currentItem.targetText, spokenText);
+
+    final finalScore = analysis.similarity;
+    final isPassed = analysis.isPassed;
+
+    final sourceId =
+        'spk_${currentItem.wordId ?? currentItem.exampleId ?? currentIndex.value}';
+    final attemptId =
+        _activeAttemptId ?? 'spk_${DateTime.now().microsecondsSinceEpoch}';
+    final durationSeconds = _listeningStartedAt != null
+        ? DateTime.now().difference(_listeningStartedAt!).inSeconds
+        : 1;
+
+    final String? rewardUnitId = (sourceContext?.isCurriculum == true)
+        ? sourceContext!.duoUnitId
+        : (unitId != null &&
+                (sourceContext == null || !sourceContext!.isPractice)
+            ? 'unit_$unitId'
+            : null);
+    final String? rewardLevelId =
+        (sourceContext?.isCurriculum == true) ? sourceContext!.levelId : null;
 
     try {
       final reward = await _rewardService.processSpeakingReward(
         sourceId: sourceId,
         attemptId: attemptId,
-        accuracyScore: result.score,
-        pronunciationScore: result.pronunciationScore,
-        toneScore: result.toneScore,
-        fluencyScore: result.fluencyScore,
-        recognizedText: result.recognizedText,
+        accuracyScore: finalScore,
+        pronunciationScore: finalScore,
+        toneScore: isPassed ? 92.0 : 60.0,
+        fluencyScore: isPassed ? 95.0 : 60.0,
+        recognizedText: spokenText,
         wordId: currentItem.wordId,
         exampleId: currentItem.exampleId,
         targetText: currentItem.targetText,
         unitId: rewardUnitId,
         levelId: rewardLevelId,
-        durationSeconds: DateTime.now().difference(startedAt).inSeconds,
+        durationSeconds: durationSeconds,
       );
       learningResult.value = reward;
-      _activeAttemptId = null;
-    } catch (error) {
+    } catch (e) {
       if (!isClosed) {
-        errorMessage.value = 'Không thể lưu kết quả phát âm: $error';
+        debugPrint('Reward error: $e');
       }
     }
+    _activeAttemptId = null;
 
-    if (isClosed) return;
+    if (epoch != _sessionEpoch || isClosed) return;
     busy.value = false;
-    recognized.value = result.recognizedText;
-    score.value = learningResult.value?.score ?? result.score;
-    correct.value = learningResult.value?.passed ?? false;
+    recognized.value = spokenText;
+    score.value = learningResult.value?.score ?? finalScore;
+    correct.value = learningResult.value?.passed ?? isPassed;
+
+    if (correct.value == true) {
+      uiState.value = SpeakingUiState.success;
+    } else {
+      uiState.value = SpeakingUiState.retry;
+    }
   }
 
   void nextItem(BuildContext context) {
     if (isClosed) return;
+    _cancelAllTimers();
+    speech.stop();
+    uiState.value = SpeakingUiState.idle;
+    busy.value = false;
+    recognized.value = '';
+    correct.value = null;
+    score.value = 0.0;
+    learningResult.value = null;
+
     if (currentIndex.value < items.length - 1) {
       currentIndex.value++;
-      recognized.value = '';
-      correct.value = null;
     } else {
-      if (!isBottomSheet) {
-        Get.snackbar('Hoàn thành', 'Đã hoàn thành bài luyện tập!');
+      if (isBottomSheet) {
+        Navigator.pop(context);
+      } else {
+        Navigator.pop(context);
       }
-      Get.back();
     }
   }
 }

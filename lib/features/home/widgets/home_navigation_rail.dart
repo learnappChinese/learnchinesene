@@ -13,7 +13,27 @@ class HomeNavigationRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) => NavigationRail(
         selectedIndex: index,
-        onDestinationSelected: onSelected,
+        onDestinationSelected: (idx) {
+          if (idx == 2) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'Tính năng Trò chơi đang được nâng cấp và sắp ra mắt bạn nhé! 🎮',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: const Color(0xFF334E35),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+            return;
+          }
+          onSelected(idx);
+        },
         extended: extended,
         labelType: extended ? null : NavigationRailLabelType.all,
         destinations: const [
@@ -28,9 +48,18 @@ class HomeNavigationRail extends StatelessWidget {
             label: Text('Học tập'),
           ),
           NavigationRailDestination(
-            icon: Icon(Icons.sports_esports_outlined),
-            selectedIcon: Icon(Icons.sports_esports_rounded),
-            label: Text('Trò chơi'),
+            icon: Opacity(
+              opacity: 0.45,
+              child: Icon(Icons.sports_esports_outlined, color: Color(0xFF94A3B8)),
+            ),
+            selectedIcon: Opacity(
+              opacity: 0.45,
+              child: Icon(Icons.sports_esports_rounded, color: Color(0xFF94A3B8)),
+            ),
+            label: Opacity(
+              opacity: 0.45,
+              child: Text('Sắp ra mắt', style: TextStyle(color: Color(0xFF94A3B8))),
+            ),
           ),
           NavigationRailDestination(
             icon: Icon(Icons.bar_chart_outlined),

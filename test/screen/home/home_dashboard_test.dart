@@ -74,8 +74,8 @@ void main() {
       expect(find.text('BÀI 2: Quốc tịch và quê quán'), findsOneWidget);
       expect(find.text('Tiếp tục'), findsOneWidget);
       expect(find.text('Từ vựng'), findsOneWidget);
-      expect(find.text('Ngữ pháp'), findsOneWidget);
-      expect(find.text('Luyện nghe'), findsOneWidget);
+      expect(find.text('Luyện viết'), findsOneWidget);
+      expect(find.text('Flashcards'), findsOneWidget);
       expect(find.text('Luyện nói'), findsOneWidget);
       expect(find.text('Hoàn thành 10 câu hỏi'), findsOneWidget);
       expect(tester.takeException(), isNull);

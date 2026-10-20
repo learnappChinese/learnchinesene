@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 
 import 'app.dart';
 import 'core/backend/supabase_bootstrap.dart';
+import 'core/database/app_database.dart';
 import 'di.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Render the first Flutter frame immediately. Network/backend bootstrap runs
-  // inside the widget tree so Android is never held on its pre-draw listener
-  // while waiting for Supabase.
+  // Render the first Flutter frame immediately.
+  // Local-first SQLite storage boots up first so users can study offline.
   runApp(const AppBootstrap());
 }
 
@@ -43,17 +43,18 @@ class _AppBootstrapState extends State<AppBootstrap> {
     }
 
     try {
-      await SupabaseBootstrap.initialize().timeout(
-        const Duration(seconds: 15),
-        onTimeout: () => throw TimeoutException(
-          'Không thể kết nối máy chủ trong 15 giây.',
-        ),
-      );
+      // 1. Khởi tạo Database SQLite cục bộ & nạp dữ liệu HSK đóng gói sẵn
+      await AppDatabase.instance.init();
+      await AppDatabase.instance.ensureContentPackSeeded();
 
+      // 2. Khởi tạo Dependency Injection
       if (!_diInitialized) {
         initDI();
         _diInitialized = true;
       }
+
+      // 3. Khởi tạo Supabase không đồng bộ (Không bao giờ chặn màn hình khi offline)
+      unawaited(_initCloudOptional());
 
       if (!mounted) return;
       setState(() {
@@ -66,6 +67,16 @@ class _AppBootstrapState extends State<AppBootstrap> {
         _error = error;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _initCloudOptional() async {
+    try {
+      await SupabaseBootstrap.initialize().timeout(
+        const Duration(seconds: 3),
+      );
+    } catch (e) {
+      debugPrint('Khởi động chế độ Ngoại tuyến (Offline mode): $e');
     }
   }
 
@@ -156,13 +167,13 @@ class _CloudErrorView extends StatelessWidget {
         const Icon(Icons.cloud_off_rounded, size: 52),
         const SizedBox(height: 16),
         const Text(
-          'Không thể kết nối dữ liệu',
+          'Không thể khởi động dữ liệu',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         const Text(
-          'Ứng dụng đang dùng dữ liệu trực tuyến. Hãy kiểm tra mạng rồi thử lại.',
+          'Không thể đọc dữ liệu học liệu cục bộ. Hãy thử khởi động lại ứng dụng.',
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),

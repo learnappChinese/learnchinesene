@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
+import '../../../core/config/feature_flags.dart';
 import '../../../core/responsive/responsive_layout.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/widgets/adventure_quest_banner.dart';
@@ -583,22 +584,24 @@ class HomeProgressTab extends StatelessWidget {
           color: GameVisualTokens.imperialGold,
           onTap: onStats,
         ),
-        SizedBox(height: 10.w),
-        _actionTile(
-          title: 'Lịch Sử Dịch & Hội Thoại',
-          subtitle: 'Tra cứu các bản dịch và bài hội thoại đã thực hiện',
-          icon: Icons.history_edu_rounded,
-          color: const Color(0xFF0284C7),
-          onTap: onHistory,
-        ),
-        SizedBox(height: 10.w),
-        _actionTile(
-          title: 'Thi Thử HSK Với Giáo Viên AI',
-          subtitle: 'Làm đề kiểm tra năng lực HSK 1-6 chuẩn hóa',
-          icon: Icons.psychology_rounded,
-          color: GameVisualTokens.primaryGreen,
-          onTap: onExam,
-        ),
+        if (FeatureFlags.enableAi) ...[
+          SizedBox(height: 10.w),
+          _actionTile(
+            title: 'Lịch Sử Dịch & Hội Thoại',
+            subtitle: 'Tra cứu các bản dịch và bài hội thoại đã thực hiện',
+            icon: Icons.history_edu_rounded,
+            color: const Color(0xFF0284C7),
+            onTap: onHistory,
+          ),
+          SizedBox(height: 10.w),
+          _actionTile(
+            title: 'Thi Thử HSK Với Giáo Viên AI',
+            subtitle: 'Làm đề kiểm tra năng lực HSK 1-6 chuẩn hóa',
+            icon: Icons.psychology_rounded,
+            color: GameVisualTokens.primaryGreen,
+            onTap: onExam,
+          ),
+        ],
       ],
     );
   }

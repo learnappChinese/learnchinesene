@@ -11,25 +11,34 @@ abstract interface class ReviewRepository {
 
 class SupabaseReviewRepository implements ReviewRepository {
   SupabaseReviewRepository({SupabaseClient? client, DbHelper? dbHelper})
-      : _client = client ?? Supabase.instance.client,
+      : _client = client ?? _tryGetClient(),
         _dbHelper = dbHelper ?? DbHelper.instance;
 
-  final SupabaseClient _client;
+  static SupabaseClient? _tryGetClient() {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  final SupabaseClient? _client;
   final DbHelper _dbHelper;
 
   @override
   Future<ReviewSummary> loadReviewSummary() async {
-    final userId = _client.auth.currentUser?.id;
+    final client = _client;
+    final userId = client?.auth.currentUser?.id;
     var wordsDue = 0;
     var listeningDue = 0;
     var speakingDue = 0;
     var hanziDue = 0;
     var cloudQueryFailed = false;
 
-    if (userId != null) {
+    if (userId != null && client != null) {
       try {
         final wordProgressRows = List<Map<String, dynamic>>.from(
-          await _client
+          await client
               .from('lexicon_user_progress')
               .select(
                   'word_id, wrong_count, mastered, next_review_at, listening_score')
@@ -50,7 +59,7 @@ class SupabaseReviewRepository implements ReviewRepository {
           if (listenScore < 75 || wrong > 1) listeningDue++;
         }
 
-        final speakingRows = List<Map<String, dynamic>>.from(await _client
+        final speakingRows = List<Map<String, dynamic>>.from(await client
             .from('lexicon_speaking_practice')
             .select('id, accuracy_score, pronunciation_score, tone_score')
             .eq('user_id', userId));
@@ -63,7 +72,7 @@ class SupabaseReviewRepository implements ReviewRepository {
         }).length;
 
         final hanziRows = List<Map<String, dynamic>>.from(
-          await _client
+          await client
               .from('lexicon_hanzi_progress')
               .select(
                   'character_id, best_score, practice_count, next_review_at')
@@ -139,8 +148,9 @@ class SupabaseReviewRepository implements ReviewRepository {
 
   Future<List<ReviewItem>> _loadListeningReview() async {
     try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
+      final client = _client;
+      final userId = client?.auth.currentUser?.id;
+      if (userId == null || client == null) {
         final local = (await _dbHelper.getReviewWords())
             .where((word) => word.ttsUrl.isNotEmpty)
             .toList()
@@ -162,7 +172,7 @@ class SupabaseReviewRepository implements ReviewRepository {
       }
 
       final weakProgress = List<Map<String, dynamic>>.from(
-        await _client
+        await client
             .from('lexicon_user_progress')
             .select('word_id, wrong_count, listening_score')
             .eq('user_id', userId)
@@ -179,7 +189,7 @@ class SupabaseReviewRepository implements ReviewRepository {
           .toList();
       if (wordIds.isEmpty) return const [];
       final wordRows = List<Map<String, dynamic>>.from(
-        await _client
+        await client
             .from('lexicon_words')
             .select('id, word, pinyin, meaning_vi, tts_url')
             .inFilter('id', wordIds),
@@ -209,10 +219,11 @@ class SupabaseReviewRepository implements ReviewRepository {
 
   Future<List<ReviewItem>> _loadSpeakingReview() async {
     try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId != null) {
+      final client = _client;
+      final userId = client?.auth.currentUser?.id;
+      if (userId != null && client != null) {
         final practiceRows = List<Map<String, dynamic>>.from(
-          await _client
+          await client
               .from('lexicon_speaking_practice')
               .select(
                   'id, target_text, recognized_text, accuracy_score, pronunciation_score, tone_score, fluency_score')
@@ -253,10 +264,11 @@ class SupabaseReviewRepository implements ReviewRepository {
 
   Future<List<ReviewItem>> _loadHanziReview() async {
     try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId != null) {
+      final client = _client;
+      final userId = client?.auth.currentUser?.id;
+      if (userId != null && client != null) {
         final progressRows = List<Map<String, dynamic>>.from(
-          await _client
+          await client
               .from('lexicon_hanzi_progress')
               .select(
                   'character_id, best_score, practice_count, next_review_at')
@@ -280,14 +292,14 @@ class SupabaseReviewRepository implements ReviewRepository {
               .whereType<int>()
               .toList();
           final chars = List<Map<String, dynamic>>.from(
-            await _client
+            await client
                 .from('lexicon_characters')
                 .select('id, character, stroke_count')
                 .inFilter('id', charIds),
           );
           final charsById = {for (final c in chars) c['id']: c};
           final words = List<Map<String, dynamic>>.from(
-            await _client
+            await client
                 .from('lexicon_words')
                 .select('main_character_id, pinyin, meaning_vi')
                 .inFilter('main_character_id', charIds),

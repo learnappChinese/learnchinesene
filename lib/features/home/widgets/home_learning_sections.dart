@@ -66,8 +66,8 @@ class HomeLearningSections extends StatelessWidget {
           Row(children: [
             for (final action in <(String, Color, VoidCallback)>[
               ('Từ vựng', const Color(0xFFFFD5CD), onStartLearning),
-              ('Ngữ pháp', const Color(0xFFBEE5FF), onGrammar),
-              ('Luyện nghe', const Color(0xFFC8F5DB), onListening),
+              ('Luyện viết', const Color(0xFFBEE5FF), onGrammar),
+              ('Flashcards', const Color(0xFFC8F5DB), onListening),
               ('Luyện nói', const Color(0xFFFFE9AC), onSpeaking),
             ]) ...[
               if (action.$1 != 'Từ vựng') SizedBox(width: 7.w),

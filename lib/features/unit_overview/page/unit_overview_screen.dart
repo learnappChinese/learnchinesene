@@ -670,9 +670,11 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
         break;
 
       case LearningStageActivityType.hanzi:
-        final firstCharId = stage.items.isNotEmpty
-            ? int.tryParse(stage.items.first.sourceId)
-            : null;
+        final charIds = stage.items
+            .map((item) => int.tryParse(item.sourceId))
+            .whereType<int>()
+            .toList();
+        final firstCharId = charIds.isNotEmpty ? charIds.first : null;
         final hanziContext = LearningSourceContext(
           courseId: 'duo_chinese',
           duoUnitId: 'unit_${chapter.chapterNumber}',
@@ -686,6 +688,8 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
               ? HanziWritingScreen(
                   characterId: firstCharId,
                   sourceContext: hanziContext,
+                  characterSequence: charIds,
+                  unitId: chapter.chapterNumber,
                 )
               : HanziWritingHomeScreen(
                   sourceContext: hanziContext,

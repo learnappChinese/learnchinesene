@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../database/app_database.dart';
 import '../learning_rules_config.dart';
 import '../model/learning_activity_submission.dart';
 import '../model/learning_result.dart';
@@ -11,6 +13,7 @@ import '../model/learning_skill_taxonomy.dart';
 import '../model/unit_mastery.dart';
 import '../service/learning_rules_service.dart';
 import 'guest_learning_progress_store.dart';
+import '../../../features/hanzi_writing/services/hanzi_stroke_cache.dart';
 import '../service/guest_journey_resolver.dart';
 
 abstract interface class LearningProgressRepository {
@@ -88,6 +91,21 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
       return;
     }
 
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final db = AppDatabase.instance.database;
+        final profileId = AppDatabase.instance.activeProfileId;
+        final nowUtc = _now().toUtc().toIso8601String();
+        await db.rawUpdate('''
+          UPDATE local_activity_attempts
+          SET status = 'abandoned', completed_at_utc = ?
+          WHERE attempt_id = ? AND local_id = ? AND status = 'started';
+        ''', [nowUtc, attemptId, profileId]);
+      } catch (e) {
+        debugPrint('[LearningProgressRepository] SQLite abandonAttempt error: $e');
+      }
+    }
+
     final prefs = await _getPrefs;
     final attempts = _readJsonList(prefs, _localAttemptsKey);
     final index = attempts.indexWhere(
@@ -129,6 +147,32 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
         },
       );
       return;
+    }
+
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final db = AppDatabase.instance.database;
+        final profileId = AppDatabase.instance.activeProfileId;
+        final nowUtc = _now().toUtc().toIso8601String();
+        await db.rawInsert('''
+          INSERT OR IGNORE INTO local_activity_attempts (
+            attempt_id, local_id, activity_type, source_namespace, source_id,
+            unit_id, level_id, started_at_utc, status, metadata_json
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'started', ?);
+        ''', [
+          submission.attemptId,
+          profileId,
+          submission.activityType,
+          submission.sourceType,
+          submission.sourceId,
+          submission.unitId,
+          submission.levelId,
+          nowUtc,
+          jsonEncode(submission.metadata),
+        ]);
+      } catch (e) {
+        debugPrint('[LearningProgressRepository] SQLite startAttempt error: $e');
+      }
     }
 
     final prefs = await _getPrefs;
@@ -181,9 +225,59 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
   Future<LearningResult> _completeLocalActivity(
     LearningActivitySubmission submission,
   ) async {
+    final eventKey = _eventKey(submission);
+
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final db = AppDatabase.instance.database;
+        final existingEvents = await db.query(
+          'local_xp_events',
+          where: 'event_key = ?',
+          whereArgs: [eventKey],
+          limit: 1,
+        );
+        if (existingEvents.isNotEmpty) {
+          final existingAttempts = await db.query(
+            'local_activity_attempts',
+            where: 'attempt_id = ?',
+            whereArgs: [submission.attemptId],
+            limit: 1,
+          );
+          final score = (existingAttempts.firstOrNull?['score'] as num?)?.toDouble() ?? 100.0;
+          final stars = (existingAttempts.firstOrNull?['stars'] as num?)?.toInt() ?? 3;
+          final xp = (existingEvents.first['xp_amount'] as num?)?.toInt() ?? 0;
+          final totalXp = await AppDatabase.instance.getTotalXp();
+          final streak = await AppDatabase.instance.getCurrentStreak();
+          return LearningResult(
+            activityType: submission.activityType,
+            sourceId: submission.sourceId,
+            attemptId: submission.attemptId,
+            passed: true,
+            stars: stars,
+            score: score,
+            accuracy: 1.0,
+            correctCount: submission.correctCount,
+            wrongCount: submission.wrongCount,
+            xpEarned: xp,
+            baseXp: xp,
+            bonusXp: 0,
+            newTotalXp: totalXp,
+            currentStreak: streak,
+            masteryBefore: 1.0,
+            masteryAfter: 1.0,
+            bestCombo: submission.bestCombo,
+            firstClear: false,
+            perfect: false,
+            attemptNumber: 1,
+            unlockedNext: false,
+            idempotent: true,
+          );
+        }
+      } catch (_) {}
+    }
+
     final prefs = await _getPrefs;
     final events = _readJsonList(prefs, _localXpEventsKey);
-    final eventKey = _eventKey(submission);
     final duplicate = events.where((row) => row['event_key'] == eventKey);
     if (duplicate.isNotEmpty) {
       final stored = duplicate.first['result'];
@@ -407,6 +501,127 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
         masteryKey: masteryAfter,
       }),
     );
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final db = AppDatabase.instance.database;
+        final profileId = AppDatabase.instance.activeProfileId;
+        final nowUtc = now.toUtc().toIso8601String();
+        final dateStr = '${now.year.toString().padLeft(4, '0')}-'
+            '${now.month.toString().padLeft(2, '0')}-'
+            '${now.day.toString().padLeft(2, '0')}';
+
+        await db.transaction((txn) async {
+          // 1. Nhật ký lượt làm bài
+          await txn.rawInsert('''
+            INSERT OR REPLACE INTO local_activity_attempts (
+              attempt_id, local_id, activity_type, source_namespace, source_id,
+              unit_id, level_id, started_at_utc, completed_at_utc, status,
+              score, accuracy, correct_count, wrong_count, stars, duration_seconds,
+              metadata_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+          ''', [
+            submission.attemptId,
+            profileId,
+            submission.activityType,
+            submission.sourceType,
+            submission.sourceId,
+            submission.unitId,
+            submission.levelId,
+            submission.metadata['started_at'] ?? nowUtc,
+            nowUtc,
+            evaluation.passed ? 'passed' : 'failed',
+            evaluation.score,
+            evaluation.accuracy,
+            submission.correctCount,
+            submission.wrongCount,
+            evaluation.stars,
+            submission.durationSeconds,
+            jsonEncode(submission.metadata),
+          ]);
+
+          // 2. Tiến độ ải học nếu vượt qua
+          if (evaluation.passed) {
+            final levelId = submission.levelId ??
+                (isBossAct ? 'boss:${submission.unitId}' : submission.sourceId);
+            await txn.rawInsert('''
+              INSERT INTO local_stage_progress (
+                local_id, level_id, status, best_score, best_stars, first_completed_at_utc, last_attempt_id
+              ) VALUES (?, ?, 'completed', ?, ?, ?, ?)
+              ON CONFLICT(local_id, level_id) DO UPDATE SET
+                status = 'completed',
+                best_score = MAX(best_score, excluded.best_score),
+                best_stars = MAX(best_stars, excluded.best_stars),
+                last_attempt_id = excluded.last_attempt_id;
+            ''', [
+              profileId,
+              levelId,
+              evaluation.score,
+              evaluation.stars,
+              nowUtc,
+              submission.attemptId,
+            ]);
+
+            // 3. Chuỗi ngày học
+            await txn.rawInsert('''
+              INSERT OR IGNORE INTO local_study_days (local_id, local_date, first_qualifying_attempt_id)
+              VALUES (?, ?, ?);
+            ''', [profileId, dateStr, submission.attemptId]);
+          }
+
+          // 2b. Tiến độ luyện viết chữ Hán nếu là bài tập Hanzi
+          if (submission.activityType == 'hanzi') {
+            final charId = (submission.metadata['character_id'] as num?)?.toInt() ??
+                int.tryParse(submission.sourceId) ??
+                0;
+            if (charId > 0) {
+              final practiceAttempts =
+                  (submission.metadata['practice_attempts'] as num?)?.toInt() ?? 1;
+              final isMastered = (evaluation.hanziMastered || evaluation.score >= 90.0) ? 1 : 0;
+              await txn.rawInsert('''
+                INSERT INTO local_hanzi_progress (
+                  local_id, character_id, attempts, best_accuracy, last_practiced_at_utc, is_mastered
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(local_id, character_id) DO UPDATE SET
+                  attempts = attempts + excluded.attempts,
+                  best_accuracy = MAX(best_accuracy, excluded.best_accuracy),
+                  last_practiced_at_utc = excluded.last_practiced_at_utc,
+                  is_mastered = MAX(is_mastered, excluded.is_mastered);
+              ''', [
+                profileId,
+                charId,
+                practiceAttempts,
+                evaluation.score,
+                nowUtc,
+                isMastered,
+              ]);
+              HanziStrokeCache.instance.invalidateCharacter(charId);
+            }
+          }
+
+          // 4. Sổ cái XP bất biến với event_key duy nhất
+          await txn.rawInsert('''
+            INSERT OR IGNORE INTO local_xp_events (
+              event_id, event_key, local_id, attempt_id, source_namespace, source_id,
+              base_xp, bonus_xp, xp_amount, earned_at_utc, reward_rule_version
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1);
+          ''', [
+            _generateRandomUuid(),
+            eventKey,
+            profileId,
+            submission.attemptId,
+            submission.sourceType,
+            submission.sourceId,
+            evaluation.baseXp,
+            evaluation.bonusXp,
+            evaluation.xpEarned,
+            nowUtc,
+          ]);
+        });
+      } catch (e) {
+        debugPrint('[LearningProgressRepository] SQLite completeActivity error: $e');
+      }
+    }
+
     return result;
   }
 
@@ -426,6 +641,33 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
             .order('created_at', ascending: false)
             .limit(limit),
       );
+    }
+
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final profileId = AppDatabase.instance.activeProfileId;
+        final rows = await AppDatabase.instance.database.query(
+          'local_xp_events',
+          where: 'local_id = ?',
+          whereArgs: [profileId],
+          orderBy: 'earned_at_utc DESC',
+          limit: limit,
+        );
+        if (rows.isNotEmpty) {
+          return rows.map((r) => <String, dynamic>{
+            'id': r['event_id'],
+            'event_key': r['event_key'],
+            'activity_type': r['source_namespace'],
+            'source_type': r['source_namespace'],
+            'source_id': r['source_id'],
+            'xp_amount': r['xp_amount'],
+            'base_xp': r['base_xp'],
+            'bonus_xp': r['bonus_xp'],
+            'reason': 'Học bài',
+            'created_at': r['earned_at_utc'],
+          }).toList();
+        }
+      } catch (_) {}
     }
 
     final prefs = await _getPrefs;
@@ -453,6 +695,37 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
             .limit(limit),
       );
     }
+
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final profileId = AppDatabase.instance.activeProfileId;
+        final rows = await AppDatabase.instance.database.query(
+          'local_activity_attempts',
+          where: 'local_id = ?',
+          whereArgs: [profileId],
+          orderBy: 'started_at_utc DESC',
+          limit: limit,
+        );
+        if (rows.isNotEmpty) {
+          return rows.map((r) => <String, dynamic>{
+            'id': r['attempt_id'],
+            'activity_type': r['activity_type'],
+            'source_id': r['source_id'],
+            'score': r['score'],
+            'accuracy': r['accuracy'],
+            'status': r['status'],
+            'stars': r['stars'],
+            'xp_earned': 0,
+            'duration_seconds': r['duration_seconds'],
+            'best_combo': 0,
+            'mastery_before': 0.0,
+            'mastery_after': 0.0,
+            'completed_at': r['completed_at_utc'],
+          }).toList();
+        }
+      } catch (_) {}
+    }
+
     final prefs = await _getPrefs;
     final rows = _readJsonList(prefs, _localAttemptsKey).reversed.toList();
     return rows.take(limit).toList();
@@ -819,5 +1092,13 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
     if (difference <= 0) return previous == 0 ? 1 : previous;
     if (difference == 1) return previous + 1;
     return 1;
+  }
+
+  String _generateRandomUuid() {
+    final random = Random.secure();
+    final values = List<int>.generate(16, (i) => random.nextInt(256));
+    values[6] = (values[6] & 0x0f) | 0x40; // v4
+    values[8] = (values[8] & 0x3f) | 0x80; // variant
+    return values.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
 }

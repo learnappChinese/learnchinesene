@@ -50,34 +50,35 @@ class GuestJourneyResolver {
         isUnlocked = true;
         lockReason = null;
       } else {
-        // Check prerequisite
-        final requiredNodeId = row['required_node_id'] as String?;
-        if (requiredNodeId != null && requiredNodeId.isNotEmpty) {
-          final parts = requiredNodeId.split(':');
-          final reqGameId = parts.length >= 2 ? int.tryParse(parts[0]) : null;
-          final reqLevelId = parts.length >= 2 ? parts[1] : requiredNodeId;
+        // Lộ trình tuần tự: Ải i bắt buộc phải hoàn thành Ải i - 1 trước đó
+        final prevRow = updatedLearningRows[i - 1];
+        final prevCompleted = prevRow['is_completed'] == true;
 
-          final reqPassed = reqGameId != null
-              ? await store.isStagePassed(reqGameId, reqLevelId)
-              : passedKeys.any((k) => k.endsWith(':$reqLevelId'));
-
-          if (reqPassed) {
-            isUnlocked = true;
-            lockReason = null;
-          } else {
-            isUnlocked = false;
-            lockReason = 'complete_previous';
-          }
+        if (!prevCompleted) {
+          isUnlocked = false;
+          lockReason = 'complete_previous';
         } else {
-          // If no explicit required_node_id, check the immediately preceding learning node
-          final prevRow = updatedLearningRows[i - 1];
-          final prevCompleted = prevRow['is_completed'] == true;
-          if (prevCompleted) {
+          // Kiểm tra thêm điều kiện tiên quyết nếu có
+          final requiredNodeId = row['required_node_id'] as String?;
+          if (requiredNodeId != null && requiredNodeId.isNotEmpty) {
+            final parts = requiredNodeId.split(':');
+            final reqGameId = parts.length >= 2 ? int.tryParse(parts[0]) : null;
+            final reqLevelId = parts.length >= 2 ? parts[1] : requiredNodeId;
+
+            final reqPassed = reqGameId != null
+                ? await store.isStagePassed(reqGameId, reqLevelId)
+                : passedKeys.any((k) => k.endsWith(':$reqLevelId'));
+
+            if (reqPassed) {
+              isUnlocked = true;
+              lockReason = null;
+            } else {
+              isUnlocked = false;
+              lockReason = 'complete_previous';
+            }
+          } else {
             isUnlocked = true;
             lockReason = null;
-          } else {
-            isUnlocked = false;
-            lockReason = 'complete_previous';
           }
         }
       }
@@ -251,17 +252,25 @@ class GuestJourneyResolver {
       String? lockReason;
 
       if (!isSectionUnlocked) {
-        isUnlocked = false;
-        lockReason = 'Phần học này chưa được mở.';
+        // Unit 1 của Section 1 luôn luôn mở cho người học
+        if (i == 0 && unit.sectionNumber <= 1) {
+          isUnlocked = true;
+          lockReason = null;
+        } else {
+          isUnlocked = false;
+          lockReason = 'Phần học này chưa được mở.';
+        }
       } else if (i == 0) {
         // Unit 1 in an unlocked section
         if (unit.sectionNumber <= 1) {
           isUnlocked = true;
+          lockReason = null;
         } else if (previousSectionLastUnitId != null) {
           isUnlocked = wonBossUnits.contains(previousSectionLastUnitId);
           lockReason = isUnlocked ? null : 'Hoàn thành phần trước để mở.';
         } else {
           isUnlocked = true;
+          lockReason = null;
         }
       } else {
         // Unit N in the same section: depends on Unit N-1 boss victory

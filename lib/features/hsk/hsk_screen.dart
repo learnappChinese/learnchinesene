@@ -76,6 +76,7 @@ class _HskScreenState extends State<HskScreen> {
   }
 
   Widget _buildLevelMetrics(BuildContext context, HskLevel level, int index) {
+    final isUnlockedLevel = level.order <= 4;
     return FutureBuilder<List<Object>>(
       key: ValueKey(level.id),
       future: controller.metricsFor(level.id),
@@ -84,15 +85,28 @@ class _HskScreenState extends State<HskScreen> {
         index: index,
         count: snapshot.hasData ? snapshot.data![0] as int : 0,
         progress: snapshot.hasData ? snapshot.data![1] as double : 0,
-        isUnlocked: true,
-        onTap: () => Get.to(
-          () => const UnitScreen(),
-          arguments: {
-            'hskLevelId': level.id,
-            'hskTitle': level.title,
-            'hskOrder': level.order,
-          },
-        ),
+        isUnlocked: isUnlockedLevel,
+        onTap: () {
+          if (!isUnlockedLevel) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Giáo trình HSK 5 & 6 đang được biên soạn. Bạn hãy hoàn thành HSK 1–4 trước nhé!',
+                ),
+                duration: Duration(seconds: 2),
+              ),
+            );
+            return;
+          }
+          Get.to(
+            () => const UnitScreen(),
+            arguments: {
+              'hskLevelId': level.id,
+              'hskTitle': level.title,
+              'hskOrder': level.order,
+            },
+          );
+        },
       ),
     );
   }
@@ -143,12 +157,15 @@ class _HskScreenState extends State<HskScreen> {
                 ),
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => _WorldPathItem(
-                      index: index,
-                      isLast: index == levels.length - 1,
-                      isUnlocked: true,
-                      child: _buildLevelMetrics(context, levels[index], index),
-                    ),
+                    (context, index) {
+                      final isUnlocked = levels[index].order <= 4;
+                      return _WorldPathItem(
+                        index: index,
+                        isLast: index == levels.length - 1,
+                        isUnlocked: isUnlocked,
+                        child: _buildLevelMetrics(context, levels[index], index),
+                      );
+                    },
                     childCount: levels.length,
                   ),
                 ),

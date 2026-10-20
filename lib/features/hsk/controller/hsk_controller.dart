@@ -35,7 +35,15 @@ class HskController extends GetxController {
       final res = await _database.getHskLevels();
       if (isClosed || request != _loadRequest) return;
       _metrics.clear();
-      levels.value = res;
+
+      final allLevels = [...res];
+      if (!allLevels.any((l) => l.order == 5)) {
+        allLevels.add(const HskLevel(id: 5, title: 'HSK 5 (Chưa mở)', order: 5));
+      }
+      if (!allLevels.any((l) => l.order == 6)) {
+        allLevels.add(const HskLevel(id: 6, title: 'HSK 6 (Chưa mở)', order: 6));
+      }
+      levels.value = allLevels;
     } catch (e) {
       if (isClosed || request != _loadRequest) return;
       hasError.value = true;

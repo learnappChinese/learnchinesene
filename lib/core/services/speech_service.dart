@@ -1,4 +1,6 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -23,17 +25,215 @@ class SpeechResult {
   });
 }
 
+/// Kết quả phân tích đối chiếu chi tiết giữa câu nói người dùng và câu mục tiêu
+class SpeechMatchAnalysis {
+  final String rawTarget;
+  final String rawRecognized;
+  final String normalizedTarget;
+  final String normalizedRecognized;
+  final double similarity;
+  final bool isExactMatch;
+  final bool isFullMatch;
+  final bool isPartialMatch;
+  final bool isPassed;
+
+  const SpeechMatchAnalysis({
+    required this.rawTarget,
+    required this.rawRecognized,
+    required this.normalizedTarget,
+    required this.normalizedRecognized,
+    required this.similarity,
+    required this.isExactMatch,
+    required this.isFullMatch,
+    required this.isPartialMatch,
+    required this.isPassed,
+  });
+}
+
 class SpeechService {
   final SpeechToText _speech = SpeechToText();
 
-  Future<bool> initialize() async {
-    return _speech.initialize();
+  static final RegExp _punctuationAndWhitespaceRegex = RegExp(
+    r'[\s\p{P}\p{S}\.,!?;:"' "'" r'\(\)\[\]{}<>《》〈〉「」『』【】〔〕—–…·~`@#$%^&*+=|\\/]+',
+    unicode: true,
+  );
+
+  /// Chuẩn hoá chuỗi tiếng Trung: loại bỏ toàn bộ khoảng trắng và dấu câu
+  static String normalizeChinese(String input) {
+    return input.replaceAll(_punctuationAndWhitespaceRegex, '').trim();
+  }
+
+  bool get isListening => _speech.isListening;
+  bool get isAvailable => _speech.isAvailable;
+
+  Future<bool> initialize({
+    void Function(String status)? onStatus,
+    void Function(String error)? onError,
+  }) async {
+    try {
+      return await _speech.initialize(
+        onStatus: onStatus,
+        onError: onError != null ? (e) => onError(e.errorMsg) : null,
+      );
+    } on PlatformException catch (e) {
+      debugPrint('SpeechService initialize PlatformException: ${e.code} - ${e.message}');
+      onError?.call(e.message ?? e.code);
+      return false;
+    } catch (e) {
+      debugPrint('SpeechService initialize unexpected error: $e');
+      onError?.call(e.toString());
+      return false;
+    }
   }
 
   Future<void> stop() async {
-    if (_speech.isListening) {
-      await _speech.stop();
+    try {
+      if (_speech.isListening) {
+        await _speech.stop();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> cancel() async {
+    try {
+      if (_speech.isListening) {
+        await _speech.cancel();
+      }
+    } catch (_) {}
+  }
+
+  /// Khởi chạy nhận diện giọng nói dạng stream theo thời gian thực (real-time).
+  /// Nhận partial results liên tục mà không bắt người dùng phải đợi timeout cố định.
+  Future<bool> startListeningStream({
+    required void Function(String recognizedWords, bool isFinal) onResult,
+    void Function(String status)? onStatus,
+    void Function(String error)? onError,
+    String localeId = 'zh_CN',
+    Duration listenFor = const Duration(seconds: 45),
+    Duration pauseFor = const Duration(seconds: 5),
+    String? targetText,
+  }) async {
+    bool ok = false;
+    try {
+      ok = await initialize(
+        onStatus: onStatus,
+        onError: onError,
+      );
+    } catch (e) {
+      ok = false;
     }
+
+    if (!ok) {
+      // Dự phòng cho môi trường kiểm thử (test unit) hoặc thiết bị thiếu speech service
+      if (targetText != null) {
+        final fallback = await listenAndScore(
+          targetText: targetText,
+          localeId: localeId,
+        );
+        if (fallback.isAvailable) {
+          onResult(fallback.recognizedText, true);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    try {
+      await _speech.listen(
+        onResult: (SpeechRecognitionResult result) {
+          onResult(result.recognizedWords, result.finalResult);
+        },
+        listenOptions: SpeechListenOptions(
+          localeId: localeId,
+          listenFor: listenFor,
+          pauseFor: pauseFor,
+          partialResults: true,
+          cancelOnError: false,
+          listenMode: ListenMode.confirmation,
+        ),
+      );
+      return true;
+    } catch (_) {
+      try {
+        await _speech.listen(
+          onResult: (SpeechRecognitionResult result) {
+            onResult(result.recognizedWords, result.finalResult);
+          },
+          listenOptions: SpeechListenOptions(
+            localeId: 'zh-CN',
+            listenFor: listenFor,
+            pauseFor: pauseFor,
+            partialResults: true,
+            cancelOnError: false,
+            listenMode: ListenMode.confirmation,
+          ),
+        );
+        return true;
+      } catch (e) {
+        onError?.call(e.toString());
+        return false;
+      }
+    }
+  }
+
+  /// Phân tích đối chiếu câu mục tiêu và câu nhận diện thời gian thực.
+  SpeechMatchAnalysis analyzeMatch(String targetText, String recognizedText) {
+    final normTarget = normalizeChinese(targetText);
+    final normRec = normalizeChinese(recognizedText);
+
+    if (normTarget.isEmpty && normRec.isEmpty) {
+      return const SpeechMatchAnalysis(
+        rawTarget: '',
+        rawRecognized: '',
+        normalizedTarget: '',
+        normalizedRecognized: '',
+        similarity: 100.0,
+        isExactMatch: true,
+        isFullMatch: true,
+        isPartialMatch: false,
+        isPassed: true,
+      );
+    }
+
+    if (normRec.isEmpty) {
+      return SpeechMatchAnalysis(
+        rawTarget: targetText,
+        rawRecognized: recognizedText,
+        normalizedTarget: normTarget,
+        normalizedRecognized: '',
+        similarity: 0.0,
+        isExactMatch: false,
+        isFullMatch: false,
+        isPartialMatch: false,
+        isPassed: false,
+      );
+    }
+
+    final isExact = normTarget == normRec;
+    final similarity = similarityScore(targetText, recognizedText);
+
+    // Khớp đủ: chính xác 100% hoặc nhận dạng chứa trọn câu mục tiêu với độ tương đồng cao
+    final containsTarget =
+        normRec.contains(normTarget) || normRec.endsWith(normTarget);
+    final isFull = isExact || (containsTarget && similarity >= 80.0);
+
+    // Khớp một phần: người dùng đang nói dở phần đầu của câu
+    final isPartial =
+        normTarget.startsWith(normRec) && normRec.length < normTarget.length;
+
+    final isPassed = isExact || isFull || similarity >= 80.0;
+
+    return SpeechMatchAnalysis(
+      rawTarget: targetText,
+      rawRecognized: recognizedText,
+      normalizedTarget: normTarget,
+      normalizedRecognized: normRec,
+      similarity: isExact ? 100.0 : similarity,
+      isExactMatch: isExact,
+      isFullMatch: isFull,
+      isPartialMatch: isPartial,
+      isPassed: isPassed,
+    );
   }
 
   Future<SpeechResult> listenAndScore({
@@ -88,8 +288,8 @@ class SpeechService {
   }
 
   double similarityScore(String expected, String actual) {
-    final e = _normalize(expected);
-    final a = _normalize(actual);
+    final e = normalizeChinese(expected);
+    final a = normalizeChinese(actual);
 
     if (e.isEmpty && a.isEmpty) return 100;
     if (e.isEmpty || a.isEmpty) return 0;
@@ -99,8 +299,6 @@ class SpeechService {
     final similarity = (1 - (distance / maxLength)) * 100;
     return similarity.clamp(0, 100).toDouble();
   }
-
-  String _normalize(String input) => input.replaceAll(' ', '').trim();
 
   int _levenshtein(String s, String t) {
     final rows = s.length + 1;

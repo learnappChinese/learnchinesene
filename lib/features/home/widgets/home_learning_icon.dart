@@ -11,20 +11,26 @@ class HomeLearningIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
         child: SizedBox(
-            width: size,
-            height: size,
-            child: switch (label) {
-              'Từ vựng' => _cards(),
-              'Ngữ pháp' =>
-                CustomPaint(painter: const _LearningIconPainter('grammar')),
-              'Luyện nghe' =>
-                CustomPaint(painter: const _LearningIconPainter('listening')),
-              'Thử thách' =>
-                CustomPaint(painter: const _LearningIconPainter('challenge')),
-              _ => CustomPaint(painter: const _LearningIconPainter('speaking')),
-            }),
+          width: size,
+          height: size,
+          child: switch (label) {
+            'Từ vựng' || 'vocabulary' || 'Từ mới' => _cards(),
+            'Luyện viết' || 'writing' || 'Hanzi' || 'Viết' => _writing(),
+            'Flashcards' || 'flashcards' || 'Thẻ từ' => _flashcards(),
+            'Luyện nói' || 'speaking' || 'Phát âm' =>
+              CustomPaint(painter: const _LearningIconPainter('speaking')),
+            'Ngữ pháp' || 'grammar' =>
+              CustomPaint(painter: const _LearningIconPainter('grammar')),
+            'Luyện nghe' || 'listening' =>
+              CustomPaint(painter: const _LearningIconPainter('listening')),
+            'Thử thách' || 'challenge' =>
+              CustomPaint(painter: const _LearningIconPainter('challenge')),
+            _ => CustomPaint(painter: const _LearningIconPainter('speaking')),
+          },
+        ),
       );
 
+  /// Hai thẻ từ vựng với chữ Hán (Từ vựng).
   Widget _cards() => Stack(
         alignment: Alignment.center,
         children: [
@@ -70,6 +76,285 @@ class HomeLearningIcon extends StatelessWidget {
                     fontSize: size * .37,
                     height: 1))),
       );
+
+  /// Ô điền chữ Hán (Điền tự cách 田字格) kèm bút lông thư pháp (Luyện viết).
+  Widget _writing() => Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Transform.rotate(
+            angle: -.06,
+            child: Container(
+              width: size * .74,
+              height: size * .74,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(size * .14),
+                border: Border.all(
+                  color: const Color(0xFF60A5FA),
+                  width: 1.6,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0x280284C7),
+                    blurRadius: size * .06,
+                    offset: Offset(0, size * .04),
+                  ),
+                ],
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: Size(size * .60, size * .60),
+                    painter: const _TianzigeGridPainter(),
+                  ),
+                  Text(
+                    '永',
+                    style: TextStyle(
+                      color: const Color(0xFF1E3A8A),
+                      fontSize: size * .40,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            right: -size * .06,
+            top: -size * .08,
+            child: SizedBox(
+              width: size * .54,
+              height: size * .54,
+              child: const CustomPaint(
+                painter: _CalligraphyBrushPainter(),
+              ),
+            ),
+          ),
+        ],
+      );
+
+  /// Bộ thẻ lật Flashcards SRS có huy hiệu năng lượng và phiên âm (Flashcards).
+  Widget _flashcards() => Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // Thẻ xanh ngọc nằm phía sau
+          Positioned(
+            left: size * .06,
+            top: size * .08,
+            child: Transform.rotate(
+              angle: -.16,
+              child: Container(
+                width: size * .54,
+                height: size * .68,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(size * .10),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF34D399), Color(0xFF059669)],
+                  ),
+                  border: Border.all(color: const Color(0xFF6EE7B7), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0x30065F46),
+                      blurRadius: size * .06,
+                      offset: Offset(1, size * .04),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.bolt_rounded,
+                    color: Colors.white.withValues(alpha: .9),
+                    size: size * .28,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Thẻ trắng ngà nằm phía trước hiển thị chữ và pinyin
+          Positioned(
+            right: size * .06,
+            top: size * .18,
+            child: Transform.rotate(
+              angle: .14,
+              child: Container(
+                width: size * .54,
+                height: size * .68,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(size * .10),
+                  border: Border.all(color: const Color(0xFF10B981), width: 1.6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0x30134E4A),
+                      blurRadius: size * .06,
+                      offset: Offset(1, size * .04),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(size * .04),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '学',
+                          style: TextStyle(
+                            color: const Color(0xFF065F46),
+                            fontWeight: FontWeight.w900,
+                            fontSize: size * .32,
+                            height: 1,
+                          ),
+                        ),
+                        SizedBox(height: size * .02),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: size * .06,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD1FAE5),
+                            borderRadius: BorderRadius.circular(size * .05),
+                          ),
+                          child: Text(
+                            'xué',
+                            style: TextStyle(
+                              color: const Color(0xFF047857),
+                              fontWeight: FontWeight.w800,
+                              fontSize: size * .11,
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+}
+
+/// Nét lưới ô điền chữ thập chữ Hán (Tianzige)
+class _TianzigeGridPainter extends CustomPainter {
+  const _TianzigeGridPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0x35EF4444)
+      ..strokeWidth = 1.0;
+
+    const dashLength = 2.5;
+    const gapLength = 2.0;
+
+    // Đường nét đứt dọc giữa
+    final cx = size.width / 2;
+    double y = 0;
+    while (y < size.height) {
+      canvas.drawLine(
+        Offset(cx, y),
+        Offset(cx, math.min(y + dashLength, size.height)),
+        paint,
+      );
+      y += dashLength + gapLength;
+    }
+
+    // Đường nét đứt ngang giữa
+    final cy = size.height / 2;
+    double x = 0;
+    while (x < size.width) {
+      canvas.drawLine(
+        Offset(x, cy),
+        Offset(math.min(x + dashLength, size.width), cy),
+        paint,
+      );
+      x += dashLength + gapLength;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TianzigeGridPainter oldDelegate) => false;
+}
+
+/// Bút lông thư pháp truyền thống Trung Hoa
+class _CalligraphyBrushPainter extends CustomPainter {
+  const _CalligraphyBrushPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(size.width / 64, size.height / 64);
+
+    // Thân bút trúc (Bamboo shaft)
+    final shaftPath = Path()
+      ..moveTo(56, 4)
+      ..lineTo(60, 8)
+      ..lineTo(37, 31)
+      ..lineTo(33, 27)
+      ..close();
+
+    final shaftPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFFFD572), Color(0xFFBF7516)],
+      ).createShader(const Rect.fromLTWH(33, 4, 27, 27));
+
+    canvas.drawPath(shaftPath, shaftPaint);
+
+    // Cổ bút đồng vàng (Brass ferrule)
+    final collarPath = Path()
+      ..moveTo(37, 31)
+      ..lineTo(33, 27)
+      ..lineTo(30, 30)
+      ..lineTo(34, 34)
+      ..close();
+
+    canvas.drawPath(
+      collarPath,
+      Paint()..color = const Color(0xFFFBBF24),
+    );
+
+    // Lông bút mực đen (Black ink bristles)
+    final tipPath = Path()
+      ..moveTo(32, 32)
+      ..lineTo(29, 29)
+      ..quadraticBezierTo(21, 37, 15, 49)
+      ..quadraticBezierTo(27, 43, 32, 32)
+      ..close();
+
+    final tipPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topRight,
+        end: Alignment.bottomLeft,
+        colors: [Color(0xFF475569), Color(0xFF0F172A)],
+      ).createShader(const Rect.fromLTWH(15, 29, 17, 20));
+
+    canvas.drawPath(tipPath, tipPaint);
+
+    // Giọt mực xanh lam ở đầu ngòi
+    canvas.drawCircle(
+      const Offset(13, 51),
+      2.5,
+      Paint()..color = const Color(0xFF0284C7),
+    );
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_CalligraphyBrushPainter oldDelegate) => false;
 }
 
 class _LearningIconPainter extends CustomPainter {

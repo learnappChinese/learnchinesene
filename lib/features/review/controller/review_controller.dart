@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/models/word.dart';
 import '../../../core/learning/service/learning_progress_sync_service.dart';
-import '../../conversations/conversations_screen.dart';
+import '../../flashcards/flashcards_screen.dart';
 import '../../hanzi_writing/screens/hanzi_writing_home_screen.dart';
 import '../../hanzi_writing/screens/hanzi_writing_screen.dart';
 import '../../quiz/quiz_screen.dart';
@@ -169,7 +169,7 @@ class ReviewController extends GetxController {
             },
           )?.then((_) => loadInitialData());
         } else {
-          Get.to(() => const ConversationsScreen())
+          Get.to(() => const FlashcardsScreen(initialLevel: 0))
               ?.then((_) => loadInitialData());
         }
         break;

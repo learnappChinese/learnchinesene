@@ -73,7 +73,10 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
       _errorMessage = null;
     });
     try {
-      final list = await _journeyRepo.getUnits(widget.section.id);
+      final list = await _journeyRepo.getUnits(
+        widget.section.id,
+        isSectionUnlocked: widget.section.isUnlocked,
+      );
       if (mounted && request == _loadRequest) {
         setState(() {
           _units = list;

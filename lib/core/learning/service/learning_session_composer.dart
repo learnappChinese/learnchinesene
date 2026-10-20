@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import '../../database/app_database.dart';
 import '../../database/duo_db_helper.dart';
 import '../../models/duo_challenge.dart';
 import '../../models/duo_flashcard.dart';
@@ -101,6 +102,7 @@ class LearningSessionComposer {
       levelId: sourceContext.levelId,
       gameCode: sourceContext.gameCode,
       limit: targetBudget * 2,
+      sourceContext: sourceContext,
     );
 
     // Verify content sufficiency
@@ -163,6 +165,7 @@ class LearningSessionComposer {
         levelId: sourceContext.levelId,
         gameCode: sourceContext.gameCode,
         limit: targetBudget * 2,
+        sourceContext: sourceContext,
       );
 
       if (rawChallenges.isEmpty) return null;
@@ -173,7 +176,6 @@ class LearningSessionComposer {
 
       List<dynamic> ordered;
       if (savedIds.isNotEmpty) {
-        // Reconstruct exact saved order
         final Map<String, dynamic> lookup = {};
         for (int i = 0; i < rawChallenges.length; i++) {
           final id = _extractId(rawChallenges[i], i);
@@ -187,7 +189,6 @@ class LearningSessionComposer {
           }
         }
 
-        // If some challenges were missing, fallback to taking raw bounded
         if (ordered.isEmpty) {
           ordered = rawChallenges.take(targetBudget).toList();
         }
@@ -220,11 +221,11 @@ class LearningSessionComposer {
       return ComposedLearningSession(
         sessionId: attemptId.isNotEmpty
             ? attemptId
-            : 'duo_${gameId}_${sourceContext.levelId}_${DateTime.now().microsecondsSinceEpoch}',
+            : 'resumed_${gameId}_${sourceContext.levelId}',
         sourceContext: sourceContext,
         items: items,
         targetBudget: targetBudget,
-        currentIndex: min(savedIndex, max(0, items.length - 1)),
+        currentIndex: savedIndex.clamp(0, items.length),
         score: savedScore,
         correctCount: savedCorrect,
         wrongCount: savedWrong,
@@ -244,6 +245,7 @@ class LearningSessionComposer {
     required String levelId,
     required String gameCode,
     required int limit,
+    LearningSourceContext? sourceContext,
   }) async {
     final fetcher = _challengeFetcher;
     if (fetcher != null) {
@@ -260,57 +262,166 @@ class LearningSessionComposer {
         limit: limit,
       );
 
-      if (gameCode == 'learn_words') {
-        // Map learn_words to flashcard representation from the same level
-        final wordsSet = <String>{};
-        for (var c in challenges) {
-          if (c.choicesText != null) {
-            final correctIdx = c.choicesCorrect?.indexOf(1) ?? -1;
-            if (correctIdx >= 0 && correctIdx < c.choicesText!.length) {
-              wordsSet.add(c.choicesText![correctIdx]);
+      if (challenges.length >= minRequiredQuestions) {
+        if (gameCode == 'learn_words') {
+          final wordsSet = <String>{};
+          for (var c in challenges) {
+            if (c.choicesText != null) {
+              final correctIdx = c.choicesCorrect?.indexOf(1) ?? -1;
+              if (correctIdx >= 0 && correctIdx < c.choicesText!.length) {
+                wordsSet.add(c.choicesText![correctIdx]);
+              }
             }
           }
-        }
 
-        if (wordsSet.isNotEmpty) {
-          final flashcards =
-              await _dbHelper.getFlashcardsForWords(wordsSet.toList());
-          if (flashcards.isNotEmpty) {
-            return flashcards;
-          }
-        }
-      } else if (gameCode == 'word_connect') {
-        final wordsSet = <String>{};
-        for (var c in challenges) {
-          if (c.choicesText != null) {
-            final correctIdx = c.choicesCorrect?.indexOf(1) ?? -1;
-            if (correctIdx >= 0 && correctIdx < c.choicesText!.length) {
-              wordsSet.add(c.choicesText![correctIdx]);
+          if (wordsSet.isNotEmpty) {
+            final flashcards =
+                await _dbHelper.getFlashcardsForWords(wordsSet.toList());
+            if (flashcards.length >= minRequiredQuestions) {
+              return flashcards;
             }
           }
-        }
+        } else if (gameCode == 'word_connect') {
+          final wordsSet = <String>{};
+          for (var c in challenges) {
+            if (c.choicesText != null) {
+              final correctIdx = c.choicesCorrect?.indexOf(1) ?? -1;
+              if (correctIdx >= 0 && correctIdx < c.choicesText!.length) {
+                wordsSet.add(c.choicesText![correctIdx]);
+              }
+            }
+          }
 
-        if (wordsSet.isNotEmpty) {
-          final flashcards =
-              await _dbHelper.getFlashcardsForWords(wordsSet.toList());
-          final pairs = <Map<String, String>>[];
-          for (var f in flashcards) {
-            if (f.word.isNotEmpty &&
-                f.meaning != null &&
-                f.meaning!.isNotEmpty) {
-              pairs.add({'zh': f.word, 'vi': f.meaning!});
+          if (wordsSet.isNotEmpty) {
+            final flashcards =
+                await _dbHelper.getFlashcardsForWords(wordsSet.toList());
+            final pairs = <Map<String, String>>[];
+            for (var f in flashcards) {
+              if (f.word.isNotEmpty &&
+                  f.meaning != null &&
+                  f.meaning!.isNotEmpty) {
+                pairs.add({'zh': f.word, 'vi': f.meaning!});
+              }
+            }
+            if (pairs.length >= minRequiredQuestions) {
+              return pairs;
             }
           }
-          if (pairs.isNotEmpty) {
-            return pairs;
-          }
+        } else {
+          return challenges;
         }
       }
-
-      return challenges;
     } catch (e) {
       debugPrint('Error fetching unit challenges: $e');
-      return [];
+    }
+
+    // Local SQLite fallback synthesis
+    return await _synthesizeLocalChallenges(
+      levelId: levelId,
+      gameCode: gameCode,
+      limit: limit,
+      sourceContext: sourceContext,
+    );
+  }
+
+  Future<List<dynamic>> _synthesizeLocalChallenges({
+    required String levelId,
+    required String gameCode,
+    required int limit,
+    LearningSourceContext? sourceContext,
+  }) async {
+    if (!AppDatabase.instance.isOpen) return const [];
+    try {
+      int? unitId = sourceContext?.lexiconUnitId;
+      if (unitId == null || unitId <= 0) {
+        final duoUnit = sourceContext?.duoUnitId ?? '';
+        final clean = duoUnit.replaceAll(RegExp(r'[^0-9]'), '');
+        unitId = int.tryParse(clean);
+      }
+      if (unitId == null || unitId <= 0) {
+        final clean = levelId.replaceAll(RegExp(r'[^0-9]'), '');
+        unitId = int.tryParse(clean);
+      }
+      unitId ??= 1;
+
+      final words = await AppDatabase.instance.getWordsByUnit(unitId);
+      if (words.isEmpty) return const [];
+
+      final random = Random(42 + unitId);
+
+      if (gameCode == 'learn_words') {
+        return words
+            .map((w) => DuoFlashcard(
+                  id: (w['id'] as num).toInt(),
+                  word: '${w['word'] ?? ''}',
+                  pinyin: w['pinyin'] as String?,
+                  meaning: w['meaning_vi'] as String?,
+                  ttsUrl: w['tts_url'] as String?,
+                ))
+            .take(limit)
+            .toList();
+      }
+
+      if (gameCode == 'word_connect') {
+        final pairs = <Map<String, String>>[];
+        for (final w in words) {
+          final zh = '${w['word'] ?? ''}'.trim();
+          final vi = '${w['meaning_vi'] ?? ''}'.trim();
+          if (zh.isNotEmpty && vi.isNotEmpty) {
+            pairs.add({'zh': zh, 'vi': vi});
+          }
+        }
+        return pairs.take(limit).toList();
+      }
+
+      // Quiz / select_answer / listen_select / speaking / translate
+      final generated = <DuoChallenge>[];
+      for (int i = 0; i < words.length && generated.length < limit; i++) {
+        final current = words[i];
+        final zh = '${current['word'] ?? ''}';
+        final vi = '${current['meaning_vi'] ?? ''}';
+        final pinyin = '${current['pinyin'] ?? ''}';
+
+        final otherWords =
+            words.where((w) => w['id'] != current['id']).toList();
+        otherWords.shuffle(random);
+        final distractors = otherWords
+            .take(3)
+            .map((w) => '${w['meaning_vi'] ?? ''}')
+            .where((s) => s.isNotEmpty)
+            .toList();
+
+        final choices = <String>[vi, ...distractors];
+        choices.shuffle(random);
+        final correctIdx = choices.indexOf(vi);
+        final choicesCorrect =
+            List.generate(choices.length, (idx) => idx == correctIdx ? 1 : 0);
+
+        final challengeType = switch (gameCode) {
+          'listen_select' => 'listenTap',
+          'speaking' => 'speaking',
+          'translate' => 'translate',
+          _ => 'select',
+        };
+
+        generated.add(DuoChallenge(
+          id: 'local_${gameCode}_${current['id']}_$i',
+          type: challengeType,
+          prompt: challengeType == 'listenTap'
+              ? zh
+              : 'Chọn nghĩa đúng của từ "$zh" ($pinyin)',
+          tts: zh,
+          choicesText: choices,
+          choicesCorrect: choicesCorrect,
+          solutions: vi,
+        ));
+      }
+
+      return generated;
+    } catch (e) {
+      debugPrint(
+          '[LearningSessionComposer] _synthesizeLocalChallenges failed: $e');
+      return const [];
     }
   }
 

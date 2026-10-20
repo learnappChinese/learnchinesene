@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/config/feature_flags.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../review/model/review_item.dart';
 import '../model/home_journey.dart';
@@ -471,26 +472,28 @@ class HomeLearningTab extends StatelessWidget {
           height: 120.w,
           onTap: onVocabulary,
         ),
-        SizedBox(height: 8.w),
-        _LearningCard(
-          title: 'Bài học chuyên đề AI',
-          subtitle: 'Tự động biên soạn bài học và ngữ pháp',
-          asset: 'assets/images/backgrounds/learning_lessons.png',
-          color: const Color(0xFFFF8809),
-          background: const Color(0xFFFFFAEC),
-          height: 120.w,
-          onTap: onLessons,
-        ),
-        SizedBox(height: 8.w),
-        _LearningCard(
-          title: 'Hội thoại tình huống AI',
-          subtitle: 'Luyện giao tiếp qua các chủ đề thông minh',
-          asset: 'assets/images/backgrounds/learning_conversation.png',
-          color: const Color(0xFF168CFF),
-          background: const Color(0xFFF4F7FF),
-          height: 120.w,
-          onTap: onConversation,
-        ),
+        if (FeatureFlags.enableAi) ...[
+          SizedBox(height: 8.w),
+          _LearningCard(
+            title: 'Bài học chuyên đề AI',
+            subtitle: 'Tự động biên soạn bài học và ngữ pháp',
+            asset: 'assets/images/backgrounds/learning_lessons.png',
+            color: const Color(0xFFFF8809),
+            background: const Color(0xFFFFFAEC),
+            height: 120.w,
+            onTap: onLessons,
+          ),
+          SizedBox(height: 8.w),
+          _LearningCard(
+            title: 'Hội thoại tình huống AI',
+            subtitle: 'Luyện giao tiếp qua các chủ đề thông minh',
+            asset: 'assets/images/backgrounds/learning_conversation.png',
+            color: const Color(0xFF168CFF),
+            background: const Color(0xFFF4F7FF),
+            height: 120.w,
+            onTap: onConversation,
+          ),
+        ],
       ],
     );
   }

@@ -33,43 +33,83 @@ class HomeBottomNavigation extends StatelessWidget {
   }
 
   Widget _destination(
-      BuildContext context, int index, IconData icon, String label) {
-    final selected = currentIndex == index;
+      BuildContext context, int index, IconData icon, String label,
+      {bool isComingSoon = false}) {
+    final selected = !isComingSoon && currentIndex == index;
     const primary = homeGreen;
-    final color = selected ? primary : const Color(0xFF666E60);
+    final color = isComingSoon
+        ? const Color(0xFF94A3B8)
+        : (selected ? primary : const Color(0xFF666E60));
+
+    Widget content = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: color, size: 24.sp),
+        SizedBox(height: 2.w),
+        Text(
+          isComingSoon ? 'Sắp ra mắt' : label,
+          maxLines: 1,
+          style: TextStyle(
+            fontSize: isComingSoon ? 8.sp : 9.sp,
+            height: 1,
+            color: color,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+
+    if (isComingSoon) {
+      content = Opacity(
+        opacity: 0.45,
+        child: content,
+      );
+    }
+
     return Expanded(
       child: Semantics(
         selected: selected,
         button: true,
+        label: isComingSoon ? '$label - Sắp ra mắt' : label,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(28.r),
-            onTap: () => onSelected(index),
+            onTap: () {
+              if (isComingSoon) {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      'Tính năng Trò chơi đang được nâng cấp và sắp ra mắt bạn nhé! 🎮',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: const Color(0xFF334E35),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                );
+              } else {
+                onSelected(index);
+              }
+            },
             child: Ink(
               decoration: BoxDecoration(
+                color: selected
+                    ? primary.withValues(alpha: .12)
+                    : Colors.transparent,
+                border: Border.all(
                   color: selected
-                      ? primary.withValues(alpha: .12)
+                      ? primary.withValues(alpha: .3)
                       : Colors.transparent,
-                  border: Border.all(
-                      color: selected
-                          ? primary.withValues(alpha: .3)
-                          : Colors.transparent,
-                      width: 1.w),
-                  borderRadius: BorderRadius.circular(28.r)),
-              child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(icon, color: color, size: 24.sp),
-                    SizedBox(height: 2.w),
-                    Text(label,
-                        maxLines: 1,
-                        style: TextStyle(
-                            fontSize: 9.sp,
-                            height: 1,
-                            color: color,
-                            fontWeight: FontWeight.w700)),
-                  ]),
+                  width: 1.w,
+                ),
+                borderRadius: BorderRadius.circular(28.r),
+              ),
+              child: content,
             ),
           ),
         ),
@@ -95,7 +135,7 @@ class HomeBottomNavigation extends StatelessWidget {
       ),
       child: Row(children: [
         _destination(context, 1, Icons.menu_book_rounded, 'Học tập'),
-        _destination(context, 2, Icons.sports_esports_rounded, 'Trò chơi'),
+        _destination(context, 2, Icons.sports_esports_rounded, 'Trò chơi', isComingSoon: true),
         const Expanded(child: SizedBox()),
         _destination(context, 3, Icons.bar_chart_rounded, 'Tiến độ'),
         _destination(context, 4, Icons.person_rounded, 'Cá nhân'),

@@ -215,9 +215,7 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
             child: ScaleTransition(
               scale: controller.pulse,
               child: InkWell(
-                onTap: controller.busy.value
-                    ? null
-                    : () => controller.start(context),
+                onTap: () => controller.handleMicTap(context),
                 customBorder: const CircleBorder(),
                 child: Container(
                   width: 108,
@@ -241,9 +239,7 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
                     ],
                   ),
                   child: Icon(
-                    controller.busy.value
-                        ? Icons.graphic_eq_rounded
-                        : Icons.mic_rounded,
+                    controller.micIcon,
                     size: 46,
                     color: Colors.white,
                   ),
@@ -253,9 +249,7 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
           ),
           const SizedBox(height: 14),
           Text(
-            controller.busy.value
-                ? 'Đang nghe… hãy nói tự nhiên'
-                : 'Chạm micro để bắt đầu',
+            controller.statusMessage,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppColors.muted,

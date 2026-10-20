@@ -9,23 +9,48 @@ import '../../../core/models/hanzi_character.dart';
 import '../models/hanzi_practice_config.dart';
 
 class HanziWritingController extends GetxController {
-  HanziWritingController(
-      {DbHelper? database, LearningRewardService? rewardService})
-      : _database = database ?? DbHelper.instance,
-        _rewardService = rewardService ?? LearningRewardService();
+  HanziWritingController({
+    DbHelper? database,
+    LearningRewardService? rewardService,
+    List<int>? characterSequence,
+    this.hskLevel,
+    this.unitId,
+  })  : _database = database ?? DbHelper.instance,
+        _rewardService = rewardService ?? LearningRewardService(),
+        characterSequence =
+            characterSequence != null ? List.of(characterSequence) : <int>[];
 
   final DbHelper _database;
   final LearningRewardService _rewardService;
+  final List<int> characterSequence;
+  final int? hskLevel;
+  final int? unitId;
   final learningResult = Rxn<LearningResult>();
 
   String? _attemptId;
   DateTime? _startedAt;
   int? _activeCharacterId;
 
+  void setSequence(List<int> sequence) {
+    characterSequence
+      ..clear()
+      ..addAll(sequence);
+  }
+
   Future<HanziCharacter?> loadCharacter(int id) async {
     if (isClosed) return null;
     final character = await _database.getCharacterForWritingById(id);
-    return isClosed ? null : character;
+    if (isClosed) return null;
+
+    // Tải trước (prefetch) chữ tiếp theo trong chuỗi nếu có
+    if (characterSequence.isNotEmpty) {
+      final idx = characterSequence.indexOf(id);
+      if (idx >= 0 && idx < characterSequence.length - 1) {
+        final nextId = characterSequence[idx + 1];
+        unawaited(_database.getCharacterForWritingById(nextId));
+      }
+    }
+    return character;
   }
 
   Future<void> beginPractice(
@@ -91,8 +116,42 @@ class HanziWritingController extends GetxController {
     }
   }
 
+  /// Chuyển chữ kế tiếp mà KHÔNG tải lại toàn bộ từ điển hay toàn bộ chữ Hán.
   Future<({int? id, bool hasCharacters})> nextCharacter(int currentId) async {
     if (isClosed) return (id: null, hasCharacters: false);
+
+    // 1. Nếu có chuỗi sequence định trước (từ Unit hoặc HSK screen) -> tra cứu O(1)
+    if (characterSequence.isNotEmpty) {
+      final index = characterSequence.indexOf(currentId);
+      if (index >= 0 && index < characterSequence.length - 1) {
+        return (id: characterSequence[index + 1], hasCharacters: true);
+      }
+      return (id: null, hasCharacters: true);
+    }
+
+    // 2. Tra cứu giới hạn theo Unit
+    if (unitId != null) {
+      final chars = await _database.getCharactersForWriting(unitId: unitId);
+      if (isClosed) return (id: null, hasCharacters: false);
+      final index = chars.indexWhere((c) => c.id == currentId);
+      return (
+        id: index >= 0 && index < chars.length - 1 ? chars[index + 1].id : null,
+        hasCharacters: chars.isNotEmpty,
+      );
+    }
+
+    // 3. Tra cứu giới hạn theo cấp HSK
+    if (hskLevel != null) {
+      final chars = await _database.getCharactersForWriting(hskLevel: hskLevel);
+      if (isClosed) return (id: null, hasCharacters: false);
+      final index = chars.indexWhere((c) => c.id == currentId);
+      return (
+        id: index >= 0 && index < chars.length - 1 ? chars[index + 1].id : null,
+        hasCharacters: chars.isNotEmpty,
+      );
+    }
+
+    // 4. Dự phòng: danh sách chữ Hán (đã tối ưu hóa qua cache)
     final characters = await _database.getCharactersForWriting();
     if (isClosed) return (id: null, hasCharacters: false);
     final index =

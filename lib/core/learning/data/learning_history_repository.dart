@@ -158,7 +158,7 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
           icon = '🎧';
           break;
         case 'speaking':
-          title = 'Luyện phát âm AI';
+          title = 'Luyện phát âm';
           icon = '🎙️';
           break;
         case 'hanzi':
@@ -218,7 +218,7 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
             icon = '🎧';
             break;
           case 'speaking':
-            title = 'Luyện phát âm AI';
+            title = 'Luyện phát âm';
             icon = '🎙️';
             break;
           case 'hanzi':

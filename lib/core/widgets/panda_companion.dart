@@ -106,30 +106,34 @@ class _PandaCompanionState extends State<PandaCompanion>
         animation: _floatController,
         builder: (context, child) {
           final floatOffset = math.sin(_floatController.value * math.pi) * 4.0;
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.speechText != null && widget.speechText!.isNotEmpty)
-                _buildSpeechBubble(widget.speechText!),
-              Transform.translate(
-                offset: Offset(0, -floatOffset),
-                child: SizedBox(
-                  width: widget.size,
-                  height: widget.size,
-                  child: Image.asset(
-                    assetPath,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Image.asset(
-                      'assets/images/characters/panda_avatar.png',
+          return FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.bottomCenter,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.speechText != null && widget.speechText!.isNotEmpty)
+                  _buildSpeechBubble(widget.speechText!),
+                Transform.translate(
+                  offset: Offset(0, -floatOffset),
+                  child: SizedBox(
+                    width: widget.size,
+                    height: widget.size,
+                    child: Image.asset(
+                      assetPath,
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Center(
-                        child: Text('🐼', style: TextStyle(fontSize: 48)),
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/images/characters/panda_avatar.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Center(
+                          child: Text('🐼', style: TextStyle(fontSize: 48)),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),

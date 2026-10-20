@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../database/app_database.dart';
+
 /// Authoritative local persistent store for Guest learning progress.
 ///
 /// Ensures Guest completions, scores, stars and boss victories are persisted
@@ -192,6 +194,30 @@ class GuestLearningProgressStore {
 
     await _writeMap(prefs, _completedStagesKey, stageMap);
 
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final profileId = AppDatabase.instance.activeProfileId;
+        final db = AppDatabase.instance.database;
+        await db.rawInsert('''
+          INSERT INTO local_stage_progress (
+            local_id, level_id, status, best_score, best_stars, first_completed_at_utc
+          ) VALUES (?, ?, 'completed', ?, ?, ?)
+          ON CONFLICT(local_id, level_id) DO UPDATE SET
+            status = 'completed',
+            best_score = MAX(best_score, excluded.best_score),
+            best_stars = MAX(best_stars, excluded.best_stars);
+        ''', [
+          profileId,
+          levelId,
+          score.toDouble(),
+          stars,
+          _now().toUtc().toIso8601String(),
+        ]);
+      } catch (e) {
+        debugPrint('[GuestLearningProgressStore] SQLite stage write warning: $e');
+      }
+    }
+
     // Keep legacy key in sync for backward compatibility
     final legacyKey = 'guest_progress_${gameId}_$levelId';
     await prefs.setString(
@@ -238,10 +264,48 @@ class GuestLearningProgressStore {
     };
 
     await _writeMap(prefs, _completedBossesKey, bossMap);
+
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final profileId = AppDatabase.instance.activeProfileId;
+        final db = AppDatabase.instance.database;
+        await db.rawInsert('''
+          INSERT INTO local_stage_progress (
+            local_id, level_id, status, best_score, best_stars, first_completed_at_utc
+          ) VALUES (?, ?, 'completed', ?, ?, ?)
+          ON CONFLICT(local_id, level_id) DO UPDATE SET
+            status = 'completed',
+            best_score = MAX(best_score, excluded.best_score),
+            best_stars = MAX(best_stars, excluded.best_stars);
+        ''', [
+          profileId,
+          'boss:$unitId',
+          score.toDouble(),
+          stars,
+          _now().toUtc().toIso8601String(),
+        ]);
+      } catch (e) {
+        debugPrint('[GuestLearningProgressStore] SQLite boss write warning: $e');
+      }
+    }
   }
 
   /// Checks if a stage has been passed by Guest.
   Future<bool> isStagePassed(int gameId, String levelId) async {
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final profileId = AppDatabase.instance.activeProfileId;
+        final db = AppDatabase.instance.database;
+        final rows = await db.query(
+          'local_stage_progress',
+          where: 'local_id = ? AND (level_id = ? OR level_id = ?) AND status = ?',
+          whereArgs: [profileId, levelId, '$gameId:$levelId', 'completed'],
+          limit: 1,
+        );
+        if (rows.isNotEmpty) return true;
+      } catch (_) {}
+    }
+
     await ensureMigrated();
     final prefs = await _getPrefs;
     final stageMap = _readMap(prefs, _completedStagesKey);
@@ -263,6 +327,20 @@ class GuestLearningProgressStore {
 
   /// Checks if the boss of a given Unit has been won.
   Future<bool> isBossWon(String unitId, [int? stageId]) async {
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final profileId = AppDatabase.instance.activeProfileId;
+        final db = AppDatabase.instance.database;
+        final rows = await db.query(
+          'local_stage_progress',
+          where: 'local_id = ? AND level_id = ? AND status = ?',
+          whereArgs: [profileId, 'boss:$unitId', 'completed'],
+          limit: 1,
+        );
+        if (rows.isNotEmpty) return true;
+      } catch (_) {}
+    }
+
     await ensureMigrated();
     final prefs = await _getPrefs;
     final bossMap = _readMap(prefs, _completedBossesKey);
@@ -307,22 +385,68 @@ class GuestLearningProgressStore {
 
   /// Returns all passed stage keys in format `'$gameId:$levelId'`.
   Future<Set<String>> getAllPassedStageKeys() async {
+    final result = <String>{};
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final profileId = AppDatabase.instance.activeProfileId;
+        final db = AppDatabase.instance.database;
+        final rows = await db.query(
+          'local_stage_progress',
+          columns: ['level_id'],
+          where: 'local_id = ? AND status = ?',
+          whereArgs: [profileId, 'completed'],
+        );
+        for (final r in rows) {
+          final lid = r['level_id'] as String?;
+          if (lid != null && !lid.startsWith('boss:')) {
+            result.add(lid);
+          }
+        }
+      } catch (_) {}
+    }
+
     await ensureMigrated();
     final prefs = await _getPrefs;
     final stageMap = _readMap(prefs, _completedStagesKey);
-    return stageMap.keys
-        .where((k) => stageMap[k] is Map && stageMap[k]['passed'] == true)
-        .toSet();
+    for (final k in stageMap.keys) {
+      if (stageMap[k] is Map && stageMap[k]['passed'] == true) {
+        result.add(k);
+      }
+    }
+    return result;
   }
 
   /// Returns all Unit IDs where Boss has been won.
   Future<Set<String>> getAllWonBossUnitIds() async {
+    final result = <String>{};
+    if (AppDatabase.instance.isOpen) {
+      try {
+        final profileId = AppDatabase.instance.activeProfileId;
+        final db = AppDatabase.instance.database;
+        final rows = await db.query(
+          'local_stage_progress',
+          columns: ['level_id'],
+          where: 'local_id = ? AND status = ? AND level_id LIKE ?',
+          whereArgs: [profileId, 'completed', 'boss:%'],
+        );
+        for (final r in rows) {
+          final lid = r['level_id'] as String?;
+          if (lid != null && lid.startsWith('boss:')) {
+            result.add(lid.substring(5));
+          }
+        }
+      } catch (_) {}
+    }
+
     await ensureMigrated();
     final prefs = await _getPrefs;
     final bossMap = _readMap(prefs, _completedBossesKey);
-    return bossMap.keys
-        .where((k) => bossMap[k] is Map && bossMap[k]['won'] == true)
-        .toSet();
+    for (final k in bossMap.keys) {
+      if (bossMap[k] is Map && bossMap[k]['won'] == true) {
+        result.add(k);
+      }
+    }
+    return result;
   }
 
   /// Returns the count of passed stages for a specific unitId.

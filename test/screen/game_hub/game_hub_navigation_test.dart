@@ -28,7 +28,10 @@ class StubLearningJourneyRepository implements LearningJourneyRepository {
   Future<List<LearningSectionViewModel>> getSections() async => const [];
 
   @override
-  Future<List<LearningUnitViewModel>> getUnits(String sectionId) async =>
+  Future<List<LearningUnitViewModel>> getUnits(
+    String sectionId, {
+    bool? isSectionUnlocked,
+  }) async =>
       const [];
 
   @override

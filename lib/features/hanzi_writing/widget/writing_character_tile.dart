@@ -78,19 +78,23 @@ class WritingCharacterTile extends StatelessWidget {
           title: Row(
             children: [
               if (char.pinyin != null && char.pinyin!.isNotEmpty)
-                Text(
-                  char.pinyin!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: GameVisualTokens.crimsonDark,
+                Flexible(
+                  child: Text(
+                    char.pinyin!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: GameVisualTokens.crimsonDark,
+                    ),
                   ),
                 ),
               if (char.hskLevel != null) ...[
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: GameVisualTokens.primaryGreen.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
@@ -110,7 +114,7 @@ class WritingCharacterTile extends StatelessWidget {
               ],
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: stateColor.withValues(alpha: .12),
                   borderRadius: BorderRadius.circular(8),
