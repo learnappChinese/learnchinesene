@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/learning/learning_rules_config.dart';
-import 'writing_path_models.dart';
+import '../models/writing_path_models.dart';
 
 class WritingLearningPathRepository {
   WritingLearningPathRepository({
@@ -228,7 +228,7 @@ class WritingLearningPathRepository {
       final wordId = (row['word_id'] as num?)?.toInt();
       final sourceRow = (row['source_row'] as num?)?.toInt();
       if (unitId == null || wordId == null || sourceRow == null) continue;
-      final key = '_D__unitId:_D__wordId';
+      final key = '$unitId:$wordId';
       final current = minSource[key];
       if (current == null || sourceRow < current) minSource[key] = sourceRow;
     }
@@ -247,7 +247,7 @@ class WritingLearningPathRepository {
       final word = wordsById[wordId];
       final unit = unitById[unitId];
       if (word == null || unit == null) continue;
-      final text = '_D__{word['word'] ?? ''}';
+      final text = '${word['word'] ?? ''}';
       var charPosition = 0;
       for (final rune in text.runes) {
         charPosition++;
@@ -255,7 +255,7 @@ class WritingLearningPathRepository {
         characterStrings.add(char);
         candidates.add(_CharacterCandidate(
           unitId: unitId,
-          unitTitle: '_D__{unit['title'] ?? 'Section'}',
+          unitTitle: '${unit['title'] ?? 'Section'}',
           unitOrder: (unit['sort_order'] as num?)?.toInt() ??
               (unit['unit_number'] as num?)?.toInt() ??
               unitId,
@@ -263,7 +263,7 @@ class WritingLearningPathRepository {
           word: text,
           wordPinyin: word['pinyin']?.toString(),
           wordMeaning: word['meaning_vi']?.toString(),
-          sourceRow: minSource['_D__unitId:_D__wordId'] ?? wordId,
+          sourceRow: minSource['$unitId:$wordId'] ?? wordId,
           charPosition: charPosition,
           character: char,
         ));
@@ -278,7 +278,7 @@ class WritingLearningPathRepository {
       values: characterStrings.toList(),
     );
     final charByText = <String, Map<String, dynamic>>{
-      for (final row in characters) '_D__{row['character'] ?? ''}': row,
+      for (final row in characters) '${row['character'] ?? ''}': row,
     };
 
     final exactWords = await _loadRowsInChunks(
@@ -289,7 +289,7 @@ class WritingLearningPathRepository {
     );
     final exactByText = <String, Map<String, dynamic>>{};
     for (final row in exactWords) {
-      final text = '_D__{row['word'] ?? ''}';
+      final text = '${row['word'] ?? ''}';
       final existing = exactByText[text];
       if (existing == null ||
           (row['hsk_level_id'] as num?)?.toInt() == hskLevelId) {
@@ -315,13 +315,13 @@ class WritingLearningPathRepository {
       if (char == null) continue;
       final charId = (char['id'] as num?)?.toInt();
       if (charId == null) continue;
-      final dedupeKey = '_D__{candidate.unitId}:_D__charId';
+      final dedupeKey = '${candidate.unitId}:$charId';
       if (!seen.add(dedupeKey)) continue;
       final exact = exactByText[candidate.character];
       final order = (nodeCounter[candidate.unitId] ?? 0) + 1;
       nodeCounter[candidate.unitId] = order;
       final strokeCount = (char['stroke_count'] as num?)?.toInt() ?? 0;
-      final strokePaths = '_D__{char['stroke_paths'] ?? ''}';
+      final strokePaths = '${char['stroke_paths'] ?? ''}';
       final pinyin = exact?['pinyin']?.toString();
       final meaning = exact?['meaning_vi']?.toString();
       final quality = strokeCount <= 0 || strokePaths.trim().isEmpty
@@ -401,7 +401,7 @@ class WritingLearningPathRepository {
             bestScore: (row['best_score'] as num?)?.toDouble() ?? 0,
             lastScore: (row['last_score'] as num?)?.toDouble() ?? 0,
             nextReviewAt:
-                DateTime.tryParse('_D__{row['next_review_at'] ?? ''}'),
+                DateTime.tryParse('${row['next_review_at'] ?? ''}'),
           ),
     };
   }
@@ -432,7 +432,7 @@ class WritingLearningPathRepository {
           row['source_type'] != 'character') {
         continue;
       }
-      final id = int.tryParse('_D__{row['source_id'] ?? ''}');
+      final id = int.tryParse('${row['source_id'] ?? ''}');
       if (id == null || !wanted.contains(id)) continue;
       final metadata = row['metadata'] is Map
           ? Map<String, dynamic>.from(row['metadata'] as Map)
@@ -442,7 +442,7 @@ class WritingLearningPathRepository {
       final score = (row['score'] as num?)?.toDouble() ?? 0;
       if (score > (best[id] ?? 0)) best[id] = score;
       final completed =
-          DateTime.tryParse('_D__{row['completed_at'] ?? ''}') ??
+          DateTime.tryParse('${row['completed_at'] ?? ''}') ??
               DateTime.fromMillisecondsSinceEpoch(0);
       if (last[id] == null || completed.isAfter(last[id]!.completedAt)) {
         last[id] = _LastGuestScore(completedAt: completed, score: score);
