@@ -519,16 +519,26 @@ class DbHelper {
       final id = (char['id'] as num?)?.toInt();
       if (id == null) continue;
       final character = '${char['character'] ?? ''}';
-      final word = byCharacter[character] ?? byMain[id];
-      final pinyin = '${word?['pinyin'] ?? ''}';
-      final meaning = '${word?['meaning_vi'] ?? ''}';
-      final level = (word?['hsk_level_id'] as num?)?.toInt();
+      final exactWord = byCharacter[character];
+      final contextWord = exactWord ?? byMain[id];
+      final pinyin = '${exactWord?['pinyin'] ?? ''}';
+      final meaning = '${exactWord?['meaning_vi'] ?? ''}';
+      final contextText = exactWord == null ? '${contextWord?['word'] ?? ''}' : '';
+      final contextPinyin =
+          exactWord == null ? '${contextWord?['pinyin'] ?? ''}' : '';
+      final contextMeaning =
+          exactWord == null ? '${contextWord?['meaning_vi'] ?? ''}' : '';
+      final level =
+          (exactWord?['hsk_level_id'] as num?)?.toInt() ??
+              (contextWord?['hsk_level_id'] as num?)?.toInt();
       final progress = progressByCharacter[id];
 
       if (hskLevel != null && level != hskLevel) continue;
       if (filter != null &&
           filter.isNotEmpty &&
-          !('$character $pinyin $meaning'.toLowerCase().contains(filter))) {
+          !('$character $pinyin $meaning $contextText $contextPinyin $contextMeaning'
+                  .toLowerCase()
+                  .contains(filter))) {
         continue;
       }
 
@@ -540,8 +550,12 @@ class DbHelper {
           'stroke_width': char['stroke_width'],
           'stroke_height': char['stroke_height'],
           'stroke_paths': char['stroke_paths'] ?? '',
-          'pinyin': pinyin,
-          'meaning': meaning,
+          'pinyin': pinyin.isEmpty ? null : pinyin,
+          'meaning': meaning.isEmpty ? null : meaning,
+          'audio_url': exactWord?['tts_url'],
+          'context_word': contextText.isEmpty ? null : contextText,
+          'context_pinyin': contextPinyin.isEmpty ? null : contextPinyin,
+          'context_meaning': contextMeaning.isEmpty ? null : contextMeaning,
           'hsk_level_id': level,
           'practice_count': progress?['practice_count'],
           'best_score': progress?['best_score'],
@@ -568,23 +582,30 @@ class DbHelper {
 
     final char = rows.first;
     final character = '${char['character'] ?? ''}';
-    var words = List<Map<String, dynamic>>.from(
+    final exactRows = List<Map<String, dynamic>>.from(
       await _client
           .from('lexicon_words')
-          .select('pinyin, meaning_vi, hsk_level_id')
+          .select('word, pinyin, meaning_vi, hsk_level_id, tts_url')
           .eq('word', character)
+          .order('id')
           .limit(1),
     );
-    if (words.isEmpty) {
-      words = List<Map<String, dynamic>>.from(
-        await _client
-            .from('lexicon_words')
-            .select('pinyin, meaning_vi, hsk_level_id')
-            .eq('main_character_id', characterId)
-            .limit(1),
-      );
-    }
-    final word = words.isEmpty ? null : words.first;
+    final contextRows = exactRows.isNotEmpty
+        ? const <Map<String, dynamic>>[]
+        : List<Map<String, dynamic>>.from(
+            await _client
+                .from('lexicon_words')
+                .select('word, pinyin, meaning_vi, hsk_level_id, tts_url')
+                .eq('main_character_id', characterId)
+                .order('id')
+                .limit(1),
+          );
+
+    final exact = exactRows.isEmpty ? null : exactRows.first;
+    final context = contextRows.isEmpty ? null : contextRows.first;
+    final level =
+        (exact?['hsk_level_id'] as num?)?.toInt() ??
+            (context?['hsk_level_id'] as num?)?.toInt();
 
     return HanziCharacter.fromMap({
       'id': char['id'],
@@ -593,9 +614,13 @@ class DbHelper {
       'stroke_width': char['stroke_width'],
       'stroke_height': char['stroke_height'],
       'stroke_paths': char['stroke_paths'] ?? '',
-      'pinyin': word?['pinyin'],
-      'meaning': word?['meaning_vi'],
-      'hsk_level_id': word?['hsk_level_id'],
+      'pinyin': exact?['pinyin'],
+      'meaning': exact?['meaning_vi'],
+      'audio_url': exact?['tts_url'],
+      'context_word': context?['word'],
+      'context_pinyin': context?['pinyin'],
+      'context_meaning': context?['meaning_vi'],
+      'hsk_level_id': level,
     });
   }
 
@@ -626,7 +651,7 @@ class DbHelper {
         await _client
             .from('lexicon_words')
             .select(
-              'id, word, pinyin, meaning_vi, hsk_level_id, main_character_id',
+              'id, word, pinyin, meaning_vi, tts_url, hsk_level_id, main_character_id',
             )
             .order('id')
             .range(from, from + 999),
