@@ -1,7 +1,7 @@
 """Unit tests for the read-only V3 candidate scanner."""
 import json
 import unittest
-from scripts.v3_quality_check import inspect, scan
+from scripts.v3_quality_check import inspect, scan, translation_buildable
 
 class ContentQualityScannerTests(unittest.TestCase):
     def test_missing_word_pinyin_is_flagged(self):
@@ -26,6 +26,23 @@ class ContentQualityScannerTests(unittest.TestCase):
                           "choices_text":["hello"],"choices_correct":[True],
                           "tokens_text":[]})
         self.assertEqual(issues, [])
+
+    def test_translation_tiles_are_reconstructible(self):
+        self.assertTrue(translation_buildable("cơm và đậu phụ",
+                         ["và", "đậu", "cháo", "phụ", "cơm", "nóng"]))
+        self.assertFalse(translation_buildable("cơm và nước",
+                          ["và", "đậu", "cháo", "phụ", "cơm", "nóng"]))
+
+    def test_unbuildable_translation_flag_needs_review(self):
+        issues = inspect({"source_table": "duo_challenges", "id": "broken",
+            "type": "translate", "prompt": "你好",
+            "solutions": ["xin chào"], "choices_text": ["tạm", "biệt"]})
+        self.assertIn("translation_token_bank_not_buildable_candidate",
+                      [row["issue_code"] for row in issues])
+
+    def test_reuse_of_tile_is_not_silently_allowed(self):
+        self.assertFalse(translation_buildable("trà trà", ["trà"]))
+        self.assertTrue(translation_buildable("trà trà", ["trà", "trà"]))
 
     def test_stream_counts_multiple_sources(self):
         report = scan([json.dumps({"source_table":"lexicon_words","id":1,
