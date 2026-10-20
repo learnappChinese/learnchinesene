@@ -11,7 +11,7 @@ import pathlib
 import unicodedata
 from collections import Counter
 
-TABLES = {"lexicon_words", "lexicon_examples", "duo_challenges"}
+TABLES = {"lexicon_words", "lexicon_examples", "lexicon_characters", "duo_challenges"}
 ARRAY_FIELDS = ("choices_text", "choices_correct", "tokens_text", "solutions")
 
 def is_blank(x):
@@ -108,6 +108,20 @@ def inspect(row):
         for key in ("sentence_cn", "sentence_pinyin", "sentence_vi"):
             if is_blank(row.get(key)):
                 flag("missing_" + key, "high", {})
+    elif source == "lexicon_characters":
+        if is_blank(row.get("character")):
+            flag("missing_character", "critical", {})
+        stroke_count = row.get("stroke_count")
+        stroke_paths = row.get("stroke_paths")
+        if not isinstance(stroke_count, int) or isinstance(stroke_count, bool) or stroke_count <= 0:
+            flag("invalid_stroke_count", "critical", {"stroke_count": stroke_count})
+        if is_blank(stroke_paths):
+            flag("missing_stroke_paths", "critical", {})
+        elif isinstance(stroke_paths, str) and isinstance(stroke_count, int) and not isinstance(stroke_count, bool):
+            parsed_count = len([p for p in stroke_paths.split("|") if p.strip()])
+            if parsed_count != stroke_count:
+                flag("stroke_count_path_mismatch", "high",
+                     {"stroke_count": stroke_count, "path_count": parsed_count})
     else:
         typ = row.get("type")
         if is_blank(typ):
