@@ -3,6 +3,10 @@ class HanziCharacter {
   final String character;
   final String? pinyin;
   final String? meaning;
+  final String? audioUrl;
+  final String? contextWord;
+  final String? contextPinyin;
+  final String? contextMeaning;
   final int? hskLevel;
   final String strokePathData;
   final double viewBoxWidth;
@@ -18,6 +22,10 @@ class HanziCharacter {
     required this.character,
     this.pinyin,
     this.meaning,
+    this.audioUrl,
+    this.contextWord,
+    this.contextPinyin,
+    this.contextMeaning,
     this.hskLevel,
     required this.strokePathData,
     required this.viewBoxWidth,
@@ -46,6 +54,10 @@ class HanziCharacter {
       character: map['character'] as String? ?? '',
       pinyin: map['pinyin'] as String?,
       meaning: map['meaning'] as String?,
+      audioUrl: map['audio_url'] as String?,
+      contextWord: map['context_word'] as String?,
+      contextPinyin: map['context_pinyin'] as String?,
+      contextMeaning: map['context_meaning'] as String?,
       hskLevel: map['hsk_level_id'] as int?,
       strokePathData: map['stroke_paths'] as String? ?? '',
       viewBoxWidth: (map['stroke_width'] as num?)?.toDouble() ?? 110.0,
