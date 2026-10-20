@@ -56,3 +56,47 @@ select
   (select count(*) from public.duo_challenges c left join public.duo_sessions s on s.id=c.session_id where s.id is null) as orphan_challenges,
   (select count(*) from public.duo_sessions s left join public.duo_levels l on l.id=s.level_id where l.id is null) as orphan_sessions,
   (select count(*) from public.duo_levels l left join public.duo_units u on u.id=l.unit_id where u.id is null) as orphan_levels;
+
+-- Duplicate-looking rows: candidates ONLY; these may have different answer,
+-- audio, or pedagogical meaning. NEVER delete without comparing full payload.
+with repeated as (
+  select
+    c.type, c.session_id, coalesce(c.prompt,'') as prompt,
+    coalesce(c.choices_text::text,'') as choices,
+    count(*) as n
+  from public.duo_challenges c
+  group by c.type,c.session_id,coalesce(c.prompt,''),coalesce(c.choices_text::text,'')
+  having count(*) > 1
+)
+select count(*) as duplicate_candidate_groups,
+       coalesce(sum(n-1),0) as rows_above_one_per_group
+from repeated;
+
+-- Ranked review queue: prefer duplicates within exactly one Unit (not across
+-- different units). Include multiple answer representations for manual review.
+with repeated as (
+ select c.id,c.type,c.session_id,s.level_id,l.unit_id,
+        c.prompt,c.choices_text,c.solutions,c.choices_correct,c.tts,
+        count(*) over(partition by c.type,c.session_id,coalesce(c.prompt,''),
+                          coalesce(c.choices_text::text,'')) as group_size
+ from public.duo_challenges c
+ join public.duo_sessions s on s.id=c.session_id
+ join public.duo_levels l on l.id=s.level_id
+)
+select unit_id,level_id,session_id,type,id,
+       left(coalesce(prompt,''),100) as prompt_preview,
+       group_size,
+       (solutions is not null) has_solutions,
+       (choices_correct is not null) has_choices_correct,
+       (tts is not null and btrim(tts)<>'') has_direct_tts
+from repeated
+where group_size > 1
+order by unit_id,session_id,type,id
+limit 200;
+
+-- Control: no orphan references.
+select
+ (select count(*) from public.duo_challenges c left join public.duo_sessions s
+  on s.id=c.session_id where s.id is null) orphan_challenges,
+ (select count(*) from public.lexicon_examples e left join public.lexicon_words w
+  on w.id=e.word_id where w.id is null) orphan_examples;
