@@ -1,20 +1,21 @@
-import 'dart:convert';
-
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/writing_path_models.dart';
+import 'hanzi_progress_snapshot_service.dart';
 import 'writing_path_resolver.dart';
 
 class WritingLearningPathRepository {
   WritingLearningPathRepository({
     SupabaseClient? client,
-    Future<SharedPreferences>? preferences,
+    HanziProgressSnapshotService? progressService,
   })  : _client = client ?? Supabase.instance.client,
-        _preferences = preferences ?? SharedPreferences.getInstance();
+        _progressService = progressService ??
+            HanziProgressSnapshotService(
+              client: client ?? Supabase.instance.client,
+            );
 
   final SupabaseClient _client;
-  final Future<SharedPreferences> _preferences;
+  final HanziProgressSnapshotService _progressService;
 
   static const bool previewEnabled = bool.fromEnvironment(
     'V3_HANZI_PATH_PREVIEW',
@@ -366,93 +367,15 @@ class WritingLearningPathRepository {
 
   Future<Map<int, WritingCharacterProgress>> _loadProgress(
       List<int> characterIds) async {
-    if (characterIds.isEmpty) {
-      return const <int, WritingCharacterProgress>{};
-    }
-    final user = _client.auth.currentUser;
-    if (user == null) return _loadGuestProgress(characterIds);
-
-    final rows = <Map<String, dynamic>>[];
-    const chunkSize = 150;
-    for (var i = 0; i < characterIds.length; i += chunkSize) {
-      final end = (i + chunkSize < characterIds.length)
-          ? i + chunkSize
-          : characterIds.length;
-      final chunk = characterIds.sublist(i, end);
-      rows.addAll(List<Map<String, dynamic>>.from(
-        await _client
-            .from('lexicon_hanzi_progress')
-            .select(
-              'character_id,practice_count,best_score,last_score,next_review_at',
-            )
-            .eq('user_id', user.id)
-            .inFilter('character_id', chunk),
-      ));
-    }
+    final snapshots = await _progressService.loadForCharacters(characterIds);
     return <int, WritingCharacterProgress>{
-      for (final row in rows)
-        if (row['character_id'] is num)
-          (row['character_id'] as num).toInt(): WritingCharacterProgress(
-            practiceCount: (row['practice_count'] as num?)?.toInt() ?? 0,
-            bestScore: (row['best_score'] as num?)?.toDouble() ?? 0,
-            lastScore: (row['last_score'] as num?)?.toDouble() ?? 0,
-            nextReviewAt:
-                DateTime.tryParse('${row['next_review_at'] ?? ''}'),
-          ),
-    };
-  }
-
-  Future<Map<int, WritingCharacterProgress>> _loadGuestProgress(
-      List<int> characterIds) async {
-    final wanted = characterIds.toSet();
-    final prefs = await _preferences;
-    final raw = prefs.getString('guest_learning_attempts_v2');
-    if (raw == null || raw.isEmpty) {
-      return const <int, WritingCharacterProgress>{};
-    }
-    List<dynamic> decoded;
-    try {
-      final value = jsonDecode(raw);
-      decoded = value is List ? value : const <dynamic>[];
-    } catch (_) {
-      return const <int, WritingCharacterProgress>{};
-    }
-
-    final practices = <int, int>{};
-    final best = <int, double>{};
-    final last = <int, _LastGuestScore>{};
-    for (final item in decoded) {
-      if (item is! Map) continue;
-      final row = Map<String, dynamic>.from(item);
-      if (row['activity_type'] != 'hanzi' ||
-          row['source_type'] != 'character') {
-        continue;
-      }
-      final id = int.tryParse('${row['source_id'] ?? ''}');
-      if (id == null || !wanted.contains(id)) continue;
-      final metadata = row['metadata'] is Map
-          ? Map<String, dynamic>.from(row['metadata'] as Map)
-          : const <String, dynamic>{};
-      practices[id] = (practices[id] ?? 0) +
-          ((metadata['practice_attempts'] as num?)?.toInt() ?? 0);
-      final score = (row['score'] as num?)?.toDouble() ?? 0;
-      if (score > (best[id] ?? 0)) best[id] = score;
-      final completed =
-          DateTime.tryParse('${row['completed_at'] ?? ''}') ??
-              DateTime.fromMillisecondsSinceEpoch(0);
-      if (last[id] == null || completed.isAfter(last[id]!.completedAt)) {
-        last[id] = _LastGuestScore(completedAt: completed, score: score);
-      }
-    }
-
-    return <int, WritingCharacterProgress>{
-      for (final id in wanted)
-        if (practices.containsKey(id) || best.containsKey(id))
-          id: WritingCharacterProgress(
-            practiceCount: practices[id] ?? 0,
-            bestScore: best[id] ?? 0,
-            lastScore: last[id]?.score ?? 0,
-          ),
+      for (final entry in snapshots.entries)
+        entry.key: WritingCharacterProgress(
+          practiceCount: entry.value.practiceCount,
+          bestScore: entry.value.bestScore,
+          lastScore: entry.value.lastScore,
+          nextReviewAt: entry.value.nextReviewAt,
+        ),
     };
   }
 }
