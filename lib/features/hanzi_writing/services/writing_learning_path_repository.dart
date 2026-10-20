@@ -164,6 +164,7 @@ class WritingLearningPathRepository {
     final minSource = <String, int>{};
     final topicIds = <int>{};
     final topicStats = <String, _TopicStat>{};
+    final topicTotalsByUnit = <int, int>{};
     for (final row in sources) {
       final unitId = (row['unit_id'] as num?)?.toInt();
       final wordId = (row['word_id'] as num?)?.toInt();
@@ -176,6 +177,8 @@ class WritingLearningPathRepository {
       }
       if (unitId != null && topicId != null) {
         topicIds.add(topicId);
+        topicTotalsByUnit[unitId] =
+            (topicTotalsByUnit[unitId] ?? 0) + 1;
         final key = '$unitId:$topicId';
         final current = topicStats[key];
         topicStats[key] = _TopicStat(
@@ -215,7 +218,14 @@ class WritingLearningPathRepository {
               stat.topicId < existing.topicId);
       if (better && topicNames.containsKey(stat.topicId)) {
         bestStatByUnit[stat.unitId] = stat;
-        semanticTitleByUnit[stat.unitId] = topicNames[stat.topicId]!;
+      }
+    }
+    for (final entry in bestStatByUnit.entries) {
+      final stat = entry.value;
+      final total = topicTotalsByUnit[entry.key] ?? 0;
+      final dominance = total == 0 ? 0.0 : stat.count / total;
+      if (dominance >= 0.70 && topicNames.containsKey(stat.topicId)) {
+        semanticTitleByUnit[entry.key] = topicNames[stat.topicId]!;
       }
     }
 
