@@ -12,7 +12,7 @@ create table if not exists public.content_v3_releases (
 create table if not exists public.content_v3_revisions (
   id bigint generated always as identity primary key,
   release_id bigint not null references public.content_v3_releases(id) on delete restrict,
-  source_table text not null check(source_table in ('lexicon_words','lexicon_examples','duo_challenges')),
+  source_table text not null check(source_table in ('lexicon_words','lexicon_examples','lexicon_characters','duo_challenges')),
   source_id text not null,
   candidate jsonb not null check(jsonb_typeof(candidate)='object'),
   source_hash text,
