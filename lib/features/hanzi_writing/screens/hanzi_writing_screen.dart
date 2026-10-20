@@ -439,17 +439,38 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     }
   }
 
-  void _resetWholeSession() {
+  Future<void> _resetWholeSession() async {
     _autoNextRoundTimer?.cancel();
+    _hintTimer?.cancel();
     setState(() {
+      _isLoading = true;
+      _errorMessage = null;
       _currentRoundIndex = 0;
       _completedRoundResults.clear();
       _isRoundCompleted = false;
       _isSessionCompleted = false;
       _isPersistingSession = false;
       _persistError = null;
-      _initializeRound(_roundConfigs[_currentRoundIndex]);
     });
+
+    try {
+      await controller.beginPractice(
+        widget.characterId,
+        sourceContext: widget.sourceContext,
+      );
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _initializeRound(_roundConfigs[_currentRoundIndex]);
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage =
+            'Không bắt đầu được lượt luyện mới. Vui lòng thử lại.';
+      });
+    }
   }
 
   String _buildRoundInstruction({
