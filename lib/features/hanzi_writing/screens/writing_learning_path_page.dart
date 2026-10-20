@@ -300,7 +300,8 @@ class _WritingLearningPathPageState extends State<WritingLearningPathPage> {
             );
           }
 
-          final recommended = controller.recommendedNode;
+          final recommendation = controller.recommendation;
+          final recommended = recommendation?.node;
           return Stack(
             children: [
               RefreshIndicator(
@@ -317,15 +318,10 @@ class _WritingLearningPathPageState extends State<WritingLearningPathPage> {
                   bottom: 18,
                   child: FloatingActionButton.extended(
                     heroTag: 'writing-smart-continue-$_controllerTag',
+                    tooltip: recommendation!.explanation,
                     onPressed: () => _openNode(recommended),
                     icon: const Icon(Icons.edit_rounded),
-                    label: Text(
-                      recommended.progress.nextReviewAt != null &&
-                              !recommended.progress.nextReviewAt!
-                                  .isAfter(DateTime.now())
-                          ? 'Ôn chữ ${recommended.character}'
-                          : 'Tiếp tục: ${recommended.character}',
-                    ),
+                    label: Text(recommendation.label),
                   ),
                 ),
             ],
