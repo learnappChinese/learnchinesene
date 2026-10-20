@@ -372,13 +372,23 @@ class WritingLearningPathRepository {
     final user = _client.auth.currentUser;
     if (user == null) return _loadGuestProgress(characterIds);
 
-    final rows = await _loadRowsInChunks(
-      table: 'lexicon_hanzi_progress',
-      select:
-          'character_id,practice_count,best_score,last_score,next_review_at',
-      filterColumn: 'character_id',
-      values: characterIds,
-    );
+    final rows = <Map<String, dynamic>>[];
+    const chunkSize = 150;
+    for (var i = 0; i < characterIds.length; i += chunkSize) {
+      final end = (i + chunkSize < characterIds.length)
+          ? i + chunkSize
+          : characterIds.length;
+      final chunk = characterIds.sublist(i, end);
+      rows.addAll(List<Map<String, dynamic>>.from(
+        await _client
+            .from('lexicon_hanzi_progress')
+            .select(
+              'character_id,practice_count,best_score,last_score,next_review_at',
+            )
+            .eq('user_id', user.id)
+            .inFilter('character_id', chunk),
+      ));
+    }
     return <int, WritingCharacterProgress>{
       for (final row in rows)
         if (row['character_id'] is num)
