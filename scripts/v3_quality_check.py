@@ -48,6 +48,41 @@ def translation_buildable(solution, choices):
     return False
 
 
+def scoring_sequence_matches(row):
+    """Check actual DuoSentenceBuilder 1..N choice ranking against solutions.
+
+    The production widget grades choices_correct positions in order, rather
+    than comparing assembled answer with solutions directly.
+    Return None if source shape is not suitable for this comparison.
+    """
+    choices = row.get("choices_text")
+    ranking = row.get("choices_correct")
+    solutions = row.get("solutions")
+    if not isinstance(choices, list) or not isinstance(ranking, list) or not isinstance(solutions, list):
+        return None
+    if len(choices) != len(ranking) or not choices or not solutions:
+        return False
+    if not all(isinstance(v, (bool, int)) for v in ranking):
+        return False
+    numbers = [int(v) for v in ranking if int(v) > 0]
+    if sorted(numbers) != list(range(1, len(numbers) + 1)):
+        return False
+    ordered = sorted(((int(rank), choice) for rank, choice in zip(ranking, choices)
+                      if int(rank) > 0), key=lambda pair: pair[0])
+    if not all(isinstance(text, str) for _, text in ordered):
+        return None
+    def normalize(value):
+        if not isinstance(value, str):
+            return None
+        return "".join(ch for ch in value.casefold()
+                       if not ch.isspace() and not unicodedata.category(ch).startswith("P"))
+    result = normalize("".join(text for _, text in ordered))
+    expected = [normalize(text) for text in solutions]
+    if result is None or not result or any(v is None for v in expected):
+        return None
+    return result in expected
+
+
 def inspect(row):
     source = row.get("source_table", "")
     item_id = str(row.get("id", ""))
@@ -98,6 +133,10 @@ def inspect(row):
                 if checked and all(value is False for value in checked):
                     flag("translation_token_bank_not_buildable_candidate", "high",
                          {"type": typ, "hint": "Review tile split, punctuation and alternate scoring"})
+            scoring = scoring_sequence_matches(row)
+            if scoring is False:
+                flag("translation_scorer_solution_mismatch_candidate", "high",
+                     {"type": typ, "hint": "Flutter grades choices_correct 1..N, compare with valid solutions"})
         elif typ in ("assist", "select", "listenTap"):
             if not isinstance(row.get("choices_correct"), list) or not row["choices_correct"]:
                 flag("choice_missing_correct", "critical", {"type": typ})
