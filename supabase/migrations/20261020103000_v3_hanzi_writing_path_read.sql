@@ -32,13 +32,26 @@ stable
 security invoker
 set search_path = ''
 as $function$
-with unit_words as (
+with unit_topics as (
+  select unit_id,name_vi
+  from (
+    select s.unit_id,t.name_vi,
+           row_number() over(
+             partition by s.unit_id
+             order by count(*) desc,min(coalesce(s.source_row,2147483647)),t.id
+           ) as rn
+    from public.lexicon_word_sources s
+    join public.lexicon_topics t on t.id=s.topic_id
+    group by s.unit_id,t.id,t.name_vi
+  ) ranked
+  where rn=1
+), unit_words as (
   select
     h.id as hsk_level_id,
     h.name as hsk_name,
     coalesce(h.sort_order,h.id) as hsk_sort_order,
     u.id as section_id,
-    u.title as section_title,
+    coalesce(nullif(btrim(ut.name_vi),''),u.title) as section_title,
     coalesce(u.sort_order,u.unit_number,u.id) as section_order,
     w.id as word_id,
     w.word,
@@ -47,13 +60,14 @@ with unit_words as (
     coalesce(min(ws.source_row),w.id)::integer as source_row
   from public.lexicon_hsk_levels h
   join public.lexicon_units u on u.hsk_level_id=h.id
+  left join unit_topics ut on ut.unit_id=u.id
   join public.lexicon_word_units wu on wu.unit_id=u.id
   join public.lexicon_words w on w.id=wu.word_id
   left join public.lexicon_word_sources ws
     on ws.unit_id=u.id and ws.word_id=w.id
   where h.id=p_hsk_level_id
   group by h.id,h.name,h.sort_order,
-           u.id,u.title,u.sort_order,u.unit_number,
+           u.id,u.title,ut.name_vi,u.sort_order,u.unit_number,
            w.id,w.word,w.pinyin,w.meaning_vi
 ), expanded as (
   select uw.*,piece.ch,piece.ord::integer as char_position
