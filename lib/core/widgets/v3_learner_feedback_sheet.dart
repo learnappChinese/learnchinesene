@@ -20,7 +20,7 @@ class V3LearnerFeedbackStore {
       return decoded
           .whereType<Map>()
           .map((item) => Map<String, dynamic>.from(item))
-          .toList(growable: false);
+          .toList(growable: true);
     } catch (_) {
       return <Map<String, dynamic>>[];
     }
@@ -67,11 +67,10 @@ Future<void> showV3LearnerFeedbackSheet(
   String? challengeId,
   int? challengeIndex,
 }) async {
-  final notes = TextEditingController();
+  var notes = '';
   var category = 'wrong_translation';
   var submitting = false;
-  try {
-    await showModalBottomSheet<void>(
+  await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -112,7 +111,7 @@ Future<void> showV3LearnerFeedbackSheet(
                   ),
                   const SizedBox(height: 12),
                   TextField(
-                    controller: notes,
+                    onChanged: (value) => notes = value,
                     minLines: 2,
                     maxLines: 4,
                     maxLength: 500,
@@ -145,7 +144,7 @@ Future<void> showV3LearnerFeedbackSheet(
                           if (challengeIndex != null)
                             'challenge_index': challengeIndex,
                           'category': category,
-                          'notes': notes.text.trim(),
+                          'notes': notes.trim(),
                           'review_status': 'needs_review',
                         });
                         if (sheetContext.mounted) {
@@ -185,7 +184,4 @@ Future<void> showV3LearnerFeedbackSheet(
         ),
       ),
     );
-  } finally {
-    notes.dispose();
-  }
 }
