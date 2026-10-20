@@ -52,7 +52,10 @@ jobs:
           lib/core/learning/data/v3_unit_content_preview_repository.dart
           lib/features/hanzi_writing
           test/core/widgets/v3_learner_feedback_sheet_test.dart
-      - name: Learner feedback widget tests
-        run: flutter test test/core/widgets/v3_learner_feedback_sheet_test.dart
+      - name: Learner feedback and Hanzi path tests
+        run: >-
+          flutter test
+          test/core/widgets/v3_learner_feedback_sheet_test.dart
+          test/features/hanzi_writing/writing_path_resolver_test.dart
       - name: Compile Android debug APK
         run: flutter build apk --debug -t lib/main.dart
