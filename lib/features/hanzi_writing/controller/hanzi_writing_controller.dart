@@ -7,15 +7,21 @@ import '../../../core/learning/model/learning_source_context.dart';
 import '../../../core/learning/service/learning_reward_service.dart';
 import '../../../core/models/hanzi_character.dart';
 import '../models/hanzi_practice_config.dart';
+import '../services/hanzi_progress_snapshot_service.dart';
 
 class HanziWritingController extends GetxController {
-  HanziWritingController(
-      {DbHelper? database, LearningRewardService? rewardService})
-      : _database = database ?? DbHelper.instance,
-        _rewardService = rewardService ?? LearningRewardService();
+  HanziWritingController({
+    DbHelper? database,
+    LearningRewardService? rewardService,
+    HanziProgressSnapshotService? progressService,
+  })  : _database = database ?? DbHelper.instance,
+        _rewardService = rewardService ?? LearningRewardService(),
+        _progressService =
+            progressService ?? HanziProgressSnapshotService();
 
   final DbHelper _database;
   final LearningRewardService _rewardService;
+  final HanziProgressSnapshotService _progressService;
   final learningResult = Rxn<LearningResult>();
 
   String? _attemptId;
@@ -25,7 +31,15 @@ class HanziWritingController extends GetxController {
   Future<HanziCharacter?> loadCharacter(int id) async {
     if (isClosed) return null;
     final character = await _database.getCharacterForWritingById(id);
-    return isClosed ? null : character;
+    if (character == null || isClosed) return character;
+    final progress = await _progressService.loadForCharacter(id);
+    if (isClosed) return null;
+    return character.copyWithProgress(
+      practiceCount: progress.practiceCount,
+      bestScore: progress.bestScore,
+      lastScore: progress.lastScore,
+      nextReviewAt: progress.nextReviewAt,
+    );
   }
 
   Future<void> beginPractice(
