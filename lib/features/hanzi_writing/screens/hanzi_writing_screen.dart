@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../widget/writing_session_content.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/services/tts_service.dart';
 import 'package:get/get.dart';
 import '../controller/hanzi_writing_controller.dart';
 import '../../../core/models/hanzi_character.dart';
@@ -36,6 +38,9 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   late final String _controllerTag;
   late final HanziWritingController controller;
   HanziCharacter? _character;
+  final AudioPlayer _pronunciationPlayer = AudioPlayer();
+  final TtsService _ttsService = TtsService();
+  bool _isPronouncing = false;
   List<Path> _strokePaths = [];
   int _loadRequest = 0;
   bool _isLoading = true;
@@ -98,6 +103,8 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     Get.delete<HanziWritingController>(tag: _controllerTag);
     _autoNextRoundTimer?.cancel();
     _snapAnimationController.dispose();
+    unawaited(_pronunciationPlayer.dispose());
+    unawaited(_ttsService.stop());
     _userStrokeNotifier.dispose();
     super.dispose();
   }
@@ -466,6 +473,118 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     );
   }
 
+  Future<void> _playPronunciation() async {
+    final character = _character;
+    if (character == null || _isPronouncing) return;
+    if (mounted) setState(() => _isPronouncing = true);
+    try {
+      final audioUrl = character.audioUrl?.trim();
+      if (audioUrl != null && audioUrl.isNotEmpty) {
+        await _pronunciationPlayer.stop();
+        await _pronunciationPlayer.play(UrlSource(audioUrl));
+      } else {
+        await _ttsService.speak(character.character);
+      }
+    } catch (_) {
+      await _ttsService.speak(character.character);
+    } finally {
+      if (mounted) setState(() => _isPronouncing = false);
+    }
+  }
+
+  Widget _buildCharacterMetadata() {
+    final character = _character!;
+    final hasStandalone =
+        character.pinyin?.trim().isNotEmpty == true ||
+        character.meaning?.trim().isNotEmpty == true;
+
+    return Flexible(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  hasStandalone
+                      ? (character.pinyin ?? '')
+                      : character.character,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.orange,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton(
+                tooltip: 'Nghe phát âm',
+                visualDensity: VisualDensity.compact,
+                onPressed: _isPronouncing ? null : _playPronunciation,
+                icon: Icon(
+                  _isPronouncing
+                      ? Icons.graphic_eq_rounded
+                      : Icons.volume_up_rounded,
+                  color: AppColors.orange,
+                ),
+              ),
+            ],
+          ),
+          if (character.meaning?.trim().isNotEmpty == true)
+            Text(
+              character.meaning!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 16,
+                color: AppColors.muted,
+                fontWeight: FontWeight.w500,
+              ),
+            )
+          else if (character.contextWord?.trim().isNotEmpty == true) ...[
+            Text(
+              'Trong từ: ${character.contextWord}',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFFB45309),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (character.contextPinyin?.trim().isNotEmpty == true)
+              Text(
+                character.contextPinyin!,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.muted,
+                ),
+              ),
+            if (character.contextMeaning?.trim().isNotEmpty == true)
+              Text(
+                character.contextMeaning!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.muted,
+                ),
+              ),
+          ] else
+            const Text(
+              'Chưa có pinyin/nghĩa riêng đã kiểm duyệt.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFFB45309),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCharacterHeader(BuildContext context) {
     return Container(
       color: Colors.white,
@@ -479,30 +598,9 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // Left Column (Pinyin, Vietnamese meaning)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _character!.pinyin ?? '',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.orange,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _character!.meaning ?? '',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
+                // Standalone character metadata is separated from context-word metadata.
+                _buildCharacterMetadata(),
+                const SizedBox(width: 12),
                 // Right Column (Round/Stroke stats)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
