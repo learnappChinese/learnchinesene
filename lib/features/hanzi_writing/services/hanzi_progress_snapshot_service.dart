@@ -96,10 +96,13 @@ class HanziProgressSnapshotService {
     final practiceCount = <int, int>{};
     final bestScore = <int, double>{};
     final latest = <int, _LatestGuestAttempt>{};
+    final seenAttemptIds = <String>{};
 
     for (final item in attempts) {
       if (item is! Map) continue;
       final row = Map<String, dynamic>.from(item);
+      final attemptId = '${row['id'] ?? ''}'.trim();
+      if (attemptId.isNotEmpty && !seenAttemptIds.add(attemptId)) continue;
       if (row['activity_type'] != 'hanzi' ||
           row['source_type'] != 'character') {
         continue;
