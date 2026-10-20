@@ -57,5 +57,6 @@ jobs:
           flutter test
           test/core/widgets/v3_learner_feedback_sheet_test.dart
           test/features/hanzi_writing/writing_path_resolver_test.dart
+          test/features/hanzi_writing/hanzi_progress_snapshot_service_test.dart
       - name: Compile Android debug APK
         run: flutter build apk --debug -t lib/main.dart
