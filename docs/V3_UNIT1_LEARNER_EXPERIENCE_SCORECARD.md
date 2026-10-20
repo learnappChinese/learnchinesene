@@ -40,3 +40,15 @@ No Unit is marked `approved` until: no critical structural defects; every high-s
 
 ## Limitations
 Metrics were measured on Supabase for current source content. Flutter widget tests/CI may pass without device playback or bilingual review; manual gates remain.
+
+## Triage local feedback into editorial review candidates (V3-2)
+- At Unit Overview in a **debug APK**, choose "Bài học hợp lý" and rate 1–5 if everything checked is satisfactory; this is feedback, not certified content approval.
+- For suspect content, report by exact Unit/level/challenge ID; use "Sao chép toàn bộ báo cáo kiểm thử" and save clipboard JSON to a private local file.
+- From repository root:
+```bash
+python scripts/v3_feedback_triage.py --input /secure/path/feedback.json --output /secure/path/review_queue.json
+python -m unittest discover -s scripts -p 'test_v3*.py' -v
+```
+- `review_queue.json` prioritizes wrong answers/unlock faults, groups exact duplicate reports, and separately aggregates favorable ratings. Reviewer must locate original Supabase source record and verify meaning/context before proposing a versioned correction.
+- Do not publish this JSON if testers entered private details in notes; do not grant Flutter direct database write access to editorial tables.
+- This is offline/manual handoff, **not** a live feedback submission service or automatic release gate.
