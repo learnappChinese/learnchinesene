@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../widget/writing_session_content.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/services/tts_service.dart';
 import 'package:get/get.dart';
 import '../controller/hanzi_writing_controller.dart';
 import '../../../core/models/hanzi_character.dart';
@@ -19,11 +21,13 @@ import '../../../core/widgets/learning_scaffold.dart';
 class HanziWritingScreen extends StatefulWidget {
   final int characterId;
   final LearningSourceContext? sourceContext;
+  final bool returnToLearningPath;
 
   const HanziWritingScreen({
     super.key,
     required this.characterId,
     this.sourceContext,
+    this.returnToLearningPath = false,
   });
 
   @override
@@ -36,6 +40,9 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   late final String _controllerTag;
   late final HanziWritingController controller;
   HanziCharacter? _character;
+  final AudioPlayer _pronunciationPlayer = AudioPlayer();
+  final TtsService _ttsService = TtsService();
+  bool _isPronouncing = false;
   List<Path> _strokePaths = [];
   int _loadRequest = 0;
   bool _isLoading = true;
@@ -67,7 +74,11 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
 
   bool _isRoundCompleted = false;
   bool _isSessionCompleted = false;
+  bool _isPersistingSession = false;
+  String? _persistError;
   Timer? _autoNextRoundTimer;
+  Timer? _hintTimer;
+  bool _showTemporaryHint = false;
 
   @override
   void initState() {
@@ -88,6 +99,7 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.characterId != widget.characterId) {
       _autoNextRoundTimer?.cancel();
+      _hintTimer?.cancel();
       _snapAnimationController.stop();
       _loadCharacter();
     }
@@ -97,7 +109,10 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   void dispose() {
     Get.delete<HanziWritingController>(tag: _controllerTag);
     _autoNextRoundTimer?.cancel();
+    _hintTimer?.cancel();
     _snapAnimationController.dispose();
+    unawaited(_pronunciationPlayer.dispose());
+    unawaited(_ttsService.stop());
     _userStrokeNotifier.dispose();
     super.dispose();
   }
@@ -109,6 +124,8 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
       _errorMessage = null;
       _isSessionCompleted = false;
       _isRoundCompleted = false;
+      _isPersistingSession = false;
+      _persistError = null;
     });
     try {
       final char = await controller.loadCharacter(widget.characterId);
@@ -187,6 +204,8 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     _totalAttempts = 0;
     _failedAttemptsThisStroke = 0;
     _animatingStrokeIndex = null;
+    _showTemporaryHint = false;
+    _hintTimer?.cancel();
     _roundStartedAt = DateTime.now();
     _isRoundCompleted = false;
 
@@ -325,14 +344,13 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     _completedRoundResults.add(roundResult);
 
     if (_currentRoundIndex == 9) {
-      // 10th round finished
-      setState(() {
-        _isSessionCompleted = true;
-        _isRoundCompleted = false;
-        _validationFeedback = 'Luyện tập hoàn thành!';
-        _feedbackColor = AppColors.success;
-      });
-      _saveProgress();
+      // Do not expose "next" before the idempotent reward/progress write finishes.
+      _isRoundCompleted = false;
+      _isPersistingSession = true;
+      _persistError = null;
+      _validationFeedback = 'Đang lưu kết quả luyện viết...';
+      _feedbackColor = AppColors.success;
+      unawaited(_finishSessionPersistence());
     } else {
       setState(() {
         _isRoundCompleted = true;
@@ -347,6 +365,29 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
         List.of(_completedRoundResults),
         sourceContext: widget.sourceContext,
       );
+
+  Future<void> _finishSessionPersistence() async {
+    await _saveProgress();
+    if (!mounted) return;
+    final result = controller.learningResult.value;
+    setState(() {
+      _isPersistingSession = false;
+      if (result == null) {
+        _persistError =
+            'Chưa lưu được kết quả. Tiến độ chưa thay đổi, hãy thử lưu lại.';
+        _isSessionCompleted = false;
+        return;
+      }
+      _persistError = null;
+      _isSessionCompleted = true;
+      _validationFeedback = result.passed
+          ? 'Luyện tập hoàn thành!'
+          : 'Đã lưu kết quả. Cần luyện thêm để mở chữ tiếp theo.';
+      _feedbackColor =
+          result.passed ? AppColors.success : AppColors.orange;
+    });
+  }
+
   void _goToNextRound() {
     _autoNextRoundTimer?.cancel();
     setState(() {
@@ -356,6 +397,28 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   }
 
   Future<void> _goToNextCharacter() async {
+    final result = controller.learningResult.value;
+    if (result == null) {
+      setState(() {
+        _persistError =
+            'Kết quả chưa được lưu. Không thể mở bài tiếp theo lúc này.';
+      });
+      return;
+    }
+    if (!result.passed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cần đạt ít nhất 70 điểm để mở chữ tiếp theo.'),
+        ),
+      );
+      return;
+    }
+
+    if (widget.returnToLearningPath) {
+      Navigator.pop(context, true);
+      return;
+    }
+
     final request = _loadRequest;
     final next = await controller.nextCharacter(widget.characterId);
     if (!mounted || request != _loadRequest || !next.hasCharacters) return;
@@ -376,15 +439,38 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     }
   }
 
-  void _resetWholeSession() {
+  Future<void> _resetWholeSession() async {
     _autoNextRoundTimer?.cancel();
+    _hintTimer?.cancel();
     setState(() {
+      _isLoading = true;
+      _errorMessage = null;
       _currentRoundIndex = 0;
       _completedRoundResults.clear();
       _isRoundCompleted = false;
       _isSessionCompleted = false;
-      _initializeRound(_roundConfigs[_currentRoundIndex]);
+      _isPersistingSession = false;
+      _persistError = null;
     });
+
+    try {
+      await controller.beginPractice(
+        widget.characterId,
+        sourceContext: widget.sourceContext,
+      );
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _initializeRound(_roundConfigs[_currentRoundIndex]);
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage =
+            'Không bắt đầu được lượt luyện mới. Vui lòng thử lại.';
+      });
+    }
   }
 
   String _buildRoundInstruction({
@@ -417,13 +503,79 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_isPersistingSession) {
+      return LearningScaffold(
+        title: _character != null
+            ? 'Viết chữ: ${_character!.character}'
+            : 'Viết chữ Hán',
+        body: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 14),
+              Text('Đang lưu XP và tiến độ...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_persistError != null) {
+      return LearningScaffold(
+        title: _character != null
+            ? 'Viết chữ: ${_character!.character}'
+            : 'Viết chữ Hán',
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.sync_problem_rounded,
+                  size: 58,
+                  color: AppColors.error,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _persistError!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15, height: 1.4),
+                ),
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _isPersistingSession = true;
+                      _persistError = null;
+                    });
+                    unawaited(_finishSessionPersistence());
+                  },
+                  icon: const Icon(Icons.sync_rounded),
+                  label: const Text('Lưu lại kết quả'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     if (_isSessionCompleted) {
+      final result = controller.learningResult.value!;
       return WritingSessionSummary(
-          results: List.unmodifiable(_completedRoundResults),
-          character: _character?.character ?? "",
-          onNextCharacter: _goToNextCharacter,
-          onRetry: _resetWholeSession,
-          onClose: () => Navigator.pop(context));
+        results: List.unmodifiable(_completedRoundResults),
+        character: _character?.character ?? "",
+        passed: result.passed,
+        nextActionLabel:
+            widget.returnToLearningPath ? 'Mở chữ tiếp theo' : 'Học chữ tiếp theo',
+        closeActionLabel:
+            widget.returnToLearningPath ? 'Về lộ trình' : 'Danh sách',
+        onNextCharacter: _goToNextCharacter,
+        onRetry: _resetWholeSession,
+        onClose: () => Navigator.pop(context, result.passed),
+      );
     }
 
     final currentConfig =
@@ -466,6 +618,118 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     );
   }
 
+  Future<void> _playPronunciation() async {
+    final character = _character;
+    if (character == null || _isPronouncing) return;
+    if (mounted) setState(() => _isPronouncing = true);
+    try {
+      final audioUrl = character.audioUrl?.trim();
+      if (audioUrl != null && audioUrl.isNotEmpty) {
+        await _pronunciationPlayer.stop();
+        await _pronunciationPlayer.play(UrlSource(audioUrl));
+      } else {
+        await _ttsService.speak(character.character);
+      }
+    } catch (_) {
+      await _ttsService.speak(character.character);
+    } finally {
+      if (mounted) setState(() => _isPronouncing = false);
+    }
+  }
+
+  Widget _buildCharacterMetadata() {
+    final character = _character!;
+    final hasStandalone =
+        character.pinyin?.trim().isNotEmpty == true ||
+        character.meaning?.trim().isNotEmpty == true;
+
+    return Flexible(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  hasStandalone
+                      ? (character.pinyin ?? '')
+                      : character.character,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.orange,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton(
+                tooltip: 'Nghe phát âm',
+                visualDensity: VisualDensity.compact,
+                onPressed: _isPronouncing ? null : _playPronunciation,
+                icon: Icon(
+                  _isPronouncing
+                      ? Icons.graphic_eq_rounded
+                      : Icons.volume_up_rounded,
+                  color: AppColors.orange,
+                ),
+              ),
+            ],
+          ),
+          if (character.meaning?.trim().isNotEmpty == true)
+            Text(
+              character.meaning!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 16,
+                color: AppColors.muted,
+                fontWeight: FontWeight.w500,
+              ),
+            )
+          else if (character.contextWord?.trim().isNotEmpty == true) ...[
+            Text(
+              'Trong từ: ${character.contextWord}',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFFB45309),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (character.contextPinyin?.trim().isNotEmpty == true)
+              Text(
+                character.contextPinyin!,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.muted,
+                ),
+              ),
+            if (character.contextMeaning?.trim().isNotEmpty == true)
+              Text(
+                character.contextMeaning!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.muted,
+                ),
+              ),
+          ] else
+            const Text(
+              'Chưa có pinyin/nghĩa riêng đã kiểm duyệt.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFFB45309),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCharacterHeader(BuildContext context) {
     return Container(
       color: Colors.white,
@@ -479,30 +743,9 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // Left Column (Pinyin, Vietnamese meaning)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _character!.pinyin ?? '',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.orange,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _character!.meaning ?? '',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
+                // Standalone character metadata is separated from context-word metadata.
+                _buildCharacterMetadata(),
+                const SizedBox(width: 12),
                 // Right Column (Round/Stroke stats)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -564,6 +807,58 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     );
   }
 
+  void _clearCurrentStroke() {
+    if (_isRoundCompleted || _isSessionCompleted) return;
+    _userStrokeNotifier.value =
+        const UserStroke(points: [], color: Colors.blue);
+    setState(() {
+      _validationFeedback =
+          'Đã xóa nét đang viết. Hãy thử lại nét ${_currentStrokeIndex + 1}/${_strokePaths.length}.';
+      _feedbackColor = Colors.grey;
+    });
+  }
+
+  void _undoAcceptedStroke() {
+    if (_isRoundCompleted ||
+        _isSessionCompleted ||
+        _roundConfigs.isEmpty ||
+        _currentStrokeIndex <= 0) {
+      _clearCurrentStroke();
+      return;
+    }
+    final config = _roundConfigs[_currentRoundIndex];
+    if (_currentStrokeIndex <= config.prefilledStrokeCount) {
+      _clearCurrentStroke();
+      return;
+    }
+    setState(() {
+      _currentStrokeIndex--;
+      _completedStrokeIndexes.remove(_currentStrokeIndex);
+      if (_currentRoundStrokeScores.isNotEmpty) {
+        _currentRoundStrokeScores.removeLast();
+      }
+      _animatingStrokeIndex = null;
+      _userStrokeNotifier.value =
+          const UserStroke(points: [], color: Colors.blue);
+      _validationFeedback =
+          'Đã hoàn tác. Viết lại nét ${_currentStrokeIndex + 1}/${_strokePaths.length}.';
+      _feedbackColor = Colors.grey;
+    });
+  }
+
+  void _showHintForCurrentStroke() {
+    if (_isRoundCompleted ||
+        _isSessionCompleted ||
+        _currentStrokeIndex >= _strokePaths.length) {
+      return;
+    }
+    _hintTimer?.cancel();
+    setState(() => _showTemporaryHint = true);
+    _hintTimer = Timer(const Duration(milliseconds: 1800), () {
+      if (mounted) setState(() => _showTemporaryHint = false);
+    });
+  }
+
   Widget _buildDrawingSurface(
       BoxConstraints constraints, HanziPracticeRoundConfig currentConfig) {
     return GestureDetector(
@@ -589,10 +884,15 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
                 currentIndex: _currentStrokeIndex,
                 viewBoxWidth: _character!.viewBoxWidth,
                 viewBoxHeight: _character!.viewBoxHeight,
-                guideOpacity: currentConfig.guideOpacity,
-                showCurrentStroke: currentConfig.showCurrentStroke,
-                showStartPoint: currentConfig.showStartPoint,
-                showDirectionArrow: currentConfig.showDirectionArrow,
+                guideOpacity: _showTemporaryHint
+                    ? math.max(currentConfig.guideOpacity, 0.20)
+                    : currentConfig.guideOpacity,
+                showCurrentStroke:
+                    currentConfig.showCurrentStroke || _showTemporaryHint,
+                showStartPoint:
+                    currentConfig.showStartPoint || _showTemporaryHint,
+                showDirectionArrow:
+                    currentConfig.showDirectionArrow || _showTemporaryHint,
                 animatingStrokeIndex: _animatingStrokeIndex,
                 snapAnimationValue: _snapAnimationController.value,
               ),
@@ -623,6 +923,51 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
                         _currentRoundStrokeScores.length,
                 currentRoundIndex: _currentRoundIndex,
                 onContinue: _goToNextRound),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWritingTools(HanziPracticeRoundConfig currentConfig) {
+    final canUndo = !_isRoundCompleted &&
+        !_isSessionCompleted &&
+        _currentStrokeIndex > currentConfig.prefilledStrokeCount;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 22),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Tooltip(
+            message: 'Hoàn tác nét vừa hoàn thành',
+            child: IconButton.filledTonal(
+              onPressed: canUndo ? _undoAcceptedStroke : null,
+              icon: const Icon(Icons.undo_rounded),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Tooltip(
+            message: 'Xóa nét đang viết',
+            child: IconButton.filledTonal(
+              onPressed: _isRoundCompleted || _isSessionCompleted
+                  ? null
+                  : _clearCurrentStroke,
+              icon: const Icon(Icons.delete_sweep_outlined),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Tooltip(
+            message: 'Gợi ý nét hiện tại',
+            child: IconButton.filledTonal(
+              onPressed: _isRoundCompleted || _isSessionCompleted
+                  ? null
+                  : _showHintForCurrentStroke,
+              icon: Icon(
+                _showTemporaryHint
+                    ? Icons.lightbulb_rounded
+                    : Icons.lightbulb_outline_rounded,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -700,7 +1045,10 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
 
           // Status feedback above the board (using AnimatedSwitcher)
           _buildStrokeFeedback(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
+
+          _buildWritingTools(currentConfig),
+          const SizedBox(height: 10),
 
           // Writing Canvas Area
           _buildWritingCanvas(currentConfig),

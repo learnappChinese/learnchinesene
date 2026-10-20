@@ -12,6 +12,7 @@ import '../../../core/learning/model/learning_source_context.dart';
 import '../../../core/widgets/adventure_quest_banner.dart';
 import '../../../core/widgets/panda_companion.dart';
 import 'hanzi_writing_screen.dart';
+import 'writing_learning_path_page.dart';
 
 class HanziWritingHomeScreen extends StatefulWidget {
   final LearningSourceContext? sourceContext;
@@ -68,6 +69,9 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (WritingLearningPathPage.enabled) {
+      return WritingLearningPathPage(sourceContext: widget.sourceContext);
+    }
     return LearningScaffold(
       title: 'Luyện viết chữ Hán',
       body: LearningSceneBackground(

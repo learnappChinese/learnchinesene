@@ -1,0 +1,18 @@
+{
+  "release": "v3-pilot-draft",
+  "source_table": "lexicon_words",
+  "source_id": "1925",
+  "source_value": {
+    "word": "t恤",
+    "pinyin": null,
+    "meaning_vi": "áo thun"
+  },
+  "issue_codes": [
+    "missing_pinyin"
+  ],
+  "candidate": {
+    "pinyin": "T xù"
+  },
+  "status": "needs_review",
+  "notes": "Candidate reading only, not yet bilingual-reviewed or published. Preserve original word and pronunciation conventions; verify context and audio."
+}

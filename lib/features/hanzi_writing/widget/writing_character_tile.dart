@@ -77,13 +77,22 @@ class WritingCharacterTile extends StatelessWidget {
           ),
           title: Row(
             children: [
-              if (char.pinyin != null && char.pinyin!.isNotEmpty)
+              if (char.pinyin?.isNotEmpty == true)
                 Text(
                   char.pinyin!,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: GameVisualTokens.crimsonDark,
+                  ),
+                )
+              else if (char.contextWord?.isNotEmpty == true)
+                Text(
+                  'Trong từ ${char.contextWord}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFB45309),
                   ),
                 ),
               if (char.hskLevel != null) ...[
@@ -129,9 +138,17 @@ class WritingCharacterTile extends StatelessWidget {
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              char.meaning ?? '',
-              style: const TextStyle(
-                color: Color(0xFF64748B),
+              char.meaning?.isNotEmpty == true
+                  ? char.meaning!
+                  : (char.contextMeaning?.isNotEmpty == true
+                      ? char.contextMeaning!
+                      : 'Chưa có nghĩa riêng đã kiểm duyệt'),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: char.meaning?.isNotEmpty == true
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFFB45309),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),

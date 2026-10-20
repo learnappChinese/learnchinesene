@@ -227,18 +227,26 @@ class WritingSessionMetric extends StatelessWidget {
 }
 
 class WritingSessionSummary extends StatelessWidget {
-  const WritingSessionSummary(
-      {super.key,
-      required this.results,
-      required this.character,
-      required this.onNextCharacter,
-      required this.onRetry,
-      required this.onClose});
+  const WritingSessionSummary({
+    super.key,
+    required this.results,
+    required this.character,
+    required this.passed,
+    required this.onNextCharacter,
+    required this.onRetry,
+    required this.onClose,
+    this.nextActionLabel = 'Học chữ tiếp theo',
+    this.closeActionLabel = 'Danh sách',
+  });
+
   final List<HanziRoundResult> results;
   final String character;
+  final bool passed;
   final VoidCallback onNextCharacter;
   final VoidCallback onRetry;
   final VoidCallback onClose;
+  final String nextActionLabel;
+  final String closeActionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -375,8 +383,11 @@ class WritingSessionSummary extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.emoji_events_rounded,
-                    color: Colors.white, size: 28),
+                child: Icon(
+                  passed ? Icons.emoji_events_rounded : Icons.refresh_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
             );
           },
@@ -385,9 +396,9 @@ class WritingSessionSummary extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Tuyệt vời!',
-              style: TextStyle(
+            Text(
+              passed ? 'Tuyệt vời!' : 'Cần luyện thêm',
+              style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
                   color: Colors.black87),
@@ -532,7 +543,7 @@ class WritingSessionSummary extends StatelessWidget {
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: onNextCharacter,
+        onPressed: passed ? onNextCharacter : onRetry,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.orange,
           foregroundColor: Colors.white,
@@ -541,8 +552,10 @@ class WritingSessionSummary extends StatelessWidget {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
-        child: const Text('Học chữ tiếp theo',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        child: Text(
+          passed ? nextActionLabel : 'Luyện lại để đạt yêu cầu',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -578,8 +591,11 @@ class WritingSessionSummary extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16)),
               ),
-              child: const Text('Danh sách',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              child: Text(
+                closeActionLabel,
+                style: const TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ),
