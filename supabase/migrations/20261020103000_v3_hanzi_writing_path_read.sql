@@ -32,18 +32,33 @@ stable
 security invoker
 set search_path = ''
 as $function$
-with unit_topics as (
-  select unit_id,name_vi
-  from (
-    select s.unit_id,t.name_vi,
-           row_number() over(
-             partition by s.unit_id
-             order by count(*) desc,min(coalesce(s.source_row,2147483647)),t.id
-           ) as rn
-    from public.lexicon_word_sources s
-    join public.lexicon_topics t on t.id=s.topic_id
-    group by s.unit_id,t.id,t.name_vi
-  ) ranked
+with topic_counts as (
+  select
+    s.unit_id,
+    t.id as topic_id,
+    t.name_vi,
+    count(*) as topic_count,
+    min(coalesce(s.source_row,2147483647)) as first_source_row
+  from public.lexicon_word_sources s
+  join public.lexicon_topics t on t.id=s.topic_id
+  group by s.unit_id,t.id,t.name_vi
+), topic_ranked as (
+  select
+    tc.*,
+    sum(tc.topic_count) over(partition by tc.unit_id) as total_count,
+    row_number() over(
+      partition by tc.unit_id
+      order by tc.topic_count desc,tc.first_source_row,tc.topic_id
+    ) as rn
+  from topic_counts tc
+), unit_topics as (
+  select
+    unit_id,
+    case
+      when topic_count::numeric/nullif(total_count,0) >= 0.70 then name_vi
+      else null
+    end as name_vi
+  from topic_ranked
   where rn=1
 ), unit_words as (
   select
