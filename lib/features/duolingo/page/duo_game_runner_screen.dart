@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../../../core/widgets/v3_learner_feedback_sheet.dart';
 import '../widget/duo_answer_feedback.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
@@ -70,6 +72,32 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
     return LearningScaffold(
       title: widget.gameName,
       actions: [
+        if (kDebugMode)
+          IconButton(
+            tooltip: 'Báo lỗi nội dung câu hỏi (V3 QA)',
+            icon: const Icon(Icons.rate_review_outlined),
+            onPressed: () {
+              final index = controller.currentIndex.value;
+              final items = controller.challenges;
+              final current = index >= 0 && index < items.length
+                  ? items[index]
+                  : null;
+              final challengeId = current is DuoChallenge
+                  ? current.id
+                  : current is DuoFlashcard
+                      ? 'flashcard:${current.id}'
+                      : null;
+              showV3LearnerFeedbackSheet(
+                context,
+                unitId: widget.unitId ?? '',
+                levelId: widget.levelId,
+                gameCode: widget.gameCode,
+                challengeId: challengeId,
+                challengeIndex: index,
+                screen: 'duo_game_runner',
+              );
+            },
+          ),
         Obx(() => Center(
               child: Padding(
                 padding: const EdgeInsets.only(right: 16.0),
