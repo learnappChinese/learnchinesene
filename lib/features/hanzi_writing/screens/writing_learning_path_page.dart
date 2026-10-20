@@ -209,12 +209,13 @@ class _WritingLearningPathPageState extends State<WritingLearningPathPage> {
     );
 
     if (action != true || !mounted) return;
-    await Navigator.push(
+    await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => HanziWritingScreen(
           characterId: node.characterId,
           sourceContext: widget.sourceContext,
+          returnToLearningPath: true,
         ),
       ),
     );
