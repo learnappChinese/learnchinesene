@@ -73,6 +73,26 @@ class ContentQualityScannerTests(unittest.TestCase):
                "choices_correct": [1, 3], "solutions": ["我你"]}
         self.assertFalse(scoring_sequence_matches(row))
 
+    def test_hanzi_stroke_count_matches_path_segments(self):
+        issues = inspect({"source_table": "lexicon_characters", "id": 1,
+                          "character": "水", "stroke_count": 4,
+                          "stroke_paths": "M0 0|M1 1|M2 2|M3 3"})
+        self.assertEqual(issues, [])
+
+    def test_hanzi_stroke_mismatch_is_flagged(self):
+        issues = inspect({"source_table": "lexicon_characters", "id": 2,
+                          "character": "你", "stroke_count": 3,
+                          "stroke_paths": "M0 0|M1 1"})
+        self.assertIn("stroke_count_path_mismatch",
+                      [x["issue_code"] for x in issues])
+
+    def test_hanzi_missing_strokes_blocks_content(self):
+        issues = inspect({"source_table": "lexicon_characters", "id": 3,
+                          "character": "好", "stroke_count": 0,
+                          "stroke_paths": ""})
+        codes = {x["issue_code"] for x in issues}
+        self.assertEqual(codes, {"invalid_stroke_count", "missing_stroke_paths"})
+
     def test_stream_counts_multiple_sources(self):
         report = scan([json.dumps({"source_table":"lexicon_words","id":1,
             "word":"你好","pinyin":"nǐ hǎo","meaning_vi":"xin chào"})+"\n",
