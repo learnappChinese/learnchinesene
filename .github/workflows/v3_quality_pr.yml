@@ -9,6 +9,7 @@ on:
       - 'lib/features/duolingo/page/duo_game_runner_screen.dart'
       - 'lib/features/unit_overview/page/unit_overview_screen.dart'
       - 'lib/core/learning/data/v3_unit_content_preview_repository.dart'
+      - 'lib/features/hanzi_writing/**'
       - 'test/core/widgets/v3_learner_feedback_sheet_test.dart'
       - 'supabase/audits/**'
       - 'supabase/migrations/*v3*'
@@ -49,6 +50,7 @@ jobs:
           lib/features/unit_overview/page/unit_overview_screen.dart
           lib/features/duolingo/page/duo_game_runner_screen.dart
           lib/core/learning/data/v3_unit_content_preview_repository.dart
+          lib/features/hanzi_writing
           test/core/widgets/v3_learner_feedback_sheet_test.dart
       - name: Learner feedback widget tests
         run: flutter test test/core/widgets/v3_learner_feedback_sheet_test.dart
