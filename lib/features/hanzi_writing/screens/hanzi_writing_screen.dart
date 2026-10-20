@@ -21,11 +21,13 @@ import '../../../core/widgets/learning_scaffold.dart';
 class HanziWritingScreen extends StatefulWidget {
   final int characterId;
   final LearningSourceContext? sourceContext;
+  final bool returnToLearningPath;
 
   const HanziWritingScreen({
     super.key,
     required this.characterId,
     this.sourceContext,
+    this.returnToLearningPath = false,
   });
 
   @override
@@ -72,6 +74,8 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
 
   bool _isRoundCompleted = false;
   bool _isSessionCompleted = false;
+  bool _isPersistingSession = false;
+  String? _persistError;
   Timer? _autoNextRoundTimer;
   Timer? _hintTimer;
   bool _showTemporaryHint = false;
@@ -120,6 +124,8 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
       _errorMessage = null;
       _isSessionCompleted = false;
       _isRoundCompleted = false;
+      _isPersistingSession = false;
+      _persistError = null;
     });
     try {
       final char = await controller.loadCharacter(widget.characterId);
@@ -338,14 +344,13 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     _completedRoundResults.add(roundResult);
 
     if (_currentRoundIndex == 9) {
-      // 10th round finished
-      setState(() {
-        _isSessionCompleted = true;
-        _isRoundCompleted = false;
-        _validationFeedback = 'Luyện tập hoàn thành!';
-        _feedbackColor = AppColors.success;
-      });
-      _saveProgress();
+      // Do not expose "next" before the idempotent reward/progress write finishes.
+      _isRoundCompleted = false;
+      _isPersistingSession = true;
+      _persistError = null;
+      _validationFeedback = 'Đang lưu kết quả luyện viết...';
+      _feedbackColor = AppColors.success;
+      unawaited(_finishSessionPersistence());
     } else {
       setState(() {
         _isRoundCompleted = true;
@@ -360,6 +365,29 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
         List.of(_completedRoundResults),
         sourceContext: widget.sourceContext,
       );
+
+  Future<void> _finishSessionPersistence() async {
+    await _saveProgress();
+    if (!mounted) return;
+    final result = controller.learningResult.value;
+    setState(() {
+      _isPersistingSession = false;
+      if (result == null) {
+        _persistError =
+            'Chưa lưu được kết quả. Tiến độ chưa thay đổi, hãy thử lưu lại.';
+        _isSessionCompleted = false;
+        return;
+      }
+      _persistError = null;
+      _isSessionCompleted = true;
+      _validationFeedback = result.passed
+          ? 'Luyện tập hoàn thành!'
+          : 'Đã lưu kết quả. Cần luyện thêm để mở chữ tiếp theo.';
+      _feedbackColor =
+          result.passed ? AppColors.success : AppColors.orange;
+    });
+  }
+
   void _goToNextRound() {
     _autoNextRoundTimer?.cancel();
     setState(() {
@@ -369,6 +397,28 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   }
 
   Future<void> _goToNextCharacter() async {
+    final result = controller.learningResult.value;
+    if (result == null) {
+      setState(() {
+        _persistError =
+            'Kết quả chưa được lưu. Không thể mở bài tiếp theo lúc này.';
+      });
+      return;
+    }
+    if (!result.passed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cần đạt ít nhất 70 điểm để mở chữ tiếp theo.'),
+        ),
+      );
+      return;
+    }
+
+    if (widget.returnToLearningPath) {
+      Navigator.pop(context, true);
+      return;
+    }
+
     final request = _loadRequest;
     final next = await controller.nextCharacter(widget.characterId);
     if (!mounted || request != _loadRequest || !next.hasCharacters) return;
@@ -396,6 +446,8 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
       _completedRoundResults.clear();
       _isRoundCompleted = false;
       _isSessionCompleted = false;
+      _isPersistingSession = false;
+      _persistError = null;
       _initializeRound(_roundConfigs[_currentRoundIndex]);
     });
   }
@@ -430,13 +482,79 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_isPersistingSession) {
+      return LearningScaffold(
+        title: _character != null
+            ? 'Viết chữ: ${_character!.character}'
+            : 'Viết chữ Hán',
+        body: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 14),
+              Text('Đang lưu XP và tiến độ...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_persistError != null) {
+      return LearningScaffold(
+        title: _character != null
+            ? 'Viết chữ: ${_character!.character}'
+            : 'Viết chữ Hán',
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.sync_problem_rounded,
+                  size: 58,
+                  color: AppColors.error,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _persistError!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15, height: 1.4),
+                ),
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _isPersistingSession = true;
+                      _persistError = null;
+                    });
+                    unawaited(_finishSessionPersistence());
+                  },
+                  icon: const Icon(Icons.sync_rounded),
+                  label: const Text('Lưu lại kết quả'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     if (_isSessionCompleted) {
+      final result = controller.learningResult.value!;
       return WritingSessionSummary(
-          results: List.unmodifiable(_completedRoundResults),
-          character: _character?.character ?? "",
-          onNextCharacter: _goToNextCharacter,
-          onRetry: _resetWholeSession,
-          onClose: () => Navigator.pop(context));
+        results: List.unmodifiable(_completedRoundResults),
+        character: _character?.character ?? "",
+        passed: result.passed,
+        nextActionLabel:
+            widget.returnToLearningPath ? 'Mở chữ tiếp theo' : 'Học chữ tiếp theo',
+        closeActionLabel:
+            widget.returnToLearningPath ? 'Về lộ trình' : 'Danh sách',
+        onNextCharacter: _goToNextCharacter,
+        onRetry: _resetWholeSession,
+        onClose: () => Navigator.pop(context, result.passed),
+      );
     }
 
     final currentConfig =
