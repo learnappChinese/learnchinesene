@@ -204,6 +204,28 @@ abstract final class AppTheme {
     );
   }
 
+  static ThemeData get dark {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: GameVisualTokens.orange,
+      brightness: Brightness.dark,
+      surface: const Color(0xFF211921),
+    ).copyWith(
+      primary: const Color(0xFFFFB743),
+      secondary: const Color(0xFFFF8050),
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: const Color(0xFF171017),
+      fontFamily: 'sans-serif',
+      cardTheme: const CardThemeData(
+        color: Color(0xFF2A2029),
+        surfaceTintColor: Color(0xFF2A2029),
+      ),
+    );
+  }
+
   static const _buttonShape = RoundedRectangleBorder(
     borderRadius: BorderRadius.all(Radius.circular(GameVisualTokens.radiusM)),
   );
