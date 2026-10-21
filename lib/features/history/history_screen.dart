@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import '../../core/widgets/learning_scene_background.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../core/config/feature_flags.dart';
@@ -8,6 +10,7 @@ import '../../core/theme/game_visual_tokens.dart';
 import '../../core/widgets/app_back_button.dart';
 import 'controller/history_controller.dart';
 import 'widget/history_content.dart';
+import '../home/widgets/home_decorations.dart';
 
 const _kHeroImage = 'assets/images/backgrounds/progress_history.png';
 const _kPandaImage = 'assets/images/characters/home_panda_peek.png';
@@ -52,13 +55,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: Column(
+        body: SafeBottomArea(child: Column(
           children: [
             _buildHeroWithStats(context),
             _buildTabSelector(),
             Expanded(child: _buildHistoryContent(context)),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -122,9 +125,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       children: [
                         Row(
                           children: [
-                            AppBackButton(
-                              onPressed: () => Get.back<void>(),
-                            ),
+                            AppBackButton(onPressed: () => Get.back<void>()),
                             const Spacer(),
                             Obx(() {
                               // Chỉ cho xoá lịch sử công cụ AI cục bộ;
@@ -172,12 +173,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
             ),
           ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 0,
-            child: _buildStatsCard(),
-          ),
+          Positioned(left: 16, right: 16, bottom: 0, child: _buildStatsCard()),
         ],
       ),
     );
@@ -188,7 +184,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE8E1D6), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: const Color(0x24635D3B),
@@ -203,26 +200,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
         return Row(
           children: [
             _HistoryStat(
-              emoji: '📚',
+              icon: Icons.menu_book_rounded,
               value: '${learning.length}',
               label: 'Lượt học',
               color: GameVisualTokens.primaryGreenDark,
             ),
             const _StatDivider(),
             _HistoryStat(
-              emoji: '⚡',
+              icon: Icons.bolt_rounded,
               value: '$xp',
               label: 'XP nhận được',
               color: AppColors.orange,
             ),
             if (FeatureFlags.enableAi) ...[
-            const _StatDivider(),
-            _HistoryStat(
-              emoji: '✨',
-              value: '${controller.aiHistoryItems.length}',
-              label: 'Công cụ AI',
-              color: const Color(0xFF2E93E8),
-            ),
+              const _StatDivider(),
+              _HistoryStat(
+                icon: Icons.auto_awesome_rounded,
+                value: '${controller.aiHistoryItems.length}',
+                label: 'Công cụ AI',
+                color: const Color(0xFF2E93E8),
+              ),
             ],
           ],
         );
@@ -359,6 +356,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
   // Content
   // ---------------------------------------------------------------------------
 
+  DateTime? _parseTime(dynamic rawTime) {
+    if (rawTime == null) return null;
+    return DateTime.tryParse('$rawTime')?.toLocal();
+  }
+
+  String _formatClock(DateTime date) =>
+      '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+
+  String _dayLabel(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'Hôm nay';
+    if (diff == 1) return 'Hôm qua';
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
   String _formatTime(dynamic rawTime) {
     if (rawTime == null) return '';
     try {
@@ -380,10 +395,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.delete_sweep_rounded,
-            color: AppColors.red, size: 36),
-        title:
-            const Text('Xóa lịch sử công cụ AI?', textAlign: TextAlign.center),
+        icon: const Icon(
+          Icons.delete_sweep_rounded,
+          color: AppColors.red,
+          size: 36,
+        ),
+        title: const Text(
+          'Xóa lịch sử công cụ AI?',
+          textAlign: TextAlign.center,
+        ),
         content: const Text(
           'Toàn bộ lịch sử dịch, tra từ và hội thoại AI sẽ bị xóa. Tiến độ và điểm XP học tập chính thức vẫn được giữ nguyên.',
           textAlign: TextAlign.center,
@@ -413,17 +433,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildHistoryContent(BuildContext context) {
     return Obx(() {
-      final isOfficialTab = !FeatureFlags.enableAi || controller.selectedTab.value == 0;
+      final isOfficialTab =
+          !FeatureFlags.enableAi || controller.selectedTab.value == 0;
       final isEmpty = isOfficialTab
           ? controller.learningItems.isEmpty
           : controller.aiHistoryItems.isEmpty;
 
       // Khi đã có dữ liệu thì giữ danh sách lúc kéo để làm mới.
       if (controller.isLoading.value && isEmpty) {
-        return const Center(
-          child:
-              CircularProgressIndicator(color: GameVisualTokens.primaryGreen),
-        );
+        return const _HistoryListSkeleton();
       }
 
       return RefreshIndicator(
@@ -452,27 +470,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
     }
 
-    return ListView.builder(
+    // Gom các lượt học theo ngày, chèn nhãn ngày trước lượt đầu tiên mỗi ngày.
+    final rows = <Widget>[];
+    String? lastDay;
+    for (final item in items) {
+      final date = _parseTime(item['timestamp']);
+      final day = date == null ? '' : _dayLabel(date);
+      if (day.isNotEmpty && day != lastDay) {
+        rows.add(_HistoryDayHeader(label: day, isFirst: lastDay == null));
+        lastDay = day;
+      }
+      rows.add(
+        LearningAttemptTile(
+          attempt: item,
+          timeLabel: date == null
+              ? _formatTime(item['timestamp'])
+              : _formatClock(date),
+        ),
+      );
+    }
+
+    return ListView(
       key: const ValueKey('learning-list'),
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      itemCount: items.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return const _HistoryNote(
-            icon: Icons.verified_rounded,
-            color: AppColors.success,
-            text: 'Tiến độ và điểm kinh nghiệm chính thức từ server.',
-          );
-        }
-        final item = items[index - 1];
-        return LearningAttemptTile(
-          attempt: item,
-          timeLabel: _formatTime(item['timestamp']),
-        );
-      },
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: rows,
     );
   }
 
@@ -558,13 +582,13 @@ class _GlassIconButton extends StatelessWidget {
 
 class _HistoryStat extends StatelessWidget {
   const _HistoryStat({
-    required this.emoji,
+    required this.icon,
     required this.value,
     required this.label,
     required this.color,
   });
 
-  final String emoji;
+  final IconData icon;
   final String value;
   final String label;
   final Color color;
@@ -578,8 +602,16 @@ class _HistoryStat extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 15)),
-              const SizedBox(width: 4),
+              Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: .12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 16, color: color),
+              ),
+              const SizedBox(width: 6),
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
@@ -587,7 +619,7 @@ class _HistoryStat extends StatelessWidget {
                     value,
                     style: TextStyle(
                       color: color,
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -599,10 +631,43 @@ class _HistoryStat extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+              color: AppColors.homeSubtitle,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Nhãn ngày giữa danh sách lịch sử: "Hôm nay", "Hôm qua" hoặc ngày cụ thể.
+class _HistoryDayHeader extends StatelessWidget {
+  const _HistoryDayHeader({required this.label, required this.isFirst});
+
+  final String label;
+  final bool isFirst;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(2, isFirst ? 6 : 10, 2, 10),
+      child: Row(
+        children: [
+          const HomePandaFace(size: 24),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.homeInk,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Divider(color: Color(0xFFE8E1D6), thickness: 1.5),
           ),
         ],
       ),
@@ -690,10 +755,7 @@ class _HistoryEmptyState extends StatelessWidget {
                     gradient: const RadialGradient(
                       colors: [Color(0xFFFFF4E4), Color(0xFFFBE3D0)],
                     ),
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 4,
-                    ),
+                    border: Border.all(color: Colors.white, width: 4),
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFFB4232C).withValues(alpha: .12),
@@ -765,4 +827,38 @@ class _HistoryEmptyState extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Khung đang tải khớp danh sách lịch sử: nhãn ngày và các thẻ lượt học.
+class _HistoryListSkeleton extends StatelessWidget {
+  const _HistoryListSkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: ListView(
+          physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(2, 6, 2, 10),
+              child: Row(
+                children: [
+                  ShimmerBox.circle(size: 24),
+                  SizedBox(width: 8),
+                  ShimmerBox(width: 72, height: 16),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Divider(color: Color(0xFFE8E1D6), thickness: 1.5),
+                  ),
+                ],
+              ),
+            ),
+            for (var i = 0; i < 10; i++) ...[
+              const SkeletonListTile(trailingPillWidth: 58),
+              const SizedBox(height: 12),
+            ],
+          ],
+        ),
+      );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../theme/game_visual_tokens.dart';
 import 'panda_companion.dart';
 
@@ -278,47 +279,14 @@ class AdventureNode extends StatelessWidget {
                   const SizedBox(height: 6),
                   GestureDetector(
                     onTap: onTap,
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 26),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 5),
-                      decoration: BoxDecoration(
-                        gradient: primaryCta
-                            ? LinearGradient(
-                                colors: isBoss
-                                    ? const [
-                                        Color(0xFFEF4444),
-                                        GameVisualTokens.crimson,
-                                      ]
-                                    : const [
-                                        GameVisualTokens.primaryGreenLight,
-                                        GameVisualTokens.primaryGreen,
-                                      ],
-                              )
-                            : null,
-                        color: primaryCta ? null : Colors.transparent,
-                        borderRadius: BorderRadius.circular(99),
-                        border: primaryCta
-                            ? null
-                            : Border.all(
-                                color: isLocked
-                                    ? const Color(0xFFD9D2C3)
-                                    : GameVisualTokens.primaryGreen),
-                      ),
-                      child: Text(
-                        ctaLabel!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: primaryCta
-                              ? Colors.white
-                              : isLocked
-                                  ? const Color(0xFF8C8577)
-                                  : GameVisualTokens.primaryGreenDark,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: .35,
-                        ),
-                      ),
+                    child: _NodeCtaButton(
+                      label: ctaLabel!,
+                      color: !primaryCta
+                          ? null
+                          : isBoss
+                              ? GameVisualTokens.crimson
+                              : AppColors.homeGreen,
+                      muted: isLocked,
                     ),
                   ),
                 ],
@@ -328,8 +296,8 @@ class AdventureNode extends StatelessWidget {
                     rewardPreview!,
                     style: const TextStyle(
                       color: Color(0xFFB45309),
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ],
@@ -337,6 +305,90 @@ class AdventureNode extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Nút nhỏ trên thẻ nhiệm vụ, nổi khối như nút ở màn Home.
+///
+/// [color] null → nút phụ mặt trắng viền xanh xám.
+class _NodeCtaButton extends StatelessWidget {
+  const _NodeCtaButton({
+    required this.label,
+    required this.color,
+    required this.muted,
+  });
+
+  final String label;
+  final Color? color;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final face = color;
+    final radius = BorderRadius.circular(99);
+    final edge = face == null
+        ? (muted ? const Color(0xFFD9D2C3) : AppColors.homeBorder)
+        : Color.lerp(face, Colors.black, .24)!;
+    final rim = face == null ? edge : Color.lerp(face, Colors.white, .32)!;
+    final foreground = face != null
+        ? Colors.white
+        : muted
+            ? const Color(0xFF8C8577)
+            : AppColors.homeGreenLink;
+
+    return Container(
+      padding: const EdgeInsets.only(bottom: 3),
+      decoration: BoxDecoration(
+        color: edge,
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: face?.withValues(alpha: .28) ?? AppColors.homeShadow,
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 28),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: const [0, .55, 1],
+            colors: face == null
+                ? const [Colors.white, Colors.white, Color(0xFFF6FAF2)]
+                : [
+                    Color.lerp(face, Colors.white, .12)!,
+                    face,
+                    Color.lerp(face, Colors.black, .06)!,
+                  ],
+          ),
+          borderRadius: radius,
+          border: Border.all(color: rim, width: 1.5),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: foreground,
+            fontSize: 11,
+            height: 1.1,
+            fontWeight: FontWeight.w900,
+            shadows: face == null
+                ? null
+                : const [
+                    Shadow(
+                      color: Color(0x33000000),
+                      blurRadius: 1,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+          ),
+        ),
       ),
     );
   }

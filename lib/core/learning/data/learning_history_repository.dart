@@ -150,11 +150,11 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
           icon = '🐲';
           break;
         case 'vocabulary':
-          title = 'Khám phá Từ vựng';
+          title = 'Khám phá từ vựng';
           icon = '📖';
           break;
         case 'listening':
-          title = 'Luyện nghe & Thanh điệu';
+          title = 'Luyện nghe & thanh điệu';
           icon = '🎧';
           break;
         case 'speaking':
@@ -162,12 +162,12 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
           icon = '🎙️';
           break;
         case 'hanzi':
-          title = 'Viết Chữ Hán';
+          title = 'Viết chữ Hán';
           icon = '✍️';
           break;
         case 'sentence':
         case 'dialogue':
-          title = 'Mẫu câu & Đối thoại';
+          title = 'Mẫu câu & đối thoại';
           icon = '💬';
           break;
         case 'quiz':
@@ -175,7 +175,7 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
           icon = '⚡';
           break;
         default:
-          title = 'Bài học Trung văn';
+          title = 'Bài học tiếng Trung';
           icon = '⭐';
       }
 
@@ -214,7 +214,7 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
             icon = '📖';
             break;
           case 'listening':
-            title = 'Luyện nghe & Thanh điệu';
+            title = 'Luyện nghe & thanh điệu';
             icon = '🎧';
             break;
           case 'speaking':
@@ -222,12 +222,12 @@ class SupabaseLearningHistoryRepository implements LearningHistoryRepository {
             icon = '🎙️';
             break;
           case 'hanzi':
-            title = 'Viết Chữ Hán';
+            title = 'Viết chữ Hán';
             icon = '✍️';
             break;
           case 'sentence':
           case 'dialogue':
-            title = 'Mẫu câu & Đối thoại';
+            title = 'Mẫu câu & đối thoại';
             icon = '💬';
             break;
           case 'quiz':

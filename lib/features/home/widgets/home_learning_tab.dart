@@ -50,8 +50,7 @@ class HomeLearningTab extends StatelessWidget {
           const TabHeader(
             icon: Icons.menu_book_rounded,
             title: 'Học tập',
-            accentTitle: 'lộ trình',
-            subtitle: 'Khám phá bản đồ ải và trung tâm luyện kỹ năng',
+            subtitle: 'Bản đồ ải và luyện kỹ năng',
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -373,23 +372,11 @@ class HomeLearningTab extends StatelessWidget {
             ),
           ),
           SizedBox(width: 8.w),
-          TextButton(
-            onPressed: onReview ?? onPractice,
-            style: TextButton.styleFrom(
-              backgroundColor: GameVisualTokens.crimson,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.w),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-            ),
-            child: Text(
-              'Ôn ngay',
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+          HomeGreenButton(
+            label: 'Ôn ngay',
+            chevronIcon: true,
+            color: GameVisualTokens.crimson,
+            onTap: onReview ?? onPractice,
           ),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'widget/hsk_exam_content.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
@@ -84,18 +85,7 @@ class _HskExamScreenState extends State<HskExamScreen> {
       final state = controller.examState.value;
 
       if (state == 'loading') {
-        return const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Đang khởi tạo đề thi thử...',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w600, color: AppColors.muted)),
-            ],
-          ),
-        );
+        return const SkeletonPage.card();
       }
 
       if (state == 'submitting') {

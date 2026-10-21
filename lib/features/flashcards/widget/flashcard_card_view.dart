@@ -52,20 +52,22 @@ class FlashcardCardView extends StatelessWidget {
   }
 
   Widget _buildCardFrame({required Widget child, Color? borderColor}) {
+    // Khung kem viền trắng như thẻ ở các màn học.
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: borderColor ?? const Color(0xFFE2E8F0),
-          width: 2.0,
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFFFDF6), Color(0xFFFFF4DE)],
         ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white, width: 4),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+          const BoxShadow(
+            color: Color(0x2E635D3B),
+            blurRadius: 20,
+            offset: Offset(0, 12),
           ),
         ],
       ),
@@ -89,18 +91,23 @@ class FlashcardCardView extends StatelessWidget {
           children: [
             // Badge chủ đề / HSK
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: GameVisualTokens.primaryGreenSoft,
-                borderRadius: BorderRadius.circular(20),
+                gradient: const LinearGradient(
+                  colors: [
+                    GameVisualTokens.primaryGreenLight,
+                    GameVisualTokens.primaryGreen,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(99),
               ),
               child: Text(
                 'HSK ${word.hskLevelId} • ${item.direction.label}'.toUpperCase(),
                 style: const TextStyle(
-                  color: GameVisualTokens.primaryGreenDark,
+                  color: Colors.white,
                   fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
                 ),
               ),
             ),
@@ -125,8 +132,8 @@ class FlashcardCardView extends StatelessWidget {
                 'Hãy nhớ cách đọc và nghĩa của từ này',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF5D5C54),
                 ),
               ),
             ] else if (direction == FlashcardDirection.viToZh) ...[
@@ -144,8 +151,8 @@ class FlashcardCardView extends StatelessWidget {
                 'Hãy nhớ chữ Hán và Pinyin tương ứng',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF5D5C54),
                 ),
               ),
             ] else ...[
@@ -180,8 +187,8 @@ class FlashcardCardView extends StatelessWidget {
                 'Bấm loa để nghe và nhớ nghĩa của từ',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF5D5C54),
                 ),
               ),
             ],
@@ -192,20 +199,22 @@ class FlashcardCardView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(20),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(color: const Color(0xFFE8E1D6), width: 1.5),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.touch_app_rounded, size: 16, color: Color(0xFF64748B)),
+                  Icon(Icons.touch_app_rounded,
+                      size: 16, color: GameVisualTokens.primaryGreenDark),
                   SizedBox(width: 6),
                   Text(
                     'Chạm vào thẻ để xem đáp án',
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF64748B),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: GameVisualTokens.primaryGreenDark,
                     ),
                   ),
                 ],

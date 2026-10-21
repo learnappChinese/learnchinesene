@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/widgets/app_back_button.dart';
+import '../../../core/widgets/app_green_button.dart';
 import '../../../core/widgets/game_answer_tile.dart';
+import '../../../core/widgets/learning_question_card.dart';
 import '../../../core/widgets/panda_companion.dart';
 import '../model/vocabulary_adventure.dart';
 
@@ -34,109 +37,30 @@ class VocabularyGameplayCard extends StatelessWidget {
       null => event.isDiscovery ? PandaMood.idle : PandaMood.thinking,
     };
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 620),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFFDF6), Color(0xFFFFF4DE)],
-          ),
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: Colors.white, width: 4),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x2E635D3B),
-              blurRadius: 20,
-              offset: Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _StageHeader(event: event)),
-                const SizedBox(width: 8),
-                PandaCompanion(
-                  mood: mood,
-                  size: 72,
-                  animate: feedback == null,
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            if (event.isDiscovery)
-              _DiscoverContent(
-                event: event,
-                onSpeak: onSpeak,
-                onSpeakSlow: onSpeakSlow,
-                onContinue: onCompleteDiscovery,
-              )
-            else
-              _QuestionContent(
-                event: event,
-                selectedAnswer: selectedAnswer,
-                feedback: feedback,
-                onAnswer: onAnswer,
-                onSpeak: onSpeak,
-              ),
-          ],
-        ),
+    return LearningQuestionCard(
+      stageLabel: event.stageLabel,
+      instruction: event.instruction,
+      trailing: PandaCompanion(
+        mood: mood,
+        size: 72,
+        animate: feedback == null,
       ),
+      child: event.isDiscovery
+          ? _DiscoverContent(
+              event: event,
+              onSpeak: onSpeak,
+              onSpeakSlow: onSpeakSlow,
+              onContinue: onCompleteDiscovery,
+            )
+          : _QuestionContent(
+              event: event,
+              selectedAnswer: selectedAnswer,
+              feedback: feedback,
+              onAnswer: onAnswer,
+              onSpeak: onSpeak,
+            ),
     );
   }
-}
-
-class _StageHeader extends StatelessWidget {
-  const _StageHeader({required this.event});
-
-  final VocabularyGameplayEvent event;
-
-  @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  GameVisualTokens.primaryGreenLight,
-                  GameVisualTokens.primaryGreen,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(99),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-              child: Text(
-                event.stageLabel,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            event.instruction,
-            style: const TextStyle(
-              color: Color(0xFF342E10),
-              fontSize: 19,
-              height: 1.25,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
-      );
 }
 
 class _DiscoverContent extends StatelessWidget {
@@ -179,68 +103,62 @@ class _DiscoverContent extends StatelessWidget {
             fontWeight: FontWeight.w800,
           ),
         ),
-        const SizedBox(height: 7),
-        Text(
-          word.vietnamese,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: GameVisualTokens.primaryGreenDark,
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
+        const SizedBox(height: 12),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.homeGreenSoft,
+            borderRadius: BorderRadius.circular(99),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+            child: Text(
+              word.vietnamese,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.homeGreenText,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ),
         ),
-        const SizedBox(height: 16),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 10,
-          runSpacing: 8,
+        const SizedBox(height: 20),
+        Row(
           children: [
-            OutlinedButton.icon(
-              onPressed: onSpeak,
-              style: _outlineStyle,
-              icon: const Icon(Icons.volume_up_rounded),
-              label: const Text('Nghe'),
+            Expanded(
+              child: AppGreenButton.light(
+                label: 'Nghe',
+                icon: Icons.volume_up_rounded,
+                height: 46,
+                fontSize: 14,
+                onPressed: onSpeak,
+              ),
             ),
-            OutlinedButton.icon(
-              onPressed: onSpeakSlow,
-              style: _outlineStyle,
-              icon: const Icon(Icons.slow_motion_video_rounded),
-              label: const Text('Nghe chậm'),
+            const SizedBox(width: 10),
+            Expanded(
+              child: AppGreenButton.light(
+                label: 'Nghe chậm',
+                icon: Icons.slow_motion_video_rounded,
+                height: 46,
+                fontSize: 14,
+                onPressed: onSpeakSlow,
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 18),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: onContinue,
-            icon: const Icon(Icons.auto_awesome_rounded),
-            label: const Text('ĐÃ KHÁM PHÁ'),
-            style: FilledButton.styleFrom(
-              backgroundColor: GameVisualTokens.primaryGreen,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(52),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              textStyle: const TextStyle(
-                fontWeight: FontWeight.w900,
-                letterSpacing: .5,
-              ),
-            ),
-          ),
+        const SizedBox(height: 14),
+        AppGreenButton(
+          label: 'Đã khám phá',
+          icon: Icons.auto_awesome_rounded,
+          height: 52,
+          fontSize: 16,
+          expand: true,
+          onPressed: onContinue,
         ),
       ],
     );
   }
 }
-
-final _outlineStyle = OutlinedButton.styleFrom(
-  foregroundColor: GameVisualTokens.primaryGreenDark,
-  side: const BorderSide(color: GameVisualTokens.primaryGreen, width: 1.5),
-  backgroundColor: Colors.white,
-  textStyle: const TextStyle(fontWeight: FontWeight.w800),
-);
 
 class _WordVisual extends StatelessWidget {
   const _WordVisual({this.imageUrl});
@@ -251,13 +169,24 @@ class _WordVisual extends StatelessWidget {
   Widget build(BuildContext context) {
     final canLoadImage = imageUrl?.startsWith('http') == true;
     return Container(
-      width: 118,
-      height: 94,
+      width: 96,
+      height: 96,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFF1E6CF), width: 1.5),
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.white, AppColors.homeGreenSoft],
+        ),
+        border: Border.all(color: Colors.white, width: 4),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.homeShadow,
+            blurRadius: 12,
+            offset: Offset(0, 5),
+          ),
+        ],
       ),
       child: canLoadImage
           ? Image.network(
@@ -274,13 +203,9 @@ class _ScrollIllustration extends StatelessWidget {
   const _ScrollIllustration();
 
   @override
-  Widget build(BuildContext context) => const Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(Icons.landscape_rounded, size: 68, color: Color(0x337D1D24)),
-          Icon(Icons.menu_book_rounded,
-              size: 42, color: GameVisualTokens.primaryGreen),
-        ],
+  Widget build(BuildContext context) => const Center(
+        child: Icon(Icons.menu_book_rounded,
+            size: 44, color: AppColors.homeGreen),
       );
 }
 

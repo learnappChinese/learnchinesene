@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'package:get/get.dart';
 
 import '../../core/game/game_art.dart';
@@ -1003,11 +1004,7 @@ class _StageLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(
-        color: Color(0xFFFFB52D),
-      ),
-    );
+    return const SkeletonPage.path();
   }
 }
 

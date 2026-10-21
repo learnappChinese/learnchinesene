@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/learning_scene_background.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'widget/mastered_words_summary.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
@@ -49,7 +51,7 @@ class _StatsScreenState extends State<StatsScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: _buildBody(context),
+      body: SafeBottomArea(child: _buildBody(context)),
     );
   }
 
@@ -94,7 +96,7 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget _buildBody(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const _StatsSkeleton();
       }
       final s = controller.stats;
       final correct = s['correct'] ?? 0;
@@ -130,4 +132,77 @@ class _StatsScreenState extends State<StatsScreen> {
       );
     });
   }
+}
+
+/// Khung đang tải khớp màn thống kê: thẻ tổng số từ, lưới 4 ô và lời nhắn.
+class _StatsSkeleton extends StatelessWidget {
+  const _StatsSkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+                maxWidth: ResponsiveHelper.contentMaxWidth(context)),
+            child: ListView(
+              physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveHelper.horizontalPadding(context),
+                vertical: 24,
+              ),
+              children: [
+                const SkeletonCard(
+                  radius: 26,
+                  padding: EdgeInsets.all(24),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        ShimmerBox.circle(size: 42),
+                        SizedBox(height: 12),
+                        ShimmerBox(width: 70, height: 44, radius: 12),
+                        SizedBox(height: 8),
+                        ShimmerBox(width: 110, height: 14),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                GridView(
+                  shrinkWrap: true,
+                  physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 250,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.35,
+                  ),
+                  children: [
+                    for (var i = 0; i < 4; i++)
+                      const SkeletonCard(
+                        radius: 20,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            ShimmerBox.circle(size: 36),
+                            ShimmerBox(width: 56, height: 22),
+                            ShimmerLine(widthFactor: .7, height: 11),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 22),
+                const ShimmerBox(width: 160, height: 19),
+                const SizedBox(height: 10),
+                const ShimmerLine(height: 13),
+                const SizedBox(height: 6),
+                const ShimmerLine(widthFactor: .6, height: 13),
+              ],
+            ),
+          ),
+        ),
+      );
 }

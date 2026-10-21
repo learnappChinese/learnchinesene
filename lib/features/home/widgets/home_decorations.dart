@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
-const homeCream = Color(0xFFFFFAF0);
-const homePageBackground = Color(0xFFFFFEF9);
-const homeInk = Color(0xFF201E16);
-const homeGreen = Color(0xFF45BC09);
+import '../../../core/theme/app_colors.dart';
+
+const homeCream = AppColors.background;
+const homePageBackground = AppColors.homePage;
+const homeInk = AppColors.homeInk;
+const homeGreen = AppColors.homeGreen;
 const homePandaPeekAsset = 'assets/images/characters/home_panda_peek.png';
 const homeTitlePandaAsset = 'assets/images/characters/home_title_panda.png';
 const homeNavPandaAsset = 'assets/images/characters/home_nav_panda.png';

@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/models/word.dart';
 import '../../../core/models/example_sentence.dart';
+import '../../../core/widgets/app_back_button.dart';
+import '../../../core/widgets/app_green_button.dart';
+import '../../../core/widgets/learning_question_card.dart';
+import '../../../core/widgets/panda_companion.dart';
 
+/// Thẻ từ chính, cùng khung với thẻ "Khám phá từ mới" ở các màn học.
 class WordPronunciationCard extends StatelessWidget {
   const WordPronunciationCard(
       {super.key,
@@ -15,94 +21,77 @@ class WordPronunciationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            AppColors.redDark,
-            AppColors.red,
-            AppColors.orange,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x30B4232C),
-            blurRadius: 25,
-            offset: Offset(0, 12),
-          ),
-        ],
-      ),
+    return LearningQuestionCard(
+      stageLabel: word.hskLevelId > 0 ? 'HSK ${word.hskLevelId}' : 'TỪ VỰNG',
+      instruction: word.sectionTitle.isNotEmpty
+          ? word.sectionTitle
+          : 'Nghe và luyện phát âm',
+      trailing: const PandaCompanion(size: 72),
       child: Column(
         children: [
-          if (word.sectionTitle.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 11,
-                vertical: 5,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                word.sectionTitle,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 6),
           Text(
             word.chinese,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 58,
-              fontWeight: FontWeight.w400,
-              fontFamily: 'FZKaiTiPinyin',
-              fontFamilyFallback: [
-                'FZKaiTiPinyin_1',
-                'PingFang SC',
-                'Heiti SC',
-                'Microsoft YaHei',
-                'Noto Sans SC'
-              ],
-            ),
-          ),
-          Text(
-            word.vietnamese,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 19,
-              fontWeight: FontWeight.w600,
+              color: GameVisualTokens.ink,
+              fontSize: 54,
+              height: 1,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 22),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton.filled(
-                onPressed: onPlayAudio,
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppColors.red,
-                ),
-                icon: const Icon(Icons.volume_up_rounded),
+          if (word.pinyin.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              word.pinyin,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: GameVisualTokens.crimsonDark,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
               ),
-              const SizedBox(width: 12),
-              IconButton.filled(
-                onPressed: onSpeak,
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppColors.red,
+            ),
+          ],
+          const SizedBox(height: 12),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.homeGreenSoft,
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+              child: Text(
+                word.vietnamese,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.homeGreenText,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
                 ),
-                icon: const Icon(Icons.mic_rounded),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: AppGreenButton.light(
+                  label: 'Nghe',
+                  icon: Icons.volume_up_rounded,
+                  height: 46,
+                  fontSize: 14,
+                  onPressed: onPlayAudio,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: AppGreenButton.light(
+                  label: 'Luyện nói',
+                  icon: Icons.mic_rounded,
+                  height: 46,
+                  fontSize: 14,
+                  onPressed: onSpeak,
+                ),
               ),
             ],
           ),
@@ -112,6 +101,21 @@ class WordPronunciationCard extends StatelessWidget {
   }
 }
 
+/// Thẻ chứa danh sách câu mẫu, cùng khung với thẻ câu hỏi.
+class WordExamplesCard extends StatelessWidget {
+  const WordExamplesCard({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LearningQuestionCard(
+        stageLabel: 'CÂU MẪU',
+        instruction: 'Câu mẫu theo ngữ cảnh',
+        child: child,
+      );
+}
+
+/// Một câu mẫu: ô trắng viền kem, nhãn số tròn.
 class WordExampleCard extends StatelessWidget {
   const WordExampleCard(
       {super.key,
@@ -122,76 +126,86 @@ class WordExampleCard extends StatelessWidget {
   final int number;
   final VoidCallback onSpeak;
 
+  static const _line = Color(0xFFE8E1D6);
+  static const _ink = Color(0xFF342E10);
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 11),
-      padding: const EdgeInsets.all(17),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFE9E5),
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              '$number',
-              style: const TextStyle(
-                color: AppColors.red,
-                fontWeight: FontWeight.w800,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _line, width: 1.5),
+          boxShadow: const [BoxShadow(color: Color(0x14635D3B), blurRadius: 10, offset: Offset(0, 4))],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 26,
+              height: 26,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFF7E8),
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '$number',
+                style: const TextStyle(
+                  color: AppColors.amberDark,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  example.chinese,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w400,
-                    fontFamily: 'FZKaiTiPinyin',
-                    fontFamilyFallback: [
-                      'FZKaiTiPinyin_1',
-                      'PingFang SC',
-                      'Heiti SC',
-                      'Microsoft YaHei',
-                      'Noto Sans SC'
-                    ],
-                  ),
-                ),
-                if (example.vietnamese.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 5),
-                    child: Text(
-                      example.vietnamese,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        height: 1.4,
-                      ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    example.chinese,
+                    style: const TextStyle(
+                      color: _ink,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w400,
+                      fontFamily: 'FZKaiTiPinyin',
+                      fontFamilyFallback: [
+                        'FZKaiTiPinyin_1',
+                        'PingFang SC',
+                        'Heiti SC',
+                        'Microsoft YaHei',
+                        'Noto Sans SC'
+                      ],
                     ),
                   ),
-              ],
+                  if (example.vietnamese.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        example.vietnamese,
+                        style: const TextStyle(
+                          color: GameVisualTokens.primaryGreenDark,
+                          fontWeight: FontWeight.w700,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          IconButton(
-            onPressed: onSpeak,
-            icon: const Icon(
-              Icons.mic_none_rounded,
-              color: AppColors.red,
+            const SizedBox(width: 8),
+            AppHudIconButton(
+              icon: Icons.mic_rounded,
+              tooltip: 'Luyện nói câu này',
+              size: 40,
+              onPressed: onSpeak,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

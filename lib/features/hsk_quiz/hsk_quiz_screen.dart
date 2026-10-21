@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
+import '../../core/widgets/learning_scaffold.dart';
 import 'package:get/get.dart';
 import '../../core/responsive/responsive_layout.dart';
 import '../../core/services/tts_service.dart';
@@ -57,13 +59,10 @@ class _HskQuizScreenState extends State<HskQuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Trắc nghiệm từ vựng HSK',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ),
+    // LearningScaffold bọc nội dung trong SafeArea nên nút "Câu tiếp theo"
+    // không dính sát thanh home indicator.
+    return LearningScaffold(
+      title: 'Trắc nghiệm từ vựng HSK',
       body: _buildQuizViewport(context),
     );
   }
@@ -108,7 +107,9 @@ class _HskQuizScreenState extends State<HskQuizScreen> {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: Obx(() => controller.isLoading.value
-            ? const Center(child: CircularProgressIndicator())
+            ? SkeletonQuiz(
+                horizontalPadding:
+                    ResponsiveHelper.horizontalPadding(context))
             : _buildBody()),
       ),
     );

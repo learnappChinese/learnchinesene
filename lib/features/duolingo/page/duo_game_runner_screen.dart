@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_shimmer.dart';
 import '../widget/duo_answer_feedback.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
@@ -142,7 +143,7 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
   Widget _buildChallengeContent(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const SkeletonMissionIntro();
       }
 
       if (controller.errorMessage.value != null) {
@@ -186,7 +187,7 @@ class _DuoGameRunnerScreenState extends State<DuoGameRunnerScreen> {
       if (controller.isCompleted.value) {
         final result = controller.rewardResult.value;
         if (result == null) {
-          return const Center(child: CircularProgressIndicator());
+          return const SkeletonMissionIntro();
         }
         return Center(
           child: MissionCompleteOverlay(

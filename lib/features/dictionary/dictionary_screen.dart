@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/learning_scene_background.dart';
 import 'widget/dictionary_entry_view.dart';
 import 'controller/dictionary_controller.dart';
 import 'package:get/get.dart';
@@ -127,7 +128,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: _buildBody(context),
+      body: SafeBottomArea(child: _buildBody(context)),
     );
   }
 

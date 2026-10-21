@@ -73,38 +73,52 @@ class _HanziZigzagNodeWidgetState extends State<HanziZigzagNodeWidget>
     // Kích thước nút
     final double buttonSize = isInProgress ? 82.0 : 74.0;
 
+    final Color face = isCompleted || isInProgress
+        ? AppColors.homeGreen
+        : isLocked
+        ? const Color(0xFFF1EDE4)
+        : Colors.white;
+    final Color edge = isCompleted || isInProgress
+        ? Color.lerp(AppColors.homeGreen, Colors.black, .24)!
+        : isLocked
+        ? const Color(0xFFDDD5C6)
+        : AppColors.homeBorder;
+    final Color rim = isInProgress
+        ? Colors.white
+        : isCompleted
+        ? Color.lerp(AppColors.homeGreen, Colors.white, .32)!
+        : isLocked
+        ? const Color(0xFFE8E1D6)
+        : AppColors.homeBorder;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Nhãn nổi "Đang học" nếu node đang học
           if (isInProgress) ...[
+            // Hàng cao cố định 126px (HanziPathRowItem) và node đang học chiếm
+            // 96px kể cả vòng sáng, nên nhãn phải gọn trong ~28px.
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              margin: const EdgeInsets.only(bottom: 6),
+              margin: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
-                color: GameVisualTokens.primaryGreenDark,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                color: AppColors.homeGreenSoft,
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(color: AppColors.homeGreen, width: 1.5),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('✏️', style: TextStyle(fontSize: 10)),
+                  Icon(Icons.draw_rounded,
+                      size: 12, color: AppColors.homeGreenText),
                   SizedBox(width: 4),
                   Text(
-                    'ĐANG HỌC',
+                    'Đang học',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
+                      color: AppColors.homeGreenText,
+                      fontSize: 11,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
                     ),
                   ),
                 ],
@@ -132,79 +146,57 @@ class _HanziZigzagNodeWidgetState extends State<HanziZigzagNodeWidget>
                           height: buttonSize + 14,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: GameVisualTokens.primaryGreen
-                                .withValues(alpha: 0.22),
+                            color: AppColors.homeGreen.withValues(alpha: .18),
                           ),
                         ),
 
-                      // Nút 3D tròn
+                      // Nút 3D tròn: mặt tròn + gờ đáy sậm như nút ở màn Home
                       Container(
                         width: buttonSize,
                         height: buttonSize,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: isCompleted
-                              ? GameVisualTokens.primaryGreen
-                              : isInProgress
-                                  ? GameVisualTokens.primaryGreenDark
-                                  : isLocked
-                                      ? const Color(0xFFE2E8F0)
-                                      : Colors.white,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color.lerp(
+                                face,
+                                Colors.white,
+                                isCompleted || isInProgress ? .14 : 0,
+                              )!,
+                              face,
+                            ],
+                          ),
                           border: Border.all(
-                            color: isCompleted
-                                ? GameVisualTokens.primaryGreenDark
-                                : isInProgress
-                                    ? GameVisualTokens.imperialGold
-                                    : isLocked
-                                        ? const Color(0xFFCBD5E1)
-                                        : GameVisualTokens.primaryGreenLight,
-                            width: isInProgress ? 3.5 : 2.5,
+                            color: rim,
+                            width: isInProgress ? 4 : 2.5,
                           ),
                           boxShadow: [
+                            BoxShadow(color: edge, offset: const Offset(0, 5)),
                             BoxShadow(
-                              color: isCompleted
-                                  ? GameVisualTokens.primaryGreenDark
-                                      .withValues(alpha: 0.4)
-                                  : isInProgress
-                                      ? GameVisualTokens.primaryGreenDark
-                                          .withValues(alpha: 0.5)
-                                      : isLocked
-                                          ? Colors.black.withValues(alpha: 0.05)
-                                          : Colors.black.withValues(alpha: 0.1),
-                              blurRadius: isInProgress ? 12 : 6,
-                              offset: const Offset(0, 4),
+                              color: isCompleted || isInProgress
+                                  ? AppColors.homeGreen.withValues(alpha: .3)
+                                  : AppColors.homeShadow,
+                              blurRadius: 12,
+                              offset: const Offset(0, 8),
                             ),
                           ],
                         ),
                         alignment: Alignment.center,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              node.character.character,
-                              style: TextStyle(
-                                fontFamily: 'FZKaiTiPinyin',
-                                fontSize: isInProgress ? 34 : 30,
-                                fontWeight: FontWeight.bold,
-                                color: isCompleted || isInProgress
-                                    ? Colors.white
-                                    : isLocked
-                                        ? const Color(0xFF94A3B8)
-                                        : AppColors.ink,
-                              ),
-                            ),
-                            if ((node.character.pinyin?.isNotEmpty ?? false) && !isLocked)
-                              Text(
-                                node.character.pinyin!,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: isCompleted || isInProgress
-                                      ? Colors.white.withValues(alpha: 0.9)
-                                      : AppColors.muted,
-                                ),
-                              ),
-                          ],
+                        // Font Khải đã vẽ sẵn pinyin phía trên chữ.
+                        child: Text(
+                          node.character.character,
+                          style: TextStyle(
+                            fontFamily: 'FZKaiTiPinyin',
+                            fontSize: isInProgress ? 36 : 32,
+                            fontWeight: FontWeight.bold,
+                            color: isCompleted || isInProgress
+                                ? Colors.white
+                                : isLocked
+                                ? const Color(0xFFA8A196)
+                                : AppColors.homeInk,
+                          ),
                         ),
                       ),
 
@@ -247,7 +239,7 @@ class _HanziZigzagNodeWidgetState extends State<HanziZigzagNodeWidget>
                             height: 24,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: const Color(0xFF94A3B8),
+                              color: const Color(0xFFA8A196),
                               border: Border.all(color: Colors.white, width: 2),
                             ),
                             alignment: Alignment.center,

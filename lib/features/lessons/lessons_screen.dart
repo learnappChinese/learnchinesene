@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'widget/lesson_content.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
@@ -50,10 +51,10 @@ class _LessonsScreenState extends State<LessonsScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: LearningSceneBackground(
+      body: SafeBottomArea(child: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: _buildBody(),
-      ),
+      )),
     );
   }
 
@@ -131,7 +132,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
 
   Widget _buildTopics() {
     return Obx(() => controller.isTopicsLoading.value
-        ? const Center(child: CircularProgressIndicator())
+        ? const SkeletonPage.list(showHero: false)
         : controller.topics.isEmpty
             ? const Center(child: Text('Không tìm thấy bài học nào.'))
             : ListView.builder(
@@ -192,10 +193,10 @@ class _LessonDetailView extends StatelessWidget {
             ],
           ),
         ),
-        body: LearningSceneBackground(
+        body: SafeBottomArea(child: LearningSceneBackground(
           theme: LearningSceneTheme.bambooVillage,
           child: _buildDetailContent(),
-        ),
+        )),
       ),
     );
   }
@@ -203,7 +204,7 @@ class _LessonDetailView extends StatelessWidget {
   Widget _buildDetailContent() {
     return Obx(() {
       if (controller.isDetailLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const SkeletonPage.list(showHero: false);
       }
 
       return TabBarView(

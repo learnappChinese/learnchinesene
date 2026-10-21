@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 
 import 'app.dart';
 import 'core/backend/supabase_bootstrap.dart';
+import 'core/theme/app_theme.dart';
 import 'core/database/app_database.dart';
 import 'di.dart';
+import 'features/splash/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +27,6 @@ class AppBootstrap extends StatefulWidget {
 class _AppBootstrapState extends State<AppBootstrap> {
   Object? _error;
   bool _ready = false;
-  bool _loading = true;
   bool _diInitialized = false;
 
   @override
@@ -35,11 +36,8 @@ class _AppBootstrapState extends State<AppBootstrap> {
   }
 
   Future<void> _initialize() async {
-    if (mounted) {
-      setState(() {
-        _loading = true;
-        _error = null;
-      });
+    if (mounted && _error != null) {
+      setState(() => _error = null);
     }
 
     try {
@@ -57,16 +55,11 @@ class _AppBootstrapState extends State<AppBootstrap> {
       unawaited(_initCloudOptional());
 
       if (!mounted) return;
-      setState(() {
-        _ready = true;
-        _loading = false;
-      });
+      setState(() => _ready = true);
     } catch (error) {
+      debugPrint('Khởi động dữ liệu cục bộ thất bại: $error');
       if (!mounted) return;
-      setState(() {
-        _error = error;
-        _loading = false;
-      });
+      setState(() => _error = error);
     }
   }
 
@@ -86,111 +79,18 @@ class _AppBootstrapState extends State<AppBootstrap> {
       return const ChineseMasterApp();
     }
 
+    // Màn khởi động giống hệt Splash nhưng không có vòng tải; Splash nối tiếp
+    // ngay sau mà không chạy lại hiệu ứng logo.
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD32F2F)),
-        useMaterial3: true,
+      theme: AppTheme.light,
+      home: SplashIntro(
+        error: _error == null
+            ? null
+            : 'Không thể đọc dữ liệu học trên máy. '
+                'Hãy thử lại hoặc khởi động lại ứng dụng.',
+        onRetry: _initialize,
       ),
-      home: _buildBootstrapScreen(),
-    );
-  }
-
-  Widget _buildConnectionStatus() {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 220),
-      child: _loading
-          ? const _CloudLoadingView(key: ValueKey('loading'))
-          : _CloudErrorView(
-              key: const ValueKey('error'),
-              error: _error,
-              onRetry: _initialize,
-            ),
-    );
-  }
-
-  Widget _buildBootstrapScreen() {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: _buildConnectionStatus(),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CloudLoadingView extends StatelessWidget {
-  const _CloudLoadingView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 42,
-          height: 42,
-          child: CircularProgressIndicator(strokeWidth: 3),
-        ),
-        SizedBox(height: 20),
-        Text(
-          'Đang kết nối dữ liệu học...',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
-}
-
-class _CloudErrorView extends StatelessWidget {
-  const _CloudErrorView({
-    super.key,
-    required this.error,
-    required this.onRetry,
-  });
-
-  final Object? error;
-  final Future<void> Function() onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final details = error?.toString() ?? 'Không xác định được lỗi kết nối.';
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.cloud_off_rounded, size: 52),
-        const SizedBox(height: 16),
-        const Text(
-          'Không thể khởi động dữ liệu',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Không thể đọc dữ liệu học liệu cục bộ. Hãy thử khởi động lại ứng dụng.',
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 10),
-        Text(
-          details,
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 12),
-        ),
-        const SizedBox(height: 20),
-        FilledButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Thử lại'),
-        ),
-      ],
     );
   }
 }

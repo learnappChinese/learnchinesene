@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_shimmer.dart';
 import 'package:get/get.dart';
 
 import '../../../core/learning/model/learning_source_context.dart';
-import '../../../core/theme/game_visual_tokens.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_green_button.dart';
 import '../../../core/widgets/learning_scene_background.dart';
 import '../controller/hanzi_learning_path_controller.dart';
 import '../models/hanzi_path_models.dart';
@@ -17,10 +19,7 @@ import 'hanzi_writing_screen.dart';
 class HanziWritingHomeScreen extends StatefulWidget {
   final LearningSourceContext? sourceContext;
 
-  const HanziWritingHomeScreen({
-    super.key,
-    this.sourceContext,
-  });
+  const HanziWritingHomeScreen({super.key, this.sourceContext});
 
   @override
   State<HanziWritingHomeScreen> createState() => _HanziWritingHomeScreenState();
@@ -78,7 +77,7 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           // Nền tranh phong cảnh làng trúc nhẹ nhàng
@@ -100,24 +99,7 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
                 Expanded(
                   child: Obx(() {
                     if (controller.isLoading.value) {
-                      return const Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(
-                              color: GameVisualTokens.primaryGreen,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'Đang tải lộ trình học viết...',
-                              style: TextStyle(
-                                color: Color(0xFF64748B),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
+                      return const _HanziPathSkeleton();
                     }
 
                     if (controller.errorMessage.value != null) {
@@ -138,16 +120,10 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              ElevatedButton(
+                              AppGreenButton(
+                                label: 'Thử lại',
+                                icon: Icons.refresh_rounded,
                                 onPressed: controller.loadLearningPath,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: GameVisualTokens.primaryGreen,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: const Text('Thử lại'),
                               ),
                             ],
                           ),
@@ -169,9 +145,7 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
                       controller: controller.scrollController,
                       physics: const BouncingScrollPhysics(),
                       slivers: [
-                        const SliverToBoxAdapter(
-                          child: SizedBox(height: 12),
-                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
                         // Lặp qua các cấp độ HSK và các Section
                         for (final hskLevel in filteredLevels) ...[
@@ -183,23 +157,24 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
 
                             // Danh sách các node chữ Hán uốn lượn liên tục
                             SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  final node = section.nodes[index];
-                                  final nextNode = index < section.nodes.length - 1
-                                      ? section.nodes[index + 1]
-                                      : null;
-                                  return HanziPathRowItem(
-                                    key: ValueKey(
-                                      'hanzi_row_${node.hskLevel}_${node.sectionId}_${node.character.id}_${node.indexInSection}',
-                                    ),
-                                    node: node,
-                                    nextNode: nextNode,
-                                    onTap: () => _onNodeTapped(node, section),
-                                  );
-                                },
-                                childCount: section.nodes.length,
-                              ),
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
+                                final node = section.nodes[index];
+                                final nextNode =
+                                    index < section.nodes.length - 1
+                                    ? section.nodes[index + 1]
+                                    : null;
+                                return HanziPathRowItem(
+                                  key: ValueKey(
+                                    'hanzi_row_${node.hskLevel}_${node.sectionId}_${node.character.id}_${node.indexInSection}',
+                                  ),
+                                  node: node,
+                                  nextNode: nextNode,
+                                  onTap: () => _onNodeTapped(node, section),
+                                );
+                              }, childCount: section.nodes.length),
                             ),
 
                             const SliverToBoxAdapter(
@@ -212,15 +187,11 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
                             child: HanziHskMilestoneCard(hskLevel: hskLevel),
                           ),
 
-                          const SliverToBoxAdapter(
-                            child: SizedBox(height: 24),
-                          ),
+                          const SliverToBoxAdapter(child: SizedBox(height: 24)),
                         ],
 
                         // Khoảng trống đệm cuối màn hình để không bị nút Floating che khuất
-                        const SliverToBoxAdapter(
-                          child: SizedBox(height: 80),
-                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 80)),
                       ],
                     );
                   }),
@@ -238,73 +209,92 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
 
             return Positioned(
               right: 20,
-              bottom: 24,
+              // Nút nổi đặt ngoài SafeArea nên tự cộng phần inset đáy.
+              bottom: 24 + MediaQuery.paddingOf(context).bottom,
               child: GestureDetector(
                 onTap: controller.scrollToCurrentNode,
+                // Nút xanh nổi khối như nút ở màn Home: gờ đáy sậm + viền sáng.
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  padding: const EdgeInsets.only(bottom: 4),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        GameVisualTokens.primaryGreen,
-                        GameVisualTokens.primaryGreenDark,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: Color.lerp(AppColors.homeGreen, Colors.black, .24),
                     borderRadius: BorderRadius.circular(30),
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 2.5,
-                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: GameVisualTokens.primaryGreenDark
-                            .withValues(alpha: 0.45),
-                        blurRadius: 12,
-                        offset: const Offset(0, 5),
+                        color: AppColors.homeGreen.withValues(alpha: .35),
+                        blurRadius: 14,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          activeNode.character.character,
-                          style: const TextStyle(
-                            fontFamily: 'FZKaiTiPinyin',
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: GameVisualTokens.primaryGreenDark,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0, .55, 1],
+                        colors: [
+                          Color.lerp(AppColors.homeGreen, Colors.white, .12)!,
+                          AppColors.homeGreen,
+                          Color.lerp(AppColors.homeGreen, Colors.black, .06)!,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                        color: Color.lerp(
+                          AppColors.homeGreen,
+                          Colors.white,
+                          .32,
+                        )!,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            activeNode.character.character,
+                            style: const TextStyle(
+                              fontFamily: 'FZKaiTiPinyin',
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.homeGreenText,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Tiếp tục học',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.3,
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Tiếp tục học',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            shadows: [
+                              Shadow(
+                                color: Color(0x33000000),
+                                blurRadius: 1,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.arrow_downward_rounded,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.arrow_downward_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -314,4 +304,57 @@ class _HanziWritingHomeScreenState extends State<HanziWritingHomeScreen> {
       ),
     );
   }
+}
+
+/// Khung đang tải khớp lộ trình: banner bài và các node chữ uốn lượn theo
+/// đúng độ lệch của [HanziPathRowItem].
+class _HanziPathSkeleton extends StatelessWidget {
+  const _HanziPathSkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: ListView(
+          physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+          padding: const EdgeInsets.only(top: 12),
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: SkeletonCard(
+                style: SkeletonCardStyle.cream,
+                radius: 26,
+                padding: EdgeInsets.fromLTRB(16, 14, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonPill(width: 112, height: 22),
+                    SizedBox(height: 12),
+                    ShimmerLine(widthFactor: .5, height: 20),
+                    SizedBox(height: 8),
+                    ShimmerLine(widthFactor: .7, height: 13),
+                    SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(child: ShimmerBox(height: 9, radius: 99)),
+                        SizedBox(width: 10),
+                        ShimmerBox(width: 52, height: 13),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            for (var i = 0; i < 10; i++)
+              SizedBox(
+                height: 126,
+                child: Center(
+                  child: Transform.translate(
+                    offset: Offset(HanziPathRowItem.getOffsetForIndex(i), 0),
+                    child: ShimmerBox.circle(size: i == 0 ? 82 : 74),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
 }

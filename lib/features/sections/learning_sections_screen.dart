@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'package:get/get.dart';
 import '../../core/learning/data/learning_journey_repository.dart';
 import '../../core/learning/model/learning_journey_models.dart';
@@ -100,9 +101,7 @@ class _LearningSectionsScreenState extends State<LearningSectionsScreen> {
 
   Widget _buildBody(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: GameVisualTokens.primaryGreen),
-      );
+      return const _LearningSectionsSkeleton();
     }
 
     if (_errorMessage != null) {
@@ -545,6 +544,63 @@ class _Chip extends StatelessWidget {
             color: foreground,
             fontSize: 10.5,
             fontWeight: FontWeight.w900,
+          ),
+        ),
+      );
+}
+
+/// Khung đang tải khớp bố cục màn: banner bản đồ và các thẻ phần trên lộ trình.
+class _LearningSectionsSkeleton extends StatelessWidget {
+  const _LearningSectionsSkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: ResponsiveHelper.contentMaxWidth(context),
+            ),
+            child: ListView(
+              physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveHelper.horizontalPadding(context),
+                20,
+                ResponsiveHelper.horizontalPadding(context),
+                32,
+              ),
+              children: [
+                const SkeletonQuestBanner(),
+                const SizedBox(height: 18),
+                for (var i = 0; i < 8; i++)
+                  SkeletonTrailEntry(
+                    isFirst: i == 0,
+                    isLast: i == 7,
+                    nodeSize: 58,
+                    nodeTop: 14,
+                    child: const SkeletonCard(
+                      padding: EdgeInsets.fromLTRB(14, 12, 12, 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ShimmerBox(width: 60, height: 11),
+                          SizedBox(height: 8),
+                          ShimmerLine(widthFactor: .8, height: 17),
+                          SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                  child: ShimmerBox(height: 7, radius: 99)),
+                              SizedBox(width: 10),
+                              ShimmerBox(width: 38, height: 12),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       );

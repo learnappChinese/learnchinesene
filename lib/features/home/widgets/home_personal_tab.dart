@@ -29,7 +29,7 @@ class HomePersonalTab extends StatelessWidget {
             const TabHeader(
               icon: Icons.person_rounded,
               title: 'Cá nhân',
-              subtitle: 'Quản lý tài khoản và công cụ cá nhân của bạn',
+              subtitle: 'Tài khoản và công cụ của bạn',
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -50,21 +50,8 @@ class HomePersonalTab extends StatelessWidget {
                       accent: GameVisualTokens.crimson,
                       compact: true,
                     ),
-                    SizedBox(height: 10.w),
-                    HomeIllustratedCard(
-                      title: 'Hồ sơ người dùng',
-                      subtitle: 'Xem thông tin cá nhân\nvà xếp hạng',
-                      asset: 'personal_profile',
-                      ink: const Color(0xFF8C0E0D),
-                      accent: const Color(0xFFE30D15),
-                      background: const Color(0xFFFFE5EB),
-                      minHeight: 128.w,
-                      textStart: .43,
-                      scale: scale,
-                      onTap: onProfile,
-                    ),
                     if (FeatureFlags.enableAi) ...[
-                      SizedBox(height: 8.w),
+                      SizedBox(height: 10.w),
                       HomeIllustratedCard(
                         title: 'Từ điển Việt ↔ Trung',
                         subtitle: 'Tra cứu từ bằng AI,\nhỗ trợ giọng nói',

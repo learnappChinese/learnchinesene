@@ -6,6 +6,7 @@ import 'home_decorations.dart';
 import 'home_green_button.dart';
 import 'home_learning_sections.dart';
 import 'home_streak_badge.dart';
+import 'tab_header.dart';
 
 class HomeDashboard extends StatelessWidget {
   const HomeDashboard({
@@ -111,7 +112,11 @@ class HomeDashboard extends StatelessWidget {
                                 onViewAllQuickActions ?? onStartLearning,
                           ),
                         ),
-                        SizedBox(height: 118.w),
+                        // Chừa chỗ cho thanh điều hướng nổi + inset đáy,
+                        // giống các tab khác.
+                        SizedBox(
+                            height: 122.w +
+                                MediaQuery.viewPaddingOf(context).bottom),
                       ],
                     ),
                   ],
@@ -138,9 +143,10 @@ class HomeDashboard extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.fromLTRB(18.w, 12.w, 15.w, 0),
           child: Stack(children: [
+            // Cùng cỡ 44 với biểu tượng ở header các tab (TabHeader).
             Container(
-              width: 41.w,
-              height: 41.w,
+              width: 44.w,
+              height: 44.w,
               decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: const Color(0xFFFFF3C7),
@@ -158,22 +164,28 @@ class HomeDashboard extends StatelessWidget {
                       child: Image.asset(homePandaPeekAsset,
                           fit: BoxFit.contain))),
             ),
+            // Cùng kiểu chữ và cách căn với header các tab (TabHeader):
+            // cụm hai dòng căn giữa theo chiều dọc với ô panda 44.
             Positioned(
-                left: 49.w,
-                top: 2.w,
-                child: Text('你好! 👋',
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 19.sp,
-                        fontWeight: FontWeight.w900))),
-            Positioned(
-                left: 49.w,
-                top: 27.w,
-                child: Text('Hôm nay cùng học tiếng Trung nào!',
-                    style: TextStyle(
-                        color: const Color(0xFF4F514A),
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w600))),
+                left: 54.w,
+                right: 108.w,
+                top: 0,
+                height: 44.w,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Xin chào! 👋',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TabHeader.titleStyle()),
+                    SizedBox(height: TabHeader.titleGap),
+                    Text('Hôm nay cùng học tiếng Trung nào!',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TabHeader.subtitleStyle()),
+                  ],
+                )),
             Positioned(
                 right: 0,
                 top: 0,
@@ -199,9 +211,9 @@ class HomeDashboard extends StatelessWidget {
         : (hasJourney
             ? '${journey!.chapterTitle} • Ải ${journey!.missionNumber}/${journey!.totalMissions}'
             : 'Học từ vựng, luyện nghe và mở khóa thế giới tiếng Trung đầy thú vị!');
-    final ctaLabel = nextAction?.label.trim().isNotEmpty == true
+    final ctaLabel = _sentenceCase(nextAction?.label.trim().isNotEmpty == true
         ? nextAction!.label.trim()
-        : (hasJourney ? 'Tiếp tục học' : 'Bắt đầu học');
+        : (hasJourney ? 'Tiếp tục học' : 'Bắt đầu học'));
     // Bounds measured on the artwork, independent of header and safe insets.
     double sceneY(double fraction) =>
         sceneTop + sceneHeight * fraction - headerHeight;
@@ -222,50 +234,48 @@ class HomeDashboard extends StatelessWidget {
                     maxLines: 1,
                     style: TextStyle(
                         color: const Color(0xFF57300A),
-                        fontSize: 10.sp,
+                        fontSize: 11.5.sp,
+                        letterSpacing: .4,
                         fontWeight: FontWeight.w900)))),
+        // Tiêu đề và mô tả nối liền trong khung giấy; chỉ thu nhỏ khi nội
+        // dung dài hơn khung.
         Positioned.fromRect(
-            rect: artworkRect(const Rect.fromLTRB(.095, .408, .438, .604)),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.topLeft,
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(heroTitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            color: const Color(0xFF342E10),
-                            fontSize: 21.sp,
-                            height: 1.03,
-                            letterSpacing: -.6.w,
-                            fontWeight: FontWeight.w900)),
-                    if (hasJourney)
-                      Text('cùng Panda',
-                          style: TextStyle(
-                              color: const Color(0xFF375B1C),
-                              fontSize: 17.sp,
-                              height: 1.08,
-                              fontWeight: FontWeight.w900)),
-                  ]),
-            )),
-        Positioned.fromRect(
-            rect: artworkRect(const Rect.fromLTRB(.095, .625, .438, .748)),
+            rect: artworkRect(const Rect.fromLTRB(.095, .405, .438, .755)),
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.topLeft,
               child: SizedBox(
                 width: width * .343,
-                child: Text(description,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        color: const Color(0xFF5D5C54),
-                        fontSize: 9.8.sp,
-                        height: 1.5,
-                        fontWeight: FontWeight.w600)),
+                child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(heroTitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: const Color(0xFF342E10),
+                              fontSize: 21.sp,
+                              height: 1.1,
+                              letterSpacing: -.5.w,
+                              fontWeight: FontWeight.w900)),
+                      if (hasJourney)
+                        Text('cùng Panda',
+                            style: TextStyle(
+                                color: const Color(0xFF375B1C),
+                                fontSize: 16.sp,
+                                height: 1.2,
+                                fontWeight: FontWeight.w900)),
+                      SizedBox(height: 8.w),
+                      Text(description,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: const Color(0xFF5D5C54),
+                              fontSize: 12.sp,
+                              height: 1.4,
+                              fontWeight: FontWeight.w700)),
+                    ]),
               ),
             )),
         Positioned(
@@ -276,6 +286,13 @@ class HomeDashboard extends StatelessWidget {
                 label: ctaLabel, onTap: onStartLearning, playIcon: true)),
       ]),
     );
+  }
+
+  /// "ÔN NGAY" → "Ôn ngay": nhãn nút viết thường như các nút ở màn Home.
+  static String _sentenceCase(String label) {
+    if (label != label.toUpperCase()) return label;
+    final lower = label.toLowerCase();
+    return lower.isEmpty ? lower : lower[0].toUpperCase() + lower.substring(1);
   }
 
   Widget _staleNotice() => Container(

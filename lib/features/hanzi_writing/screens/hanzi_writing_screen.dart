@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_shimmer.dart';
 import '../widget/writing_session_content.dart';
 import '../../../core/theme/app_colors.dart';
 import 'package:get/get.dart';
@@ -15,7 +16,12 @@ import '../services/hanzi_stroke_cache.dart';
 import '../models/hanzi_practice_config.dart';
 import '../../../core/learning/model/learning_source_context.dart';
 import '../../../core/responsive/responsive_layout.dart';
+import '../../../core/theme/game_visual_tokens.dart';
+import '../../../core/widgets/app_green_button.dart';
+import '../../../core/widgets/learning_question_card.dart';
 import '../../../core/widgets/learning_scaffold.dart';
+import '../../../core/widgets/learning_scene_background.dart';
+import '../../../core/widgets/panda_companion.dart';
 
 class HanziWritingScreen extends StatefulWidget {
   final int characterId;
@@ -88,12 +94,13 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
       ),
       tag: _controllerTag,
     );
-    _snapAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    )..addListener(() {
-        setState(() {});
-      });
+    _snapAnimationController =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 200),
+        )..addListener(() {
+          setState(() {});
+        });
     _loadCharacter();
   }
 
@@ -145,7 +152,9 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
       }
 
       final cachedPaths = HanziStrokeCache.instance.getPaths(char.id);
-      final paths = cachedPaths ?? SvgStrokeParser.parseStrokesToPaths(char.strokePathData);
+      final paths =
+          cachedPaths ??
+          SvgStrokeParser.parseStrokesToPaths(char.strokePathData);
       if (cachedPaths == null && paths.isNotEmpty) {
         HanziStrokeCache.instance.putPaths(char.id, paths);
       }
@@ -192,16 +201,13 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
 
     _completedStrokeIndexes
       ..clear()
-      ..addAll(
-        List.generate(
-          config.prefilledStrokeCount,
-          (index) => index,
-        ),
-      );
+      ..addAll(List.generate(config.prefilledStrokeCount, (index) => index));
 
     _currentRoundStrokeScores.clear();
-    _userStrokeNotifier.value =
-        const UserStroke(points: [], color: Colors.blue);
+    _userStrokeNotifier.value = const UserStroke(
+      points: [],
+      color: Colors.blue,
+    );
     _totalAttempts = 0;
     _failedAttemptsThisStroke = 0;
     _animatingStrokeIndex = null;
@@ -255,10 +261,7 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     final offsetY = (canvasSize.height - char.viewBoxHeight * scale) / 2;
 
     final List<Offset> svgSpacePoints = userPoints.map((p) {
-      return Offset(
-        (p.dx - offsetX) / scale,
-        (p.dy - offsetY) / scale,
-      );
+      return Offset((p.dx - offsetX) / scale, (p.dy - offsetY) / scale);
     }).toList();
 
     // Validate against current stroke
@@ -287,8 +290,10 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
       Future.delayed(const Duration(milliseconds: 700), () {
         if (mounted && _failedAttemptsThisStroke > 0) {
           if (_userStrokeNotifier.value.color == AppColors.error) {
-            _userStrokeNotifier.value =
-                const UserStroke(points: [], color: Colors.blue);
+            _userStrokeNotifier.value = const UserStroke(
+              points: [],
+              color: Colors.blue,
+            );
           }
         }
       });
@@ -300,8 +305,10 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
       _completedStrokeIndexes.add(_currentStrokeIndex);
       _currentRoundStrokeScores.add(score);
 
-      _userStrokeNotifier.value =
-          const UserStroke(points: [], color: Colors.blue);
+      _userStrokeNotifier.value = const UserStroke(
+        points: [],
+        color: Colors.blue,
+      );
       _failedAttemptsThisStroke = 0;
 
       // Start snap animation on this stroke
@@ -327,7 +334,7 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
     final roundScore = _currentRoundStrokeScores.isEmpty
         ? 0.0
         : _currentRoundStrokeScores.reduce((a, b) => a + b) /
-            _currentRoundStrokeScores.length;
+              _currentRoundStrokeScores.length;
 
     final drawnStrokes = _strokePaths.length - roundConfig.prefilledStrokeCount;
 
@@ -361,10 +368,10 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   }
 
   Future<void> _saveProgress() => controller.saveProgress(
-        widget.characterId,
-        List.of(_completedRoundResults),
-        sourceContext: widget.sourceContext,
-      );
+    widget.characterId,
+    List.of(_completedRoundResults),
+    sourceContext: widget.sourceContext,
+  );
   void _goToNextRound() {
     _autoNextRoundTimer?.cancel();
     setState(() {
@@ -440,118 +447,144 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   Widget build(BuildContext context) {
     if (_isSessionCompleted) {
       return WritingSessionSummary(
-          results: List.unmodifiable(_completedRoundResults),
-          character: _character?.character ?? "",
-          onNextCharacter: _goToNextCharacter,
-          onRetry: _resetWholeSession,
-          onClose: () => Navigator.pop(context));
+        results: List.unmodifiable(_completedRoundResults),
+        character: _character?.character ?? "",
+        onNextCharacter: _goToNextCharacter,
+        onRetry: _resetWholeSession,
+        onClose: () => Navigator.pop(context),
+      );
     }
 
     final currentConfig =
         (_isLoading || _errorMessage != null || _roundConfigs.isEmpty)
-            ? null
-            : _roundConfigs[_currentRoundIndex];
+        ? null
+        : _roundConfigs[_currentRoundIndex];
 
     return LearningScaffold(
       title: _character != null
           ? 'Viết chữ: ${_character!.character}'
           : 'Viết chữ Hán',
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _HanziWritingSkeleton()
           : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline_rounded,
-                            size: 64, color: AppColors.error),
-                        const SizedBox(height: 16),
-                        Text(
-                          _errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: _loadCharacter,
-                          child: const Text('Thử lại'),
-                        ),
-                      ],
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      size: 64,
+                      color: AppColors.error,
                     ),
-                  ),
-                )
-              : _buildPracticeContent(context, currentConfig!),
+                    const SizedBox(height: 16),
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    AppGreenButton(
+                      label: 'Thử lại',
+                      icon: Icons.refresh_rounded,
+                      onPressed: _loadCharacter,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : _buildPracticeContent(context, currentConfig!),
     );
   }
 
-  Widget _buildCharacterHeader(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-              maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Left Column (Pinyin, Vietnamese meaning)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+  Widget _buildCharacterHeader(
+    BuildContext context,
+    HanziPracticeRoundConfig currentConfig,
+  ) {
+    final pinyin = _character!.pinyin ?? '';
+    final meaning = _character!.meaning ?? '';
+    return LearningQuestionCard(
+      stageLabel: 'LƯỢT ${_currentRoundIndex + 1}/10',
+      instruction: _buildRoundInstruction(
+        mode: currentConfig.mode,
+        prefilledStrokeCount: currentConfig.prefilledStrokeCount,
+      ),
+      trailing: const PandaCompanion(mood: PandaMood.thinking, size: 56),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text(
-                      _character!.pinyin ?? '',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.orange,
+                    if (pinyin.isNotEmpty)
+                      Text(
+                        pinyin,
+                        style: const TextStyle(
+                          color: GameVisualTokens.crimsonDark,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _character!.meaning ?? '',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w500,
+                    if (meaning.isNotEmpty)
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.homeGreenSoft,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          child: Text(
+                            meaning,
+                            style: const TextStyle(
+                              color: AppColors.homeGreenText,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
-                // Right Column (Round/Stroke stats)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Lượt ${_currentRoundIndex + 1}/10',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.orange,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Nét ${math.min(_currentStrokeIndex + 1, _strokePaths.length)}/${_strokePaths.length}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
                 ),
-              ],
-            ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFE8E1D6),
+                    width: 1.5,
+                  ),
+                ),
+                child: Text(
+                  'Nét ${math.min(_currentStrokeIndex + 1, _strokePaths.length)}/${_strokePaths.length}',
+                  style: const TextStyle(
+                    color: AppColors.amberDark,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
+          const SizedBox(height: 14),
+          WritingRoundProgress(currentRoundIndex: _currentRoundIndex),
+        ],
       ),
     );
   }
@@ -573,12 +606,12 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
                 key: ValueKey<String>(_statusMessage),
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w800,
                   color: _feedbackColor == AppColors.error
                       ? AppColors.error
                       : _feedbackColor == AppColors.success
-                          ? Colors.green[700]
-                          : Colors.black87,
+                      ? AppColors.homeGreenText
+                      : AppColors.homeTitle,
                 ),
               ),
       ),
@@ -586,7 +619,9 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   }
 
   Widget _buildDrawingSurface(
-      BoxConstraints constraints, HanziPracticeRoundConfig currentConfig) {
+    BoxConstraints constraints,
+    HanziPracticeRoundConfig currentConfig,
+  ) {
     return GestureDetector(
       onPanStart: (details) => _handlePanStart(details, constraints),
       onPanUpdate: (details) => _handlePanUpdate(details, constraints),
@@ -637,13 +672,14 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
           // 4. Round Complete Overlay Card
           if (_isRoundCompleted)
             WritingRoundCompletion(
-                roundNumber: currentConfig.roundNumber,
-                roundScore: _currentRoundStrokeScores.isEmpty
-                    ? 0
-                    : _currentRoundStrokeScores.reduce((a, b) => a + b) /
+              roundNumber: currentConfig.roundNumber,
+              roundScore: _currentRoundStrokeScores.isEmpty
+                  ? 0
+                  : _currentRoundStrokeScores.reduce((a, b) => a + b) /
                         _currentRoundStrokeScores.length,
-                currentRoundIndex: _currentRoundIndex,
-                onContinue: _goToNextRound),
+              currentRoundIndex: _currentRoundIndex,
+              onContinue: _goToNextRound,
+            ),
         ],
       ),
     );
@@ -652,29 +688,23 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   Widget _buildWritingCanvas(HanziPracticeRoundConfig currentConfig) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 390,
-              maxHeight: 390,
-            ),
+            constraints: const BoxConstraints(maxWidth: 390, maxHeight: 390),
             child: AspectRatio(
               aspectRatio: 1.0,
               child: Container(
                 clipBehavior: Clip.hardEdge,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.grey[200]!,
-                    width: 1.5,
-                  ),
-                  boxShadow: [
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(color: const Color(0xFFE8E1D6), width: 2),
+                  boxShadow: const [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Color(0x2E635D3B),
                       blurRadius: 20,
-                      offset: const Offset(0, 8),
+                      offset: Offset(0, 10),
                     ),
                   ],
                 ),
@@ -692,41 +722,36 @@ class _HanziWritingScreenState extends State<HanziWritingScreen>
   }
 
   Widget _buildPracticeContent(
-      BuildContext context, HanziPracticeRoundConfig currentConfig) {
-    return SafeArea(
-      child: Column(
-        children: [
-          // Header: two columns layout
-          _buildCharacterHeader(context),
-          const SizedBox(height: 14),
-
-          // Progress dots
-          WritingRoundProgress(currentRoundIndex: _currentRoundIndex),
-          const SizedBox(height: 10),
-
-          // Mode description
-          Text(
-            _buildRoundInstruction(
-              mode: currentConfig.mode,
-              prefilledStrokeCount: currentConfig.prefilledStrokeCount,
+    BuildContext context,
+    HanziPracticeRoundConfig currentConfig,
+  ) {
+    return LearningSceneBackground(
+      theme: LearningSceneTheme.bambooVillage,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: ResponsiveHelper.contentMaxWidth(context),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+                  child: _buildCharacterHeader(context, currentConfig),
+                ),
+              ),
             ),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: Colors.blueGrey,
-            ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
-          // Status feedback above the board (using AnimatedSwitcher)
-          _buildStrokeFeedback(),
-          const SizedBox(height: 16),
+            // Status feedback above the board (using AnimatedSwitcher)
+            _buildStrokeFeedback(),
+            const SizedBox(height: 10),
 
-          // Writing Canvas Area
-          _buildWritingCanvas(currentConfig),
-          const SizedBox(height: 24),
-        ],
+            // Writing Canvas Area
+            _buildWritingCanvas(currentConfig),
+          ],
+        ),
       ),
     );
   }
@@ -736,8 +761,81 @@ class UserStroke {
   final List<Offset> points;
   final Color color;
 
-  const UserStroke({
-    required this.points,
-    required this.color,
-  });
+  const UserStroke({required this.points, required this.color});
+}
+
+/// Khung đang tải khớp màn viết: thẻ thông tin chữ, dòng phản hồi và bảng
+/// viết vuông.
+class _HanziWritingSkeleton extends StatelessWidget {
+  const _HanziWritingSkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+              child: SkeletonCard(
+                style: SkeletonCardStyle.cream,
+                radius: 26,
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  children: [
+                    const SkeletonQuestionHeader(pandaSize: 56),
+                    const SizedBox(height: 12),
+                    const Row(
+                      children: [
+                        ShimmerBox(width: 70, height: 22),
+                        SizedBox(width: 10),
+                        SkeletonPill(width: 80, height: 26),
+                        Spacer(),
+                        ShimmerBox(width: 64, height: 30, radius: 12),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (var i = 0; i < 10; i++)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 5),
+                            child: ShimmerBox.circle(size: 10),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 50),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints:
+                        const BoxConstraints(maxWidth: 390, maxHeight: 390),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(
+                              color: const Color(0xFFE8E1D6), width: 2),
+                        ),
+                        child: const FractionallySizedBox(
+                          widthFactor: .55,
+                          heightFactor: .55,
+                          child: ShimmerBox(radius: 24),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
 }

@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../controller/home_controller.dart';
 import 'home_decorations.dart';
+import 'home_streak_badge.dart';
 
-/// Compact pinned header shared by the Learning, Games, Progress and Personal tabs.
+/// Header ghim trên cùng của các tab Học tập, Trò chơi, Tiến độ và Cá nhân.
+///
+/// Cùng bố cục với header màn Home: biểu tượng tròn nền kem viền vàng bên
+/// trái, tiêu đề + mô tả ở giữa, huy hiệu chuỗi ngày học bên phải.
 class TabHeader extends StatelessWidget {
   const TabHeader({
     super.key,
@@ -18,8 +25,30 @@ class TabHeader extends StatelessWidget {
   final IconData icon;
   final String title, subtitle;
 
+  /// Kiểu chữ tiêu đề header, dùng chung với header màn Home.
+  static TextStyle titleStyle() => TextStyle(
+        color: homeInk,
+        fontSize: 21.sp,
+        height: 1.1,
+        letterSpacing: -.3.w,
+        fontWeight: FontWeight.w900,
+      );
+
+  /// Kiểu chữ dòng mô tả dưới tiêu đề, dùng chung với header màn Home.
+  static TextStyle subtitleStyle() => TextStyle(
+        color: AppColors.homeSubtitle,
+        fontSize: 11.5.sp,
+        height: 1.2,
+        fontWeight: FontWeight.w600,
+      );
+
+  /// Khoảng cách giữa tiêu đề và dòng mô tả.
+  static double get titleGap => 3.w;
+
   /// Optional trailing words of the title drawn in the brand green.
   final String? accentTitle;
+
+  /// Phần tử thay cho huy hiệu chuỗi ngày học ở bên phải.
   final Widget? trailing;
 
   /// Visual size of [trailing]. It is centred in a slot as tall as the icon
@@ -29,84 +58,101 @@ class TabHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final safeTop = MediaQuery.viewPaddingOf(context).top;
-    return ColoredBox(
-      color: Colors.transparent,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(20.w, safeTop + 10.w, 16.w, 14.w),
-        child: Row(children: [
-          Container(
-            width: 46.w,
-            height: 46.w,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15.r),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF6BD12A), homeGreen],
-              ),
-              boxShadow: [
-                BoxShadow(
-                    color: homeGreen.withValues(alpha: .28),
-                    blurRadius: 10.r,
-                    offset: Offset(0, 4.w)),
-              ],
+    return Padding(
+      padding: EdgeInsets.fromLTRB(18.w, safeTop + 12.w, 15.w, 12.w),
+      child: Row(children: [
+        _buildIconBadge(),
+        SizedBox(width: 10.w),
+        Expanded(child: _buildTitles()),
+        SizedBox(width: 8.w),
+        if (trailing != null)
+          SizedBox(
+            width: trailingSize,
+            height: 44.w,
+            child: OverflowBox(
+              minWidth: trailingSize,
+              maxWidth: trailingSize,
+              minHeight: trailingSize,
+              maxHeight: trailingSize,
+              child: trailing,
             ),
-            child: Icon(icon, color: Colors.white, size: 25.sp),
+          )
+        else
+          const _StreakSlot(),
+      ]),
+    );
+  }
+
+  /// Vòng tròn nền kem viền vàng như ô panda ở header màn Home.
+  Widget _buildIconBadge() => Container(
+        width: 44.w,
+        height: 44.w,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFFDF5), Color(0xFFFFF3C7)],
           ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text.rich(
-                    TextSpan(children: [
-                      TextSpan(text: title),
-                      if (accentTitle != null)
-                        TextSpan(
-                            text: ' $accentTitle',
-                            style: const TextStyle(color: Color(0xFF2E8F12))),
-                    ]),
-                    maxLines: 1,
-                    style: TextStyle(
-                        color: homeInk,
-                        fontSize: 24.sp,
-                        height: 1.1,
-                        letterSpacing: -.4.w,
-                        fontWeight: FontWeight.w900),
-                  ),
-                ),
-                SizedBox(height: 3.w),
-                Text(subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        color: const Color(0xFF7A6E5D),
-                        fontSize: 12.5.sp,
-                        height: 1.2,
-                        fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-          if (trailing != null) ...[
-            SizedBox(width: 4.w),
-            SizedBox(
-              width: trailingSize,
-              height: 46.w,
-              child: OverflowBox(
-                minWidth: trailingSize,
-                maxWidth: trailingSize,
-                minHeight: trailingSize,
-                maxHeight: trailingSize,
-                child: trailing,
-              ),
+          border: Border.all(color: const Color(0xFFFFDB87), width: 1.5),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x24956A23),
+              blurRadius: 7,
+              offset: Offset(0, 3),
             ),
           ],
-        ]),
-      ),
-    );
+        ),
+        child: Icon(icon, color: homeGreen, size: 23.sp),
+      );
+
+  Widget _buildTitles() => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text.rich(
+              TextSpan(children: [
+                TextSpan(text: title),
+                if (accentTitle != null)
+                  TextSpan(
+                    text: ' $accentTitle',
+                    style: const TextStyle(color: AppColors.homeGreenText),
+                  ),
+              ]),
+              maxLines: 1,
+              style: titleStyle(),
+            ),
+          ),
+          SizedBox(height: titleGap),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: subtitleStyle(),
+          ),
+        ],
+      );
+}
+
+/// Huy hiệu chuỗi ngày học giống góc phải màn Home; chạm để mở tab Tiến độ.
+class _StreakSlot extends StatelessWidget {
+  const _StreakSlot();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<HomeController>()) return const SizedBox.shrink();
+    final controller = Get.find<HomeController>();
+    return Obx(() {
+      final streak = controller.streak.value > 0
+          ? controller.streak.value
+          : (controller.stats['streak']?.toInt() ?? 0);
+      return HomeStreakBadge(
+        streak: streak,
+        onTap: () => controller.setIndex(3),
+      );
+    });
   }
 }

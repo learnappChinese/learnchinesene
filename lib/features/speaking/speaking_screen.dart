@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'widget/speaking_cards.dart';
 import 'package:get/get.dart';
 import '../../core/theme/game_visual_tokens.dart';
@@ -100,7 +101,7 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
     Widget content;
 
     if (controller.isLoading.value) {
-      content = const Center(child: CircularProgressIndicator());
+      content = _SpeakingSkeleton(isBottomSheet: controller.isBottomSheet);
     } else if (controller.errorMessage.value != null) {
       content = Center(
         child: Column(
@@ -298,4 +299,82 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
             ),
           ));
   }
+}
+
+/// Khung đang tải khớp màn luyện nói: banner, tiêu đề, thẻ câu mẫu, nút mic
+/// và thẻ gợi ý.
+class _SpeakingSkeleton extends StatelessWidget {
+  const _SpeakingSkeleton({required this.isBottomSheet});
+
+  final bool isBottomSheet;
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: ResponsiveHelper.contentMaxWidth(context),
+            ),
+            child: ListView(
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveHelper.horizontalPadding(context),
+                isBottomSheet ? 40 : 8,
+                ResponsiveHelper.horizontalPadding(context),
+                30,
+              ),
+              children: [
+                if (!isBottomSheet) ...[
+                  const SkeletonQuestBanner(),
+                  const SizedBox(height: 16),
+                ],
+                const Row(
+                  children: [
+                    ShimmerBox(width: 120, height: 15),
+                    Spacer(),
+                    ShimmerBox(width: 40, height: 13),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const SkeletonCard(
+                  radius: 28,
+                  padding: EdgeInsets.all(22),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          ShimmerBox.circle(size: 36),
+                          SizedBox(width: 8),
+                          ShimmerBox(width: 100, height: 12),
+                          Spacer(),
+                          ShimmerBox.circle(size: 40),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      ShimmerBox(height: 110, radius: 20),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 36),
+                const Center(child: ShimmerBox.circle(size: 108)),
+                const SizedBox(height: 30),
+                const SkeletonCard(
+                  radius: 20,
+                  padding: EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShimmerLine(widthFactor: .5, height: 14),
+                      SizedBox(height: 10),
+                      ShimmerLine(height: 11),
+                      SizedBox(height: 6),
+                      ShimmerLine(widthFactor: .7, height: 11),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
 }

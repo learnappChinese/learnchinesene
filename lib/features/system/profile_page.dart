@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/learning_scene_background.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'package:get/get.dart';
 import '../../core/theme/game_visual_tokens.dart';
 import '../../core/database/db_helper.dart';
@@ -72,7 +74,7 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         title: const Text('Hồ sơ & thành tích'),
       ),
-      body: _buildAchievements(context),
+      body: SafeBottomArea(child: _buildAchievements(context)),
     );
   }
 
@@ -81,16 +83,7 @@ class _ProfilePageState extends State<ProfilePage> {
       future: _userStatsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(color: GameVisualTokens.primaryGreen),
-                SizedBox(height: 16),
-                Text('Đang tải dữ liệu...'),
-              ],
-            ),
-          );
+          return const _ProfileSkeleton();
         }
 
         if (snapshot.hasError) {
@@ -124,4 +117,72 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
   }
+}
+
+/// Khung đang tải khớp hồ sơ: thẻ danh tính, hai ô chỉ số, danh hiệu và
+/// các chip năng lực.
+class _ProfileSkeleton extends StatelessWidget {
+  const _ProfileSkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: ListView(
+          physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+          padding: const EdgeInsets.all(20),
+          children: [
+            const SkeletonCard(
+              style: SkeletonCardStyle.cream,
+              radius: 24,
+              padding: EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  ShimmerBox.circle(size: 68),
+                  SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShimmerLine(widthFactor: .6, height: 18),
+                        SizedBox(height: 8),
+                        ShimmerLine(widthFactor: .4, height: 12),
+                        SizedBox(height: 10),
+                        SkeletonPill(width: 90, height: 22),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Row(
+              children: [
+                Expanded(child: SkeletonListTile(leadingSize: 36, radius: 16)),
+                SizedBox(width: 12),
+                Expanded(child: SkeletonListTile(leadingSize: 36, radius: 16)),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const ShimmerBox(width: 170, height: 12),
+            const SizedBox(height: 12),
+            for (var i = 0; i < 5; i++) ...[
+              const SkeletonListTile(leadingSize: 44, radius: 16),
+              const SizedBox(height: 10),
+            ],
+            const SizedBox(height: 14),
+            const ShimmerBox(width: 150, height: 12),
+            const SizedBox(height: 12),
+            const Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                SkeletonPill(width: 140, height: 34),
+                SkeletonPill(width: 130, height: 34),
+                SkeletonPill(width: 120, height: 34),
+                SkeletonPill(width: 110, height: 34),
+              ],
+            ),
+          ],
+        ),
+      );
 }

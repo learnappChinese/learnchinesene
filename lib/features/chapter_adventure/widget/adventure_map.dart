@@ -1,5 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+import '../../../core/learning/learning_reward_config.dart';
+import '../../../core/learning/model/learning_skill_taxonomy.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/widgets/adventure_node.dart';
 import '../model/chapter_adventure.dart';
@@ -72,7 +76,7 @@ class AdventureMap extends StatelessWidget {
                         item.state == AdventureNodeState.failed),
                 rewardPreview: mission.state == AdventureNodeState.locked
                     ? null
-                    : 'XP • ⭐',
+                    : _rewardLabel(mission),
                 progressLabel: _progressLabel(mission),
                 ctaLabel: _ctaLabel(mission.state),
                 onTap: () => onMissionTap(mission),
@@ -89,11 +93,13 @@ class AdventureMap extends StatelessWidget {
                   ? AdventureNodeState.available
                   : AdventureNodeState.locked,
               title: 'Boss Chương',
-              rewardPreview: bossUnlocked ? 'Rương • ⭐⭐⭐' : null,
+              rewardPreview: bossUnlocked
+                  ? 'Rương • +${LearningRewardConfig.bossBaseXp + LearningRewardConfig.bossFirstClearBonusXp} XP'
+                  : null,
               progressLabel: bossUnlocked
                   ? 'Sẵn sàng chiến đấu'
                   : 'Hoàn thành các nhiệm vụ',
-              ctaLabel: bossUnlocked ? 'CHIẾN ĐẤU' : 'XEM ĐIỀU KIỆN',
+              ctaLabel: bossUnlocked ? 'Chiến đấu' : 'Xem điều kiện',
               onTap: onBossTap,
             ),
           ),
@@ -119,6 +125,21 @@ class AdventureMap extends StatelessWidget {
     return 1 + ((count - 1) / 2).ceil();
   }
 
+  /// XP tối thiểu khi qua nhiệm vụ, theo đúng quy tắc chấm điểm: lần đầu
+  /// được XP gốc + thưởng lần đầu; chơi lại bị giới hạn ở mức replay.
+  /// Thưởng thêm (chính xác cao, combo, tuyệt đối) cộng sau khi chơi.
+  String _rewardLabel(ChapterMission mission) {
+    final activityType =
+        LearningSkillTaxonomy.activityTypeForGameCode(mission.gameCode);
+    final baseXp = LearningRewardConfig.baseXpFor(activityType);
+    final cleared = mission.state == AdventureNodeState.completed ||
+        mission.state == AdventureNodeState.perfect;
+    final xp = cleared
+        ? math.min(baseXp, LearningRewardConfig.replayXpCap)
+        : baseXp + LearningRewardConfig.firstClearBonusFor(activityType);
+    return '+$xp XP';
+  }
+
   String? _progressLabel(ChapterMission mission) {
     switch (mission.state) {
       case AdventureNodeState.inProgress:
@@ -142,17 +163,17 @@ class AdventureMap extends StatelessWidget {
   String? _ctaLabel(AdventureNodeState state) {
     switch (state) {
       case AdventureNodeState.available:
-        return 'BẮT ĐẦU';
+        return 'Bắt đầu';
       case AdventureNodeState.inProgress:
       case AdventureNodeState.paused:
-        return 'TIẾP TỤC';
+        return 'Tiếp tục';
       case AdventureNodeState.failed:
-        return 'THỬ LẠI';
+        return 'Thử lại';
       case AdventureNodeState.locked:
-        return 'XEM ĐIỀU KIỆN';
+        return 'Xem điều kiện';
       case AdventureNodeState.completed:
       case AdventureNodeState.perfect:
-        return 'CHƠI LẠI';
+        return 'Chơi lại';
     }
   }
 

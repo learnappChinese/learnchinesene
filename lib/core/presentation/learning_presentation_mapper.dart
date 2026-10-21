@@ -28,6 +28,18 @@ class LearningPresentationMapper {
 
   static String unitHeading(int number) => 'Bài ${_positive(number)}';
 
+  static final _sectionUnitPattern = RegExp(
+      r'^section\s*(\d+)\s*,?\s*unit\s*(\d+)$',
+      caseSensitive: false);
+
+  /// Đổi nhãn kỹ thuật "Section 1, Unit 2" thành "Phần 1 · Bài 2";
+  /// tiêu đề khác giữ nguyên.
+  static String sectionUnitLabel(String raw) {
+    final match = _sectionUnitPattern.firstMatch(raw.trim());
+    if (match == null) return raw;
+    return 'Phần ${match.group(1)} · Bài ${match.group(2)}';
+  }
+
   static String unitTitle(Object? raw, int number) {
     final value = _clean(raw);
     if (_isTechnical(value)) return 'Bài ${_positive(number)}';

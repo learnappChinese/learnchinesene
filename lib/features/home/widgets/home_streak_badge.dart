@@ -13,10 +13,11 @@ class HomeStreakBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(24.r);
+    final radius = BorderRadius.circular(22.r);
     return Container(
-      width: 112.w,
-      height: 50.w,
+      // Cao 44 bằng ô biểu tượng bên trái header.
+      width: 100.w,
+      height: 44.w,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
@@ -44,12 +45,12 @@ class HomeStreakBadge extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: 30.w,
+                  width: 24.w,
                   child: ExcludeSemantics(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text('🔥',
-                          style: TextStyle(fontSize: 29.sp, height: 1)),
+                          style: TextStyle(fontSize: 24.sp, height: 1)),
                     ),
                   ),
                 ),
@@ -58,9 +59,11 @@ class HomeStreakBadge extends StatelessWidget {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Column(
+                    // Số và chữ "ngày" cỡ khác nhau: dùng Row căn giữa dọc
+                    // thay vì TextSpan (TextSpan căn theo chân chữ).
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text('$streak',
                             style: TextStyle(
@@ -68,19 +71,17 @@ class HomeStreakBadge extends StatelessWidget {
                                 fontSize: 18.sp,
                                 height: 1,
                                 fontWeight: FontWeight.w900)),
-                        SizedBox(height: 2.w),
-                        Text('Ngày liên tiếp',
+                        SizedBox(width: 4.w),
+                        Text('ngày',
                             style: TextStyle(
                                 color: const Color(0xFFAF6039),
-                                fontSize: 10.sp,
-                                height: 1.1,
-                                fontWeight: FontWeight.w600)),
+                                fontSize: 12.5.sp,
+                                height: 1,
+                                fontWeight: FontWeight.w800)),
                       ],
                     ),
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded,
-                    color: const Color(0xFFE67A3C), size: 16.w),
               ],
             ),
           ),

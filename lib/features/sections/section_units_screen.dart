@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'package:get/get.dart';
 import '../../core/learning/data/learning_journey_repository.dart';
 import '../../core/learning/model/learning_journey_models.dart';
 import '../../core/learning/service/learning_progress_sync_service.dart';
 import '../../core/responsive/responsive_layout.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/game_visual_tokens.dart';
+import '../../core/theme/learning_theme.dart';
+import '../../core/widgets/adventure_node.dart';
+import '../../core/widgets/app_green_button.dart';
 import '../../core/widgets/learning_scaffold.dart';
 import '../../core/widgets/learning_scene_background.dart';
+import '../../core/widgets/learning_trail.dart';
+import '../../core/widgets/segmented_progress_node.dart';
 import '../../core/widgets/locked_mission_sheet.dart';
 import '../../core/widgets/adventure_quest_banner.dart';
 import '../../core/widgets/panda_companion.dart';
+import '../home/widgets/home_decorations.dart';
 import '../unit_overview/binding/unit_overview_binding.dart';
 import '../unit_overview/page/unit_overview_screen.dart';
 
 class SectionUnitsScreen extends StatefulWidget {
-  const SectionUnitsScreen({
-    super.key,
-    required this.section,
-  });
+  const SectionUnitsScreen({super.key, required this.section});
 
   final LearningSectionViewModel section;
 
@@ -39,22 +44,22 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
   void initState() {
     super.initState();
     if (Get.isRegistered<LearningProgressSyncService>()) {
-      _syncRegistration =
-          Get.find<LearningProgressSyncService>().registerRefresher(
-        owner: 'section-units:${widget.section.id}',
-        domains: const <LearningDomain>{
-          LearningDomain.journey,
-          LearningDomain.unitPath,
-          LearningDomain.identity,
-        },
-        refresh: (event) async {
-          if (event.type == LearningDomainEventType.identityChanged &&
-              mounted) {
-            setState(() => _units = const []);
-          }
-          await _loadUnits(rethrowFailure: true);
-        },
-      );
+      _syncRegistration = Get.find<LearningProgressSyncService>()
+          .registerRefresher(
+            owner: 'section-units:${widget.section.id}',
+            domains: const <LearningDomain>{
+              LearningDomain.journey,
+              LearningDomain.unitPath,
+              LearningDomain.identity,
+            },
+            refresh: (event) async {
+              if (event.type == LearningDomainEventType.identityChanged &&
+                  mounted) {
+                setState(() => _units = const []);
+              }
+              await _loadUnits(rethrowFailure: true);
+            },
+          );
     }
     _loadUnits();
   }
@@ -97,7 +102,7 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
   @override
   Widget build(BuildContext context) {
     return LearningScaffold(
-      title: '${widget.section.title}: ${widget.section.subtitle}',
+      title: 'Phần ${widget.section.sectionNumber}',
       body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: _buildBody(context),
@@ -107,9 +112,7 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
 
   Widget _buildBody(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: GameVisualTokens.jade),
-      );
+      return const _SectionUnitsSkeleton();
     }
 
     if (_errorMessage != null) {
@@ -127,11 +130,10 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
                 style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 16),
-              FilledButton(
+              AppGreenButton(
+                label: 'Thử lại',
+                icon: Icons.refresh_rounded,
                 onPressed: _loadUnits,
-                style: FilledButton.styleFrom(
-                    backgroundColor: GameVisualTokens.jade),
-                child: const Text('Thử lại'),
               ),
             ],
           ),
@@ -140,114 +142,116 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
     }
 
     if (_units.isEmpty) {
-      return const Center(
-        child: Text('Chưa có bài học nào trong phần này.'),
-      );
+      return const Center(child: Text('Chưa có bài học nào trong phần này.'));
     }
 
     final units = _units.toList()
       ..sort((a, b) => a.unitNumber.compareTo(b.unitNumber));
     final completed = units.where((unit) => unit.isCompleted).length;
+    final target = units.firstWhereOrNull(
+      (unit) => unit.isUnlocked && !unit.isCompleted,
+    );
 
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: ResponsiveHelper.contentMaxWidth(context),
         ),
-        child: ListView.separated(
+        child: ListView(
           padding: EdgeInsets.fromLTRB(
             ResponsiveHelper.horizontalPadding(context),
-            20,
+            16,
             ResponsiveHelper.horizontalPadding(context),
             40,
           ),
-          itemCount: units.length + 1,
-          separatorBuilder: (_, __) => const SizedBox(height: 14),
-          itemBuilder: (context, idx) {
-            if (idx == 0) {
-              return AdventureQuestBanner(
-                eyebrow: widget.section.title,
-                title: widget.section.subtitle,
-                description:
-                    'Đi lần lượt qua từng Unit. Unit đang học luôn ở đầu đường và Boss bảo vệ lối sang phần mới.',
-                progress: units.isEmpty ? 0 : completed / units.length,
-                progressLabel: '$completed/${units.length} Unit',
-                statusLabel: 'Phần ${widget.section.sectionNumber}',
-                mood: PandaMood.happy,
-                compact: true,
-              );
-            }
-            final unit = units[idx - 1];
-            return _UnitPathCard(
-              index: idx - 1,
-              isLast: idx == units.length,
-              child: _UnitCard(
-                unit: unit,
-                onTap: () {
-                  if (!unit.isUnlocked) {
-                    showLockedMissionSheet(
-                      context,
-                      title: 'Bài học chưa mở',
-                      message: unit.lockReason ??
-                          'Hoàn thành bài học trước để mở khóa bài này.',
-                    );
-                    return;
-                  }
-                  Get.to(
-                    () => const UnitOverviewScreen(),
-                    binding: UnitOverviewBinding(
-                      unitId: unit.id,
-                      unitTitle: unit.title,
-                      sectionNumber: unit.sectionNumber,
-                      unitNumber: unit.unitNumber,
+          children: [
+            AdventureQuestBanner(
+              eyebrow: 'Phần ${widget.section.sectionNumber}',
+              title: widget.section.subtitle,
+              description:
+                  'Hoàn thành từng bài theo thứ tự để mở khóa bài tiếp theo.',
+              progress: completed / units.length,
+              progressLabel: '$completed/${units.length} bài',
+              statusLabel: completed == units.length
+                  ? 'Đã hoàn thành'
+                  : completed > 0 || target?.inProgress == true
+                  ? 'Đang phiêu lưu'
+                  : 'Sẵn sàng khởi hành',
+              mood: PandaMood.happy,
+              compact: true,
+            ),
+            const SizedBox(height: 22),
+            const Row(
+              children: [
+                HomePandaFace(size: 26),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Lộ trình bài học',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.homeInk,
                     ),
-                  );
-                },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            for (final (i, unit) in units.indexed)
+              LearningTrailEntry(
+                isFirst: i == 0,
+                isLast: i == units.length - 1,
+                lineColor: unit.isCompleted
+                    ? GameVisualTokens.primaryGreen
+                    : const Color(0xFFCBD5E1),
+                node: SegmentedProgressNode(
+                  totalSegments: unit.missionCount,
+                  completedSegments: unit.completedMissionCount,
+                  state: _nodeState(unit),
+                  icon: unit.isCompleted
+                      ? Icons.emoji_events_rounded
+                      : Icons.menu_book_rounded,
+                  isActive: unit.id == target?.id,
+                  size: 56,
+                  ringWidth: 5,
+                ),
+                child: _UnitCard(
+                  unit: unit,
+                  isTarget: unit.id == target?.id,
+                  onTap: () => _openUnit(context, unit),
+                ),
               ),
-            );
-          },
+          ],
         ),
       ),
     );
   }
-}
 
-class _UnitPathCard extends StatelessWidget {
-  const _UnitPathCard({
-    required this.index,
-    required this.isLast,
-    required this.child,
-  });
+  AdventureNodeState _nodeState(LearningUnitViewModel unit) {
+    if (!unit.isUnlocked) return AdventureNodeState.locked;
+    if (unit.isCompleted) return AdventureNodeState.completed;
+    if (unit.inProgress) return AdventureNodeState.inProgress;
+    return AdventureNodeState.available;
+  }
 
-  final int index;
-  final bool isLast;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final left = index.isEven ? 0.0 : 24.0;
-    final right = index.isEven ? 24.0 : 0.0;
-    return Padding(
-      padding: EdgeInsets.only(left: left, right: right),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          if (!isLast)
-            Positioned(
-              left: index.isEven ? 28 : null,
-              right: index.isEven ? null : 28,
-              top: 114,
-              bottom: -24,
-              child: Container(
-                width: 4,
-                decoration: BoxDecoration(
-                  color: GameVisualTokens.imperialGold.withValues(alpha: .6),
-                  borderRadius: BorderRadius.circular(99),
-                ),
-              ),
-            ),
-          child,
-        ],
+  void _openUnit(BuildContext context, LearningUnitViewModel unit) {
+    if (!unit.isUnlocked) {
+      showLockedMissionSheet(
+        context,
+        title: 'Bài học chưa mở',
+        message:
+            unit.lockReason ?? 'Hoàn thành bài học trước để mở khóa bài này.',
+      );
+      return;
+    }
+    Get.to(
+      () => const UnitOverviewScreen(),
+      binding: UnitOverviewBinding(
+        unitId: unit.id,
+        unitTitle: unit.title,
+        sectionNumber: unit.sectionNumber,
+        unitNumber: unit.unitNumber,
       ),
     );
   }
@@ -256,199 +260,169 @@ class _UnitPathCard extends StatelessWidget {
 class _UnitCard extends StatelessWidget {
   const _UnitCard({
     required this.unit,
+    required this.isTarget,
     required this.onTap,
   });
 
   final LearningUnitViewModel unit;
+  final bool isTarget;
   final VoidCallback onTap;
+
+  static final _numberPrefix = RegExp(r'^Bài\s*\d+\s*[:.\-–]\s*');
 
   @override
   Widget build(BuildContext context) {
     final isLocked = !unit.isUnlocked;
     final isCompleted = unit.isCompleted;
-    final inProgress = unit.inProgress;
+    final title = unit.title.replaceFirst(_numberPrefix, '');
+    final mastery = (unit.mastery * 100).round();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isLocked ? const Color(0xFFF8FAFC) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isCompleted
-              ? GameVisualTokens.jade.withValues(alpha: 0.6)
-              : inProgress
-                  ? GameVisualTokens.imperialGold
-                  : const Color(0xFFE2E8F0),
-          width: inProgress ? 1.8 : 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isLocked ? 0.02 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return LearningTrailCard(
+      onTap: onTap,
+      highlight: isTarget,
+      completed: isCompleted,
+      locked: isLocked,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              LearningTrailTag(
+                label: 'BÀI ${unit.unitNumber}',
+                background: isLocked
+                    ? const Color(0xFFE2E8F0)
+                    : isTarget
+                    ? GameVisualTokens.primaryGreen
+                    : GameVisualTokens.primaryGreen.withValues(alpha: .12),
+                foreground: isLocked
+                    ? const Color(0xFF64748B)
+                    : isTarget
+                    ? Colors.white
+                    : GameVisualTokens.primaryGreenDark,
+              ),
+              if (isTarget) ...[
+                const SizedBox(width: 6),
+                const LearningTrailTag(
+                  label: 'ĐANG HỌC',
+                  background: GameVisualTokens.primaryGreenSoft,
+                  foreground: GameVisualTokens.primaryGreenDark,
+                ),
+              ],
+              const Spacer(),
+              if (isLocked)
+                const Icon(
+                  Icons.lock_rounded,
+                  size: 16,
+                  color: Color(0xFF94A3B8),
+                )
+              else if (isCompleted)
+                const Icon(
+                  Icons.check_circle_rounded,
+                  size: 20,
+                  color: GameVisualTokens.primaryGreen,
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 15,
+              height: 1.25,
+              color: isLocked ? const Color(0xFF64748B) : AppColors.homeTitle,
+            ),
+          ),
+          if (unit.subtitle.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(
+              unit.subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.35,
+                color: LearningColors.muted,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    LearningTrailMeta(
+                      icon: Icons.flag_rounded,
+                      text:
+                          '${unit.completedMissionCount}/${unit.missionCount} nhiệm vụ',
+                    ),
+                    if (unit.estimatedMinutes > 0)
+                      LearningTrailMeta(
+                        icon: Icons.schedule_rounded,
+                        text: '~${unit.estimatedMinutes} phút',
+                      ),
+                    if (!isLocked && mastery > 0)
+                      LearningTrailMeta(
+                        icon: Icons.psychology_rounded,
+                        text: 'Thành thạo $mastery%',
+                      ),
+                  ],
+                ),
+              ),
+              if (isTarget)
+                LearningTrailStartPill(
+                  label: unit.completedMissionCount == 0
+                      ? 'Bắt đầu'
+                      : 'Tiếp tục',
+                ),
+            ],
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    );
+  }
+}
+
+/// Khung đang tải khớp bố cục màn: banner, tiêu đề lộ trình, các thẻ bài.
+class _SectionUnitsSkeleton extends StatelessWidget {
+  const _SectionUnitsSkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: ResponsiveHelper.contentMaxWidth(context),
+            ),
+            child: ListView(
+              physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveHelper.horizontalPadding(context),
+                16,
+                ResponsiveHelper.horizontalPadding(context),
+                40,
+              ),
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: isLocked
-                            ? Colors.grey.shade200
-                            : isCompleted
-                                ? GameVisualTokens.jade.withValues(alpha: 0.15)
-                                : GameVisualTokens.imperialGold
-                                    .withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        isLocked
-                            ? '🔒'
-                            : isCompleted
-                                ? '⭐'
-                                : '📜',
-                        style: const TextStyle(fontSize: 22),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            unit.title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: isLocked
-                                  ? Colors.grey.shade600
-                                  : GameVisualTokens.templeWood,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            unit.subtitle,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                const SkeletonQuestBanner(),
+                const SizedBox(height: 22),
+                const SkeletonSectionTitle(width: 150),
                 const SizedBox(height: 14),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(
-                            '${unit.completedMissionCount} / ${unit.missionCount} nhiệm vụ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: isLocked
-                                  ? Colors.grey
-                                  : GameVisualTokens.templeWood,
-                            ),
-                          ),
-                          if (!isLocked)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: GameVisualTokens.imperialGold
-                                    .withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                'Mastery ${(unit.mastery * 100).round()}%',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w900,
-                                  color: GameVisualTokens.gold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _buildActionButton(),
-                  ],
-                ),
+                for (var i = 0; i < 10; i++)
+                  SkeletonTrailEntry(
+                    isFirst: i == 0,
+                    isLast: i == 9,
+                    child: SkeletonTrailCard(showAction: i == 0),
+                  ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton() {
-    if (!unit.isUnlocked) {
-      return const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.lock_rounded, size: 16, color: Colors.grey),
-          SizedBox(width: 4),
-          Text('Khóa', style: TextStyle(fontSize: 12, color: Colors.grey)),
-        ],
       );
-    }
-
-    if (unit.isCompleted) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: GameVisualTokens.jade.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Text(
-          'ĐÃ HOÀN THÀNH',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w900,
-            color: GameVisualTokens.jadeDark,
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: GameVisualTokens.jade,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        unit.completedMissionCount == 0 ? 'BẮT ĐẦU' : 'TIẾP TỤC',
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
-          color: Colors.white,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
 }

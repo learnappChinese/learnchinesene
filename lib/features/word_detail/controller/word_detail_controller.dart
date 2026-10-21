@@ -21,8 +21,8 @@ class WordDetailController extends GetxController {
 
   LearningProgressSyncService? get _syncService =>
       Get.isRegistered<LearningProgressSyncService>()
-          ? Get.find<LearningProgressSyncService>()
-          : null;
+      ? Get.find<LearningProgressSyncService>()
+      : null;
 
   @override
   void onInit() {
@@ -49,8 +49,9 @@ class WordDetailController extends GetxController {
       isLoadingExamples.value = false;
     }
 
-    final charId =
-        await DbHelper.instance.getCharacterIdByCharString(word!.chinese);
+    final charId = await DbHelper.instance.getCharacterIdByCharString(
+      word!.chinese,
+    );
     characterId.value = charId;
   }
 

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/responsive/responsive_layout.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'widget/quiz_content.dart';
 import 'package:get/get.dart';
 import '../../core/widgets/empty_state_widget.dart';
@@ -51,7 +53,8 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _buildQuizContent(BuildContext context) {
     return Obx(() {
       if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return SkeletonQuiz(
+            horizontalPadding: ResponsiveHelper.horizontalPadding(context));
       }
       if (controller.questions.isEmpty) {
         return const EmptyStateWidget(
@@ -61,7 +64,7 @@ class _QuizScreenState extends State<QuizScreen> {
         );
       }
       if (controller.isCompleting.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const SkeletonMissionIntro();
       }
       if (controller.complete.value) {
         return QuizResultView(

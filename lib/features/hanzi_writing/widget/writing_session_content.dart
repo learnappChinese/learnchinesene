@@ -22,9 +22,9 @@ class WritingRoundProgress extends StatelessWidget {
         List<BoxShadow>? shadow;
 
         if (isCompleted) {
-          color = AppColors.orange;
+          color = AppColors.homeGreen;
         } else if (isCurrent) {
-          color = AppColors.orange;
+          color = AppColors.homeGreen;
           size = 16.0;
           border = Border.all(color: Colors.white, width: 2.0);
           shadow = const [
@@ -35,7 +35,7 @@ class WritingRoundProgress extends StatelessWidget {
             ),
           ];
         } else {
-          color = Colors.grey[200]!;
+          color = const Color(0xFFE8E1D6);
         }
 
         return Container(

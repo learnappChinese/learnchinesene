@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_shimmer.dart';
 import 'package:get/get.dart';
 
 import '../../../core/theme/game_visual_tokens.dart';
+import '../../../core/theme/learning_theme.dart';
+import '../../../core/widgets/app_back_button.dart';
 import '../../../core/widgets/learning_scene_background.dart';
 import '../controller/flashcards_study_controller.dart';
 import '../models/flashcard_models.dart';
@@ -97,31 +100,42 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: LearningColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: GameVisualTokens.ink),
-          onPressed: () => Navigator.pop(context),
+        systemOverlayStyle: LearningSystemUi.overlay,
+        backgroundColor: LearningColors.background,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leadingWidth: 64,
+        leading: Center(
+          child: AppHudIconButton(
+            icon: Icons.close_rounded,
+            tooltip: 'Đóng',
+            size: 40,
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
         title: Obx(() {
           final current = controller.currentItem.value;
-          if (current == null) return const Text('Ôn tập Flashcard');
+          if (current == null) {
+            return const Text('Ôn tập Flashcard',
+                style: LearningTypography.screenTitle);
+          }
           return Text(
             'Thẻ ${controller.reviewedCount.value + 1} / ${controller.reviewedCount.value + controller.remainingCount.value}',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              color: GameVisualTokens.ink,
-            ),
+            style: LearningTypography.screenTitle,
           );
         }),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.volume_up_rounded, color: GameVisualTokens.primaryGreenDark),
-            tooltip: 'Phát âm từ vựng',
-            onPressed: controller.playAudio,
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: AppHudIconButton(
+              icon: Icons.volume_up_rounded,
+              tooltip: 'Phát âm từ vựng',
+              size: 40,
+              onPressed: controller.playAudio,
+            ),
           ),
         ],
       ),
@@ -130,11 +144,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen>
         child: SafeArea(
           child: Obx(() {
             if (controller.isLoading.value) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: GameVisualTokens.primaryGreen,
-                ),
-              );
+              return const _FlashcardStudySkeleton();
             }
 
             if (controller.isSessionFinished.value) {
@@ -171,8 +181,8 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen>
                     borderRadius: BorderRadius.circular(8),
                     child: LinearProgressIndicator(
                       value: progressRatio,
-                      minHeight: 6,
-                      backgroundColor: const Color(0xFFE2E8F0),
+                      minHeight: 8,
+                      backgroundColor: const Color(0xFFEDE5D6),
                       valueColor: const AlwaysStoppedAnimation<Color>(
                         GameVisualTokens.primaryGreen,
                       ),
@@ -218,4 +228,46 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen>
       ),
     );
   }
+}
+
+/// Khung đang tải khớp bố cục màn: thanh tiến độ và mặt trước thẻ flashcard.
+class _FlashcardStudySkeleton extends StatelessWidget {
+  const _FlashcardStudySkeleton();
+
+  @override
+  Widget build(BuildContext context) => const AppShimmer(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: ShimmerBox(height: 8, radius: 8),
+            ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: SkeletonCard(
+                  style: SkeletonCardStyle.cream,
+                  radius: 28,
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Column(
+                      children: [
+                        SkeletonPill(width: 170, height: 28),
+                        Spacer(),
+                        ShimmerBox(width: 120, height: 96, radius: 20),
+                        SizedBox(height: 18),
+                        ShimmerBox(width: 230, height: 14),
+                        Spacer(),
+                        SkeletonPill(width: 230, height: 38),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 10),
+          ],
+        ),
+      );
 }

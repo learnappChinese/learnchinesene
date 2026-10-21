@@ -18,8 +18,8 @@ class ChineseMasterApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'Pandarin: Learn Chinese & HSK',
         theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.system,
+        // Giao diện chuẩn theo màn Home, chỉ có chế độ sáng.
+        themeMode: ThemeMode.light,
         home: const SplashScreen(),
       ),
     );

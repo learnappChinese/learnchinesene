@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'package:get/get.dart';
 
 import '../../core/responsive/responsive_layout.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/game_visual_tokens.dart';
+import '../../core/widgets/app_back_button.dart';
+import '../../core/widgets/app_green_button.dart';
 import '../../core/widgets/learning_scene_background.dart';
+import '../home/widgets/home_decorations.dart';
 import '../../core/widgets/panda_companion.dart';
 import '../../core/widgets/learning_scaffold.dart';
 import '../../core/widgets/adventure_quest_banner.dart';
@@ -49,11 +54,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return LearningScaffold(
       title: 'Trung tâm Ôn luyện',
       actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh_rounded,
-              color: GameVisualTokens.primaryGreen),
-          tooltip: 'Làm mới',
-          onPressed: controller.loadInitialData,
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: AppHudIconButton(
+            icon: Icons.refresh_rounded,
+            tooltip: 'Làm mới',
+            size: 40,
+            onPressed: controller.loadInitialData,
+          ),
         ),
       ],
       body: LearningSceneBackground(
@@ -70,10 +78,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   child: Obx(() {
                     if (controller.isLoading.value &&
                         controller.summary.value == null) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                            color: GameVisualTokens.primaryGreen),
-                      );
+                      return const _ReviewSkeleton();
                     }
 
                     if (controller.errorMessage.value.isNotEmpty &&
@@ -94,19 +99,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                 controller.errorMessage.value,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: GameVisualTokens.ink,
                                   fontSize: 14,
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      GameVisualTokens.primaryGreen,
-                                  foregroundColor: Colors.white,
-                                ),
-                                icon: const Icon(Icons.refresh_rounded),
-                                label: const Text('Thử lại'),
+                              AppGreenButton(
+                                label: 'Thử lại',
+                                icon: Icons.refresh_rounded,
                                 onPressed: controller.loadInitialData,
                               ),
                             ],
@@ -133,7 +133,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                 constraints.maxWidth < 360 ? 12 : 16,
                                 8,
                                 constraints.maxWidth < 360 ? 12 : 16,
-                                100,
+                                16,
                               ),
                               children: [
                                 _ReviewHeroCard(
@@ -148,13 +148,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 if (controller.isLoading.value)
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 40),
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                          color: GameVisualTokens.primaryGreen),
-                                    ),
-                                  )
+                                  const AppShimmer(child: _ReviewItemsSkeleton(count: 6))
                                 else if (items.isEmpty)
                                   _EmptyCategoryCard(
                                     category: selectedCat,
@@ -163,38 +157,46 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                       if (summary.wordsDue > 0 &&
                                           selectedCat != ReviewCategory.words) {
                                         controller.selectCategory(
-                                            ReviewCategory.words);
+                                          ReviewCategory.words,
+                                        );
                                       } else if (summary.listeningDue > 0 &&
                                           selectedCat !=
                                               ReviewCategory.listening) {
                                         controller.selectCategory(
-                                            ReviewCategory.listening);
+                                          ReviewCategory.listening,
+                                        );
                                       } else if (summary.speakingDue > 0 &&
                                           selectedCat !=
                                               ReviewCategory.speaking) {
                                         controller.selectCategory(
-                                            ReviewCategory.speaking);
+                                          ReviewCategory.speaking,
+                                        );
                                       } else {
                                         controller.selectCategory(
-                                            ReviewCategory.hanzi);
+                                          ReviewCategory.hanzi,
+                                        );
                                       }
                                     },
                                   )
                                 else ...[
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 4, vertical: 6),
+                                    padding: const EdgeInsets.fromLTRB(
+                                      2,
+                                      6,
+                                      2,
+                                      12,
+                                    ),
                                     child: Row(
                                       children: [
+                                        const HomePandaFace(size: 26),
+                                        const SizedBox(width: 10),
                                         Expanded(
                                           child: Text(
-                                            'DANH SÁCH CẦN ÔN (${items.length})',
+                                            'Cần ôn (${items.length})',
                                             style: const TextStyle(
-                                              color:
-                                                  GameVisualTokens.imperialGold,
-                                              fontWeight: FontWeight.w800,
-                                              fontSize: 12,
-                                              letterSpacing: 0.8,
+                                              color: AppColors.homeInk,
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 18,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -202,10 +204,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                         ),
                                         const SizedBox(width: 8),
                                         const Text(
-                                          'Ưu tiên mục yếu',
+                                          'Mục yếu xếp trước',
                                           style: TextStyle(
-                                            color: Colors.white54,
-                                            fontSize: 11,
+                                            color: GameVisualTokens.muted,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ],
@@ -256,7 +259,7 @@ class _ReviewHeroCard extends StatelessWidget {
       eyebrow: totalDue > 0 ? 'Ôn tập hôm nay' : 'Đã hoàn tất',
       title: totalDue > 0 ? '$totalDue mục đang chờ' : 'Trí nhớ đã sẵn sàng',
       description:
-          'Hệ thống ưu tiên nội dung bạn hay sai hoặc đã lâu chưa luyện, không dùng dữ liệu mẫu.',
+          'Ôn đúng lúc sắp quên để nhớ lâu hơn. Mục bạn hay sai sẽ được ưu tiên trước.',
       statusLabel: totalDue > 0 ? 'SRS ưu tiên' : 'Không còn mục đến hạn',
       mood: totalDue > 0 ? PandaMood.encourage : PandaMood.celebrate,
       accent: totalDue > 0
@@ -285,13 +288,13 @@ class _CategorySelectorBar extends StatelessWidget {
         ReviewCategory.words,
         'Từ vựng',
         summary.wordsDue,
-        Icons.menu_book_rounded
+        Icons.menu_book_rounded,
       ),
       (
         ReviewCategory.listening,
         'Nghe',
         summary.listeningDue,
-        Icons.headphones_rounded
+        Icons.headphones_rounded,
       ),
       (ReviewCategory.speaking, 'Nói', summary.speakingDue, Icons.mic_rounded),
       (ReviewCategory.hanzi, 'Hán tự', summary.hanziDue, Icons.draw_rounded),
@@ -305,36 +308,31 @@ class _CategorySelectorBar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 3),
             child: InkWell(
               onTap: () => onSelect(tab.$1),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 4,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? GameVisualTokens.primaryGreenSoft
                       : Colors.white,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isSelected
                         ? GameVisualTokens.primaryGreen
-                        : const Color(0xFFF1E6CF),
-                    width: isSelected ? 2 : 1.2,
+                        : _kTileLine,
+                    width: 1.5,
                   ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x14635D3B),
-                      blurRadius: 8,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       tab.$4,
-                      size: 18,
+                      size: 22,
                       color: isSelected
                           ? GameVisualTokens.primaryGreenDark
                           : const Color(0xFF8C8577),
@@ -348,33 +346,38 @@ class _CategorySelectorBar extends StatelessWidget {
                           color: isSelected
                               ? GameVisualTokens.primaryGreenDark
                               : const Color(0xFF5D5C54),
-                          fontWeight:
-                              isSelected ? FontWeight.w800 : FontWeight.w600,
-                          fontSize: 11,
+                          fontWeight: isSelected
+                              ? FontWeight.w900
+                              : FontWeight.w700,
+                          fontSize: 12,
                         ),
                         maxLines: 1,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 5),
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Container(
+                        constraints: const BoxConstraints(minWidth: 22),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
+                          horizontal: 7,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: tab.$3 > 0
                               ? GameVisualTokens.crimson
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
+                              : const Color(0xFFF3EEE4),
+                          borderRadius: BorderRadius.circular(99),
                         ),
                         child: Text(
                           '${tab.$3}',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             color: tab.$3 > 0
                                 ? Colors.white
                                 : const Color(0xFFB8B0A0),
-                            fontWeight: FontWeight.w800,
-                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 11,
                           ),
                         ),
                       ),
@@ -390,149 +393,190 @@ class _CategorySelectorBar extends StatelessWidget {
   }
 }
 
+/// Viền kem của các ô và thẻ trong màn ôn tập.
+const _kTileLine = Color(0xFFE8E1D6);
+
 class _ReviewItemCard extends StatelessWidget {
   const _ReviewItemCard({super.key, required this.item, required this.onTap});
 
   final ReviewItem item;
   final VoidCallback onTap;
 
+  IconData get _categoryIcon {
+    switch (item.category) {
+      case ReviewCategory.words:
+        return Icons.menu_book_rounded;
+      case ReviewCategory.listening:
+        return Icons.headphones_rounded;
+      case ReviewCategory.speaking:
+        return Icons.mic_rounded;
+      case ReviewCategory.hanzi:
+        return Icons.draw_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isHanzi = item.category == ReviewCategory.hanzi;
+    // Từ ngắn hiện thẳng trong ô bên trái; câu dài thì ô hiện icon kỹ năng
+    // và câu nằm ở cột nội dung, tránh lặp chữ hai lần.
+    final showTitleInTile = item.title.characters.length <= 3;
+    final weak = item.isWeak && item.wrongCount > 0;
+    final line = weak
+        ? GameVisualTokens.crimson.withValues(alpha: .35)
+        : _kTileLine;
+    final radius = BorderRadius.circular(18);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: item.isWeak
-              ? GameVisualTokens.crimson.withValues(alpha: 0.35)
-              : const Color(0xFFF1E6CF),
-          width: 1.2,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: radius,
+          border: Border.all(color: line, width: 1.5),
+          boxShadow: const [BoxShadow(color: Color(0x14635D3B), blurRadius: 10, offset: Offset(0, 4))],
         ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14635D3B),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                // Hanzi / Leading badge
-                Container(
-                  width: isHanzi ? 52 : 46,
-                  height: isHanzi ? 52 : 46,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF4DE),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFF5C979),
-                      width: 1.2,
+        child: Material(
+          type: MaterialType.transparency,
+          shape: RoundedRectangleBorder(borderRadius: radius),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    padding: const EdgeInsets.all(6),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFFFFFDF6), Color(0xFFFFF4DE)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFF5C979),
+                        width: 1.5,
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    item.title.length > 2 && !isHanzi
-                        ? item.title.substring(0, 2)
-                        : item.title,
-                    style: TextStyle(
-                      color: const Color(0xFF57300A),
-                      fontWeight: FontWeight.w900,
-                      fontSize: isHanzi ? 26 : 18,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-
-                // Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
+                    child: showTitleInTile
+                        ? FittedBox(
                             child: Text(
                               item.title,
                               style: const TextStyle(
-                                color: Color(0xFF342E10),
+                                color: GameVisualTokens.ink,
                                 fontWeight: FontWeight.w900,
-                                fontSize: 16,
+                                fontSize: 26,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            ),
+                          )
+                        : Icon(
+                            _categoryIcon,
+                            color: AppColors.amberDark,
+                            size: 26,
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (!showTitleInTile) ...[
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                              color: AppColors.homeTitle,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                        ],
+                        if (item.subtitle.isNotEmpty)
+                          Text(
+                            item.subtitle,
+                            style: TextStyle(
+                              color: showTitleInTile
+                                  ? GameVisualTokens.crimsonDark
+                                  : GameVisualTokens.muted,
+                              fontWeight: FontWeight.w800,
+                              fontSize: showTitleInTile ? 17 : 12,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        if (item.translation.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            item.translation,
+                            style: const TextStyle(
+                              color: GameVisualTokens.primaryGreenDark,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                        if (weak) ...[
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: GameVisualTokens.crimson.withValues(
+                                alpha: .1,
+                              ),
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 12,
+                                  color: GameVisualTokens.crimson,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '${item.wrongCount} lần sai',
+                                  style: const TextStyle(
+                                    color: GameVisualTokens.crimson,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          if (item.isWeak && item.wrongCount > 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: GameVisualTokens.crimson
-                                    .withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.warning_amber_rounded,
-                                      size: 12,
-                                      color: GameVisualTokens.crimson),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    '${item.wrongCount} lần sai',
-                                    style: const TextStyle(
-                                      color: GameVisualTokens.crimson,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                         ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        item.subtitle,
-                        style: const TextStyle(
-                          color: GameVisualTokens.primaryGreenDark,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        item.translation,
-                        style: const TextStyle(
-                          color: Color(0xFF5D5C54),
-                          fontSize: 12,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: GameVisualTokens.primaryGreen,
-                  size: 14,
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _kTileLine, width: 1.5),
+                    ),
+                    child: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.homeGreen,
+                      size: 24,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -566,13 +610,10 @@ class _EmptyCategoryCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const PandaCompanion(
-            mood: PandaMood.celebrate,
-            size: 72,
-          ),
+          const PandaCompanion(mood: PandaMood.celebrate, size: 72),
           const SizedBox(height: 14),
           const Text(
-            'Thần Công Hoàn Tất!',
+            'Thần công hoàn tất!',
             style: TextStyle(
               color: Color(0xFF342E10),
               fontWeight: FontWeight.w900,
@@ -590,22 +631,12 @@ class _EmptyCategoryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          OutlinedButton.icon(
+          AppGreenButton.light(
+            label: 'Xem kỹ năng khác',
+            icon: Icons.explore_rounded,
+            height: 44,
+            fontSize: 14,
             onPressed: onSwitch,
-            icon: const Icon(Icons.explore_rounded,
-                color: GameVisualTokens.primaryGreenDark, size: 16),
-            label: const Text(
-              'Xem Kỹ Năng Khác',
-              style: TextStyle(
-                  color: GameVisualTokens.primaryGreenDark,
-                  fontWeight: FontWeight.w800),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(
-                  color: GameVisualTokens.primaryGreen, width: 1.5),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
           ),
         ],
       ),
@@ -627,13 +658,13 @@ class _ReviewBottomAction extends StatelessWidget {
   String get _buttonLabel {
     switch (category) {
       case ReviewCategory.words:
-        return 'Bắt Đầu Ôn Từ Vựng';
+        return 'Bắt đầu ôn từ vựng';
       case ReviewCategory.listening:
-        return 'Bắt Đầu Luyện Nghe';
+        return 'Bắt đầu luyện nghe';
       case ReviewCategory.speaking:
-        return 'Bắt Đầu Luyện Nói';
+        return 'Bắt đầu luyện nói';
       case ReviewCategory.hanzi:
-        return 'Bắt Đầu Luyện Chữ Hán';
+        return 'Bắt đầu luyện chữ Hán';
     }
   }
 
@@ -652,48 +683,111 @@ class _ReviewBottomAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFAF0),
-        border: const Border(
-          top: BorderSide(color: Color(0xFFF1E6CF), width: 1),
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14635D3B),
-            blurRadius: 12,
-            offset: Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SizedBox(
-        width: double.infinity,
+    // Không có nền riêng: nút nổi thẳng trên phong cảnh để nền liền mạch
+    // tới tận mép dưới màn hình.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: AppGreenButton(
+        label: _buttonLabel,
+        icon: _buttonIcon,
         height: 52,
-        child: ElevatedButton.icon(
-          onPressed: hasItems ? onPressed : null,
-          icon: Icon(_buttonIcon,
-              color: hasItems ? Colors.white : const Color(0xFF8C8577),
-              size: 20),
-          label: Text(
-            _buttonLabel,
-            style: TextStyle(
-              color: hasItems ? Colors.white : const Color(0xFF8C8577),
-              fontWeight: FontWeight.w900,
-              fontSize: 15,
-              letterSpacing: 0.5,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: GameVisualTokens.primaryGreen,
-            disabledBackgroundColor: const Color(0xFFEFE7DA),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            elevation: 4,
-          ),
-        ),
+        fontSize: 16,
+        expand: true,
+        onPressed: hasItems ? onPressed : null,
       ),
     );
   }
+}
+
+/// Khung đang tải khớp bố cục màn: hero, 4 tab kỹ năng, danh sách cần ôn và
+/// nút bắt đầu ở đáy.
+class _ReviewSkeleton extends StatelessWidget {
+  const _ReviewSkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                children: [
+                  const SkeletonQuestBanner(showProgress: false),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      for (var i = 0; i < 4; i++)
+                        const Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 3),
+                            child: SkeletonCard(
+                              radius: 16,
+                              padding: EdgeInsets.symmetric(vertical: 10),
+                              child: Column(
+                                children: [
+                                  ShimmerBox.circle(size: 22),
+                                  SizedBox(height: 6),
+                                  ShimmerBox(width: 44, height: 12),
+                                  SizedBox(height: 6),
+                                  SkeletonPill(width: 22, height: 16),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const SkeletonSectionTitle(width: 100, showTrailing: true),
+                  const SizedBox(height: 12),
+                  const _ReviewItemsSkeleton(),
+                ],
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: ShimmerBox(height: 56, radius: 20),
+            ),
+          ],
+        ),
+      );
+}
+
+/// Các thẻ mục cần ôn giữ chỗ: ô chữ kem bên trái, pinyin, nghĩa, nút tròn.
+class _ReviewItemsSkeleton extends StatelessWidget {
+  const _ReviewItemsSkeleton({this.count = 8});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          for (var i = 0; i < count; i++) ...[
+            const SkeletonCard(
+              padding: EdgeInsets.fromLTRB(12, 12, 10, 12),
+              child: Row(
+                children: [
+                  ShimmerBox(width: 58, height: 58, radius: 16),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShimmerLine(widthFactor: .4, height: 17),
+                        SizedBox(height: 8),
+                        ShimmerLine(widthFactor: .55, height: 12),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  ShimmerBox.circle(size: 34),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
+        ],
+      );
 }

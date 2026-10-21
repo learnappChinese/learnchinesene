@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'widget/duo_game_card.dart';
 import 'duo_game_visuals.dart';
 import 'package:get/get.dart';
@@ -55,7 +56,7 @@ class _DuoGameCenterScreenState extends State<DuoGameCenterScreen> {
   Widget _buildGameCatalog(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const SkeletonPage.list();
       }
 
       if (controller.games.isEmpty) {

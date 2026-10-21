@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/game_visual_tokens.dart';
+import '../../../core/widgets/app_back_button.dart';
 import '../controller/hanzi_learning_path_controller.dart';
 
 /// Thanh trạng thái trên cùng của Lộ trình học viết chữ Hán.
@@ -9,23 +11,16 @@ import '../controller/hanzi_learning_path_controller.dart';
 class HanziPathTopBar extends StatelessWidget {
   final HanziLearningPathController controller;
 
-  const HanziPathTopBar({
-    super.key,
-    required this.controller,
-  });
+  const HanziPathTopBar({super.key, required this.controller});
+
+  static const _line = Color(0xFFE8E1D6);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        border: Border(bottom: BorderSide(color: AppColors.homeCardLine)),
       ),
       child: SafeArea(
         bottom: false,
@@ -33,11 +28,12 @@ class HanziPathTopBar extends StatelessWidget {
           children: [
             // Dòng thông số chính: Nút Trở về, Avatar Panda, XP, Streak, Mastered Hanzi
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
               child: Row(
                 children: [
-                  // Nút Trở về
-                  IconButton(
+                  AppBackButton(
+                    size: 40,
+                    tooltip: 'Trở về',
                     onPressed: () {
                       if (Navigator.of(context).canPop()) {
                         Navigator.of(context).pop();
@@ -45,49 +41,22 @@ class HanziPathTopBar extends StatelessWidget {
                         Get.back();
                       }
                     },
-                    icon: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        size: 16,
-                        color: Color(0xFF334155),
-                      ),
-                    ),
-                    tooltip: 'Trở về',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
                   ),
                   const SizedBox(width: 8),
 
                   // Avatar Panda linh vật
                   Container(
-                    width: 38,
-                    height: 38,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: GameVisualTokens.primaryGreenLight,
-                        width: 2,
-                      ),
-                      boxShadow: [
+                      color: Colors.white,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: const [
                         BoxShadow(
-                          color: GameVisualTokens.primaryGreen
-                              .withValues(alpha: 0.2),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
+                          color: AppColors.homeShadow,
+                          blurRadius: 8,
+                          offset: Offset(0, 3),
                         ),
                       ],
                     ),
@@ -107,11 +76,10 @@ class HanziPathTopBar extends StatelessWidget {
                   Expanded(
                     child: Obx(
                       () => _buildStatChip(
-                        icon: '⚡',
+                        icon: Icons.bolt_rounded,
                         value: '${controller.totalXp.value}',
                         label: 'XP',
-                        color: const Color(0xFFF59E0B),
-                        bgColor: const Color(0xFFFEF3C7),
+                        color: AppColors.imperialGold,
                       ),
                     ),
                   ),
@@ -121,11 +89,10 @@ class HanziPathTopBar extends StatelessWidget {
                   Expanded(
                     child: Obx(
                       () => _buildStatChip(
-                        icon: '🔥',
+                        icon: Icons.local_fire_department_rounded,
                         value: '${controller.currentStreak.value}',
                         label: 'ngày',
-                        color: const Color(0xFFEF4444),
-                        bgColor: const Color(0xFFFEE2E2),
+                        color: GameVisualTokens.crimson,
                       ),
                     ),
                   ),
@@ -135,11 +102,10 @@ class HanziPathTopBar extends StatelessWidget {
                   Expanded(
                     child: Obx(
                       () => _buildStatChip(
-                        icon: '✍️',
+                        icon: Icons.draw_rounded,
                         value: '${controller.totalMasteredCount.value}',
                         label: 'chữ',
-                        color: GameVisualTokens.primaryGreenDark,
-                        bgColor: GameVisualTokens.primaryGreenSoft,
+                        color: AppColors.homeGreen,
                       ),
                     ),
                   ),
@@ -149,12 +115,12 @@ class HanziPathTopBar extends StatelessWidget {
 
             // Bộ lọc chọn cấp độ HSK ngang
             SizedBox(
-              height: 44,
+              height: 46,
               child: Obx(() {
                 final selected = controller.selectedHskFilter.value;
                 return ListView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   children: [
                     _buildFilterChip(
                       label: 'Tất cả',
@@ -178,43 +144,59 @@ class HanziPathTopBar extends StatelessWidget {
     );
   }
 
+  /// Ô thông số trắng phẳng, icon màu trong vòng tròn nhạt.
   Widget _buildStatChip({
-    required String icon,
+    required IconData icon,
     required String value,
     required String label,
     required Color color,
-    required Color bgColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _line, width: 1.5),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 14)),
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: .14),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 14, color: color),
+          ),
           const SizedBox(width: 4),
           Flexible(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-                color: color,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: value,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        color: Color.lerp(color, Colors.black, .15),
+                      ),
+                    ),
+                    TextSpan(
+                      text: ' $label',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.homeSubtitle,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: color.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -222,46 +204,37 @@ class HanziPathTopBar extends StatelessWidget {
     );
   }
 
+  /// Chip lọc HSK: đang chọn nền xanh nhạt viền xanh, còn lại nền trắng.
   Widget _buildFilterChip({
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(right: 8, bottom: 4),
+      padding: const EdgeInsets.only(right: 8, bottom: 6, top: 2),
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          // Chip chọn: phẳng, không gờ — chỉ nút hành động mới nổi khối.
           decoration: BoxDecoration(
-            color: isSelected
-                ? GameVisualTokens.primaryGreen
-                : const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(20),
+            color: isSelected ? AppColors.homeGreenSoft : Colors.white,
+            borderRadius: BorderRadius.circular(99),
             border: Border.all(
-              color: isSelected
-                  ? GameVisualTokens.primaryGreenDark
-                  : const Color(0xFFE2E8F0),
+              color: isSelected ? AppColors.homeGreen : _line,
               width: 1.5,
             ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: GameVisualTokens.primaryGreen.withValues(alpha: 0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : [],
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-              color: isSelected ? Colors.white : const Color(0xFF475569),
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: isSelected
+                  ? AppColors.homeGreenText
+                  : AppColors.homeSubtitle,
             ),
           ),
         ),

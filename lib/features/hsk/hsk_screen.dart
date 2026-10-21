@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'widget/hsk_level_card.dart';
 import 'package:get/get.dart';
 import '../../core/widgets/empty_state_widget.dart';
@@ -68,10 +69,10 @@ class _HskScreenState extends State<HskScreen> {
           ),
         ],
       ),
-      body: LearningSceneBackground(
+      body: SafeBottomArea(child: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: _buildLevelCatalog(context),
-      ),
+      )),
     );
   }
 
@@ -252,19 +253,13 @@ class _WorldLoadingState extends StatelessWidget {
   const _WorldLoadingState();
 
   @override
-  Widget build(BuildContext context) => ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: 3,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
-        itemBuilder: (_, __) => Container(
-          height: 218,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .55),
-            borderRadius: BorderRadius.circular(26),
-          ),
-          child: const Center(
-            child: CircularProgressIndicator(color: Color(0xFF0F766E)),
-          ),
+  Widget build(BuildContext context) => AppShimmer(
+        child: ListView.separated(
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          itemCount: 3,
+          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          itemBuilder: (_, __) => const ShimmerBox(height: 218, radius: 26),
         ),
       );
 }

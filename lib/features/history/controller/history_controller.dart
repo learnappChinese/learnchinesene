@@ -6,12 +6,13 @@ class HistoryController extends GetxController {
   HistoryController({
     HistoryService? historyService,
     LearningHistoryRepository? learningHistoryRepository,
-  })  : _historyService = historyService ??
-            (Get.isRegistered<HistoryService>()
-                ? Get.find<HistoryService>()
-                : HistoryService()),
-        _learningHistoryRepo =
-            learningHistoryRepository ?? SupabaseLearningHistoryRepository();
+  }) : _historyService =
+           historyService ??
+           (Get.isRegistered<HistoryService>()
+               ? Get.find<HistoryService>()
+               : HistoryService()),
+       _learningHistoryRepo =
+           learningHistoryRepository ?? SupabaseLearningHistoryRepository();
 
   final HistoryService _historyService;
   final LearningHistoryRepository _learningHistoryRepo;

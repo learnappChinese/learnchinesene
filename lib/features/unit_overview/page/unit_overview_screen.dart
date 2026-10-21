@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_shimmer.dart';
 import 'package:get/get.dart';
 import '../../../core/widgets/app_green_button.dart';
 import '../../../core/presentation/learning_presentation_mapper.dart';
 import '../../../core/responsive/responsive_layout.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/theme/learning_theme.dart';
 import '../../../core/widgets/adventure_node.dart';
+import '../../../core/widgets/app_back_button.dart';
 import '../../../core/widgets/learning_scaffold.dart';
+import '../../../core/widgets/learning_trail.dart';
 import '../../../core/widgets/locked_mission_sheet.dart';
 import '../../boss_battle/boss_battle_screen.dart';
 import '../../chapter_adventure/binding/chapter_adventure_binding.dart';
@@ -25,6 +29,7 @@ import '../../hanzi_writing/screens/hanzi_writing_home_screen.dart';
 import '../../hanzi_writing/screens/hanzi_writing_screen.dart';
 import '../../speaking/speaking_screen.dart';
 import '../../hsk/hsk_screen.dart';
+import '../../home/widgets/home_decorations.dart';
 import '../../home/widgets/shared_tab_background.dart';
 import '../binding/unit_overview_binding.dart';
 import '../controller/unit_overview_controller.dart';
@@ -53,20 +58,20 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
     return LearningScaffold(
       title: 'Tổng quan bài học',
       actions: [
-        IconButton(
-          tooltip: 'Bản đồ phiêu lưu',
-          icon: const Icon(Icons.map_rounded,
-              color: GameVisualTokens.imperialGold),
-          onPressed: _openAdventureMap,
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: AppHudIconButton(
+            icon: Icons.map_rounded,
+            tooltip: 'Bản đồ phiêu lưu',
+            size: 40,
+            onPressed: _openAdventureMap,
+          ),
         ),
       ],
       body: SharedTabBackground(
         child: Obx(() {
           if (controller.isLoading.value) {
-            return const Center(
-              child: CircularProgressIndicator(
-                  color: GameVisualTokens.primaryGreen),
-            );
+            return const _UnitOverviewSkeleton();
           }
 
           if (controller.errorMessage.value != null) {
@@ -349,7 +354,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
                 child: const Text(
-                  'KHIÊU CHIẾN',
+                  'Khiêu chiến',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
                 ),
               ),
@@ -382,18 +387,18 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
     if (isCompleted) {
       final next = controller.nextUnit.value;
       if (next != null) {
-        label = 'BÀI TIẾP THEO: ${next.title}'.toUpperCase();
+        label = 'Bài tiếp theo: ${next.title}';
         icon = Icons.arrow_forward_rounded;
         color = GameVisualTokens.primaryGreen;
         onPressed = _openNextUnit;
       } else {
-        label = 'HOÀN THÀNH • VỀ BẢN ĐỒ THẾ GIỚI';
+        label = 'Hoàn thành • Về bản đồ thế giới';
         icon = Icons.explore_rounded;
         color = GameVisualTokens.imperialGold;
         onPressed = _openWorldMap;
       }
     } else if (isBossReady) {
-      label = 'KHIÊU CHIẾN BOSS';
+      label = 'Khiêu chiến Boss';
       icon = Icons.local_fire_department_rounded;
       color = GameVisualTokens.crimson;
       onPressed = () => _openBossGateModal(chapter);
@@ -402,12 +407,12 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
       final num = controller.nextPlayableStageNumber;
       if (!isStarted) {
         label = next != null
-            ? 'BẮT ĐẦU ẢI $num: ${next.title}'.toUpperCase()
-            : 'BẮT ĐẦU BÀI HỌC';
+            ? 'Bắt đầu ải $num: ${next.title}'
+            : 'Bắt đầu bài học';
       } else {
         label = next != null
-            ? 'TIẾP TỤC ẢI $num: ${next.title}'.toUpperCase()
-            : 'TIẾP TỤC BÀI HỌC';
+            ? 'Tiếp tục ải $num: ${next.title}'
+            : 'Tiếp tục bài học';
       }
       icon = Icons.play_arrow_rounded;
       color = GameVisualTokens.primaryGreen;
@@ -420,7 +425,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
       };
     } else {
       final next = controller.nextPlayableMission;
-      label = (!isStarted ? 'BẮT ĐẦU BÀI HỌC' : 'TIẾP TỤC BÀI HỌC');
+      label = (!isStarted ? 'Bắt đầu bài học' : 'Tiếp tục bài học');
       icon = Icons.play_arrow_rounded;
       color = GameVisualTokens.primaryGreen;
       onPressed = () {
@@ -448,53 +453,39 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
       children: [
         Row(
           children: [
-            Container(
-              width: 4,
-              height: 18,
-              decoration: BoxDecoration(
-                color: GameVisualTokens.imperialGold,
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
-            const SizedBox(width: 8),
+            const HomePandaFace(size: 26),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 hasStages ? 'Lộ trình ải học tập' : 'Bản đồ kỹ năng',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 17,
+                  fontSize: 18,
                   fontWeight: FontWeight.w900,
-                  color: GameVisualTokens.templeWood,
+                  color: AppColors.homeInk,
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            Material(
-              color: GameVisualTokens.primaryGreen.withValues(alpha: 0.1),
-              shape: const StadiumBorder(),
-              child: InkWell(
-                onTap: _openAdventureMap,
-                customBorder: const StadiumBorder(),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.explore_rounded,
-                          size: 15, color: GameVisualTokens.primaryGreen),
-                      SizedBox(width: 5),
-                      Text(
-                        'Bản đồ',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: GameVisualTokens.primaryGreen,
-                        ),
-                      ),
-                    ],
+            TextButton(
+              onPressed: _openAdventureMap,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.homeGreenLink,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                minimumSize: const Size(0, 34),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Xem bản đồ',
+                    style:
+                        TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
                   ),
-                ),
+                  Icon(Icons.chevron_right_rounded, size: 18),
+                ],
               ),
             ),
           ],
@@ -507,7 +498,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
             final isTarget = stage.id == controller.nextPlayableStage?.id &&
                 !stage.isCompleted &&
                 stage.isAvailable;
-            return _StageTrailEntry(
+            return LearningTrailEntry(
               isFirst: idx == 0,
               isLast:
                   idx == controller.stages.length - 1 && chapter.boss == null,
@@ -537,7 +528,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
           ...chapter.missions.asMap().entries.map((entry) {
             final idx = entry.key;
             final mission = entry.value;
-            return _StageTrailEntry(
+            return LearningTrailEntry(
               isFirst: idx == 0,
               isLast:
                   idx == chapter.missions.length - 1 && chapter.boss == null,
@@ -557,7 +548,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
             (!hasStages ||
                 !controller.stages.any((s) =>
                     s.activityType == LearningStageActivityType.boss))) ...[
-          _StageTrailEntry(
+          LearningTrailEntry(
             isFirst: false,
             isLast: true,
             lineColor: const Color(0xFFCBD5E1),
@@ -1360,7 +1351,7 @@ class _GameCtaButtonState extends State<_GameCtaButton> {
                 height: _faceHeight,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Color.lerp(color, Colors.black, .32),
+                    color: Color.lerp(color, Colors.black, .24),
                     borderRadius: radius,
                     boxShadow: [
                       BoxShadow(
@@ -1384,9 +1375,18 @@ class _GameCtaButtonState extends State<_GameCtaButton> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color.lerp(color, Colors.white, .14)!, color],
+                      stops: const [0, .55, 1],
+                      colors: [
+                        Color.lerp(color, Colors.white, .12)!,
+                        color,
+                        Color.lerp(color, Colors.black, .06)!,
+                      ],
                     ),
                     borderRadius: radius,
+                    border: Border.all(
+                      color: Color.lerp(color, Colors.white, .32)!,
+                      width: 1.5,
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1407,10 +1407,17 @@ class _GameCtaButtonState extends State<_GameCtaButton> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 16,
                             fontWeight: FontWeight.w900,
-                            letterSpacing: 0.6,
+                            letterSpacing: .3,
                             color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Color(0x33000000),
+                                blurRadius: 1,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -1422,185 +1429,6 @@ class _GameCtaButtonState extends State<_GameCtaButton> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Một chặng trên lộ trình: node bên trái nối với nhau bằng một đường dọc,
-/// thẻ nội dung bên phải.
-class _StageTrailEntry extends StatelessWidget {
-  const _StageTrailEntry({
-    required this.isFirst,
-    required this.isLast,
-    required this.lineColor,
-    required this.node,
-    required this.child,
-  });
-
-  static const double _railWidth = 64;
-  static const double _nodeTop = 10;
-  static const double _nodeCenter = _nodeTop + 28;
-
-  final bool isFirst;
-  final bool isLast;
-  final Color lineColor;
-  final Widget node;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final showLine = !(isFirst && isLast);
-    return Stack(
-      children: [
-        if (showLine)
-          Positioned(
-            left: _railWidth / 2 - 2,
-            top: isFirst ? _nodeCenter : 0,
-            bottom: isLast ? null : 0,
-            height: isLast ? _nodeCenter : null,
-            child: Container(
-              width: 4,
-              decoration: BoxDecoration(
-                color: lineColor,
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
-          ),
-        Padding(
-          padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: _railWidth,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: _nodeTop),
-                  child: Center(child: node),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(child: child),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Vỏ thẻ dùng chung cho các ải/nhiệm vụ trên lộ trình.
-class _TrailCard extends StatelessWidget {
-  const _TrailCard({
-    required this.onTap,
-    required this.child,
-    this.highlight = false,
-    this.completed = false,
-    this.locked = false,
-  });
-
-  final VoidCallback onTap;
-  final Widget child;
-  final bool highlight;
-  final bool completed;
-  final bool locked;
-
-  @override
-  Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(18);
-    final borderColor = highlight
-        ? GameVisualTokens.primaryGreen
-        : completed
-            ? GameVisualTokens.primaryGreen.withValues(alpha: 0.35)
-            : const Color(0xFFE9E4DA);
-
-    return Opacity(
-      opacity: locked ? 0.7 : 1,
-      child: Container(
-        decoration: BoxDecoration(
-          color: locked ? const Color(0xFFF8F7F4) : Colors.white,
-          borderRadius: radius,
-          border: Border.all(color: borderColor, width: highlight ? 2 : 1),
-          boxShadow: [
-            BoxShadow(
-              color: highlight
-                  ? GameVisualTokens.primaryGreen.withValues(alpha: 0.22)
-                  : Colors.black.withValues(alpha: 0.04),
-              blurRadius: highlight ? 16 : 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          shape: RoundedRectangleBorder(borderRadius: radius),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-              child: child,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TrailTag extends StatelessWidget {
-  const _TrailTag({
-    required this.label,
-    required this.background,
-    required this.foreground,
-  });
-
-  final String label;
-  final Color background;
-  final Color foreground;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          color: foreground,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-}
-
-class _TrailMeta extends StatelessWidget {
-  const _TrailMeta({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 13, color: LearningColors.muted),
-        const SizedBox(width: 3),
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w600,
-            color: LearningColors.muted,
-          ),
-        ),
-      ],
     );
   }
 }
@@ -1625,48 +1453,6 @@ class _StatusBadge extends StatelessWidget {
           fontWeight: FontWeight.w800,
           color: _kAmberDark,
         ),
-      ),
-    );
-  }
-}
-
-class _StartPill extends StatelessWidget {
-  const _StartPill();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(8, 5, 12, 5),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            GameVisualTokens.primaryGreenLight,
-            GameVisualTokens.primaryGreen,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(99),
-        boxShadow: [
-          BoxShadow(
-            color: GameVisualTokens.primaryGreen.withValues(alpha: 0.35),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.play_arrow_rounded, size: 16, color: Colors.white),
-          SizedBox(width: 2),
-          Text(
-            'VÀO HỌC',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1760,7 +1546,7 @@ class _MissionListTile extends StatelessWidget {
     final isCompleted = mission.isCompleted;
     final inProgress = mission.state == AdventureNodeState.inProgress;
 
-    return _TrailCard(
+    return LearningTrailCard(
       onTap: onTap,
       highlight: inProgress,
       completed: isCompleted,
@@ -1770,7 +1556,7 @@ class _MissionListTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              _TrailTag(
+              LearningTrailTag(
                 label: 'NHIỆM VỤ $index',
                 background: isLocked
                     ? const Color(0xFFE2E8F0)
@@ -1794,7 +1580,7 @@ class _MissionListTile extends StatelessWidget {
               height: 1.25,
               color: isLocked
                   ? const Color(0xFF64748B)
-                  : GameVisualTokens.templeWood,
+                  : AppColors.homeTitle,
             ),
           ),
           const SizedBox(height: 3),
@@ -1884,7 +1670,7 @@ class _BossListTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const _TrailTag(
+                      const LearningTrailTag(
                         label: 'BOSS',
                         background: Color(0x33FFFFFF),
                         foreground: GameVisualTokens.goldLight,
@@ -1972,7 +1758,7 @@ class _StageListTile extends StatelessWidget {
     final description =
         stage.subtitle.isNotEmpty ? stage.subtitle : stage.learningObjective;
 
-    return _TrailCard(
+    return LearningTrailCard(
       onTap: onTap,
       highlight: isNextPlayable,
       completed: isCompleted,
@@ -1982,7 +1768,7 @@ class _StageListTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              _TrailTag(
+              LearningTrailTag(
                 label: 'ẢI $index',
                 background: isLocked
                     ? const Color(0xFFE2E8F0)
@@ -1997,7 +1783,7 @@ class _StageListTile extends StatelessWidget {
               ),
               if (isNextPlayable) ...[
                 const SizedBox(width: 6),
-                _TrailTag(
+                LearningTrailTag(
                   label: 'MỤC TIÊU',
                   background: GameVisualTokens.primaryGreenSoft,
                   foreground: GameVisualTokens.primaryGreenDark,
@@ -2018,7 +1804,7 @@ class _StageListTile extends StatelessWidget {
               height: 1.25,
               color: isLocked
                   ? const Color(0xFF64748B)
-                  : GameVisualTokens.templeWood,
+                  : AppColors.homeTitle,
             ),
           ),
           if (description.isNotEmpty) ...[
@@ -2043,11 +1829,11 @@ class _StageListTile extends StatelessWidget {
                   runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    _TrailMeta(
+                    LearningTrailMeta(
                       icon: Icons.layers_rounded,
                       text: '${stage.completedItems}/${stage.totalItems}',
                     ),
-                    _TrailMeta(
+                    LearningTrailMeta(
                       icon: Icons.schedule_rounded,
                       text: '~${stage.estimatedMinutes} phút',
                     ),
@@ -2068,7 +1854,7 @@ class _StageListTile extends StatelessWidget {
                   ],
                 ),
               ),
-              if (isNextPlayable) const _StartPill(),
+              if (isNextPlayable) const LearningTrailStartPill(),
             ],
           ),
         ],
@@ -2130,6 +1916,102 @@ class _BossStat extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      );
+}
+
+/// Khung đang tải khớp bố cục màn: hero bài học, hàng chỉ số, nút chính và
+/// lộ trình ải.
+class _UnitOverviewSkeleton extends StatelessWidget {
+  const _UnitOverviewSkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: ResponsiveHelper.contentMaxWidth(context),
+            ),
+            child: ListView(
+              physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveHelper.horizontalPadding(context),
+                16,
+                ResponsiveHelper.horizontalPadding(context),
+                40,
+              ),
+              children: [
+                const SkeletonCard(
+                  style: SkeletonCardStyle.cream,
+                  radius: 26,
+                  padding: EdgeInsets.fromLTRB(20, 18, 20, 20),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ShimmerBox(width: 170, height: 12),
+                            SizedBox(height: 12),
+                            SkeletonPill(width: 120, height: 26),
+                            SizedBox(height: 12),
+                            ShimmerLine(widthFactor: .9, height: 22),
+                            SizedBox(height: 8),
+                            ShimmerLine(widthFactor: .6, height: 22),
+                            SizedBox(height: 18),
+                            Row(
+                              children: [
+                                Expanded(
+                                    child: ShimmerBox(height: 10, radius: 99)),
+                                SizedBox(width: 10),
+                                ShimmerBox(width: 40, height: 13),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      ShimmerBox.circle(size: 84),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SkeletonCard(
+                  radius: 20,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Row(
+                    children: [
+                      for (var i = 0; i < 3; i++)
+                        const Expanded(
+                          child: Column(
+                            children: [
+                              ShimmerBox.circle(size: 36),
+                              SizedBox(height: 10),
+                              ShimmerBox(width: 48, height: 18),
+                              SizedBox(height: 6),
+                              ShimmerBox(width: 64, height: 11),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const ShimmerBox(height: 61, radius: 18),
+                const SizedBox(height: 24),
+                const SkeletonSectionTitle(width: 160, showTrailing: true),
+                const SizedBox(height: 14),
+                for (var i = 0; i < 8; i++)
+                  SkeletonTrailEntry(
+                    isFirst: i == 0,
+                    isLast: i == 7,
+                    child: SkeletonTrailCard(showAction: i == 0),
+                  ),
+              ],
+            ),
           ),
         ),
       );

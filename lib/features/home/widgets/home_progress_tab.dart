@@ -35,9 +35,8 @@ class HomeProgressTab extends StatelessWidget {
           children: [
             const TabHeader(
               icon: Icons.bar_chart_rounded,
-              title: 'Tiến độ &',
-              accentTitle: 'Hành trình',
-              subtitle: 'Theo dõi năng lực tiếng Trung và lịch sử kinh nghiệm',
+              title: 'Tiến độ',
+              subtitle: 'Năng lực và lịch sử kinh nghiệm',
             ),
             Expanded(
               child: controller != null

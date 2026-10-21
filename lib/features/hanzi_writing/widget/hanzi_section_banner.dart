@@ -1,223 +1,237 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/presentation/learning_presentation_mapper.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../models/hanzi_path_models.dart';
 
 /// Banner tiêu đề cho từng Section trên con đường học tập viết chữ Hán.
+///
+/// Cùng khung thẻ kem viền trắng như các thẻ ở màn học.
 class HanziSectionBanner extends StatelessWidget {
   final HanziPathSection section;
 
-  const HanziSectionBanner({
-    super.key,
-    required this.section,
-  });
+  const HanziSectionBanner({super.key, required this.section});
+
+  /// Dữ liệu cũ có tiêu đề dạng "Section 1, Unit 1"; đổi sang tiếng Việt.
+  String get _title =>
+      LearningPresentationMapper.sectionUnitLabel(section.title);
 
   @override
   Widget build(BuildContext context) {
     final progressPercent = (section.progress * 100).toInt();
+    final locked = !section.isUnlocked;
+    final accent = section.isCompleted
+        ? AppColors.imperialGold
+        : locked
+        ? const Color(0xFF94A3B8)
+        : AppColors.homeGreen;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: section.isUnlocked
-              ? [
-                  GameVisualTokens.primaryGreenDark,
-                  GameVisualTokens.primaryGreen,
-                ]
-              : [
-                  const Color(0xFF64748B),
-                  const Color(0xFF94A3B8),
-                ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: section.isUnlocked
-              ? const Color(0xFF38A169)
-              : const Color(0xFFCBD5E1),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: section.isUnlocked
-                ? GameVisualTokens.primaryGreenDark.withValues(alpha: 0.4)
-                : Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return Opacity(
+      opacity: locked ? .75 : 1,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFFDF6), Color(0xFFFFF4DE)],
           ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Họa tiết trang trí mờ ở góc
-          Positioned(
-            right: -10,
-            bottom: -15,
-            child: Opacity(
-              opacity: 0.15,
-              child: Text(
-                '书',
-                style: TextStyle(
-                  fontSize: 100,
-                  fontFamily: 'FZKaiTiPinyin',
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: Colors.white, width: 4),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x2E635D3B),
+              blurRadius: 20,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Stack(
+            children: [
+              // Họa tiết trang trí mờ ở góc
+              Positioned(
+                right: -6,
+                bottom: -22,
+                child: Text(
+                  '书',
+                  style: TextStyle(
+                    fontSize: 104,
+                    fontFamily: 'FZKaiTiPinyin',
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.imperialGold.withValues(alpha: .12),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Tag cấp độ và phần
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        'HSK ${section.hskLevel} • BÀI ${section.sectionNumber}'
-                            .toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ),
-                    if (section.isCompleted)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: GameVisualTokens.imperialGold,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.check_circle_rounded,
-                                size: 14, color: Colors.white),
-                            SizedBox(width: 4),
-                            Text(
-                              'HOÀN THÀNH',
-                              style: TextStyle(
+                    Row(
+                      children: [
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: locked
+                                  ? const [Color(0xFFB8C0CC), Color(0xFF94A3B8)]
+                                  : const [
+                                      AppColors.homeGreenLight,
+                                      AppColors.homeGreen,
+                                    ],
+                            ),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 11,
+                              vertical: 5,
+                            ),
+                            child: Text(
+                              'HSK ${section.hskLevel} • BÀI ${section.sectionNumber}',
+                              style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w900,
+                                letterSpacing: .8,
                               ),
                             ),
-                          ],
-                        ),
-                      )
-                    else if (!section.isUnlocked)
-                      const Row(
-                        children: [
-                          Icon(Icons.lock_rounded,
-                              size: 14, color: Colors.white70),
-                          SizedBox(width: 4),
-                          Text(
-                            'ĐANG KHÓA',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                            ),
                           ),
-                        ],
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Tiêu đề phần học
-                Text(
-                  section.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-
-                // Mô tả / phụ đề
-                Text(
-                  'Luyện viết các chữ Hán thuộc chủ đề ${section.title.toLowerCase()}',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Thanh tiến độ học viết của Section
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Tiến độ: ${section.completedCount}/${section.totalCount} chữ',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
+                        ),
+                        const Spacer(),
+                        if (section.isCompleted)
+                          _StatusChip(
+                            icon: Icons.check_circle_rounded,
+                            label: 'Hoàn thành',
+                            color: AppColors.amberDark,
+                            background: AppColors.imperialGold.withValues(
+                              alpha: .16,
+                            ),
+                          )
+                        else if (locked)
+                          const _StatusChip(
+                            icon: Icons.lock_rounded,
+                            label: 'Đang khóa',
+                            color: Color(0xFF64748B),
+                            background: Color(0xFFEFF1F4),
+                          ),
+                      ],
                     ),
+                    const SizedBox(height: 10),
                     Text(
-                      '$progressPercent%',
+                      _title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: section.isCompleted
-                            ? GameVisualTokens.imperialGold
-                            : Colors.white,
-                        fontSize: 13,
+                        color: locked
+                            ? const Color(0xFF64748B)
+                            : AppColors.homeTitle,
+                        fontSize: 20,
+                        height: 1.2,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Luyện viết ${section.totalCount} chữ Hán của bài này',
+                      style: const TextStyle(
+                        color: AppColors.homeBody,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(99),
+                            child: LinearProgressIndicator(
+                              value: section.progress,
+                              minHeight: 9,
+                              backgroundColor: const Color(0xFFEDE5D6),
+                              valueColor: AlwaysStoppedAnimation<Color>(accent),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          '${section.completedCount}/${section.totalCount} chữ',
+                          style: TextStyle(
+                            color: Color.lerp(accent, Colors.black, .2),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (progressPercent > 0 && !section.isCompleted) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Đã xong $progressPercent%',
+                        style: const TextStyle(
+                          color: AppColors.homeSubtitle,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: section.progress,
-                    minHeight: 8,
-                    backgroundColor: Colors.white.withValues(alpha: 0.25),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      section.isCompleted
-                          ? GameVisualTokens.imperialGold
-                          : Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.background,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: background,
+      borderRadius: BorderRadius.circular(99),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 /// Thẻ mốc hoàn thành toàn bộ một cấp độ HSK.
 class HanziHskMilestoneCard extends StatelessWidget {
   final HanziPathHskLevel hskLevel;
 
-  const HanziHskMilestoneCard({
-    super.key,
-    required this.hskLevel,
-  });
+  const HanziHskMilestoneCard({super.key, required this.hskLevel});
 
   @override
   Widget build(BuildContext context) {
@@ -230,7 +244,9 @@ class HanziHskMilestoneCard extends StatelessWidget {
         color: isDone ? const Color(0xFFFFFBEB) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDone ? GameVisualTokens.imperialGold : const Color(0xFFE2E8F0),
+          color: isDone
+              ? GameVisualTokens.imperialGold
+              : const Color(0xFFE2E8F0),
           width: 2.5,
         ),
         boxShadow: [
@@ -290,9 +306,7 @@ class HanziHskMilestoneCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: isDone
-                  ? const Color(0xFF78350F)
-                  : const Color(0xFF64748B),
+              color: isDone ? const Color(0xFF78350F) : const Color(0xFF64748B),
             ),
           ),
           const SizedBox(height: 14),

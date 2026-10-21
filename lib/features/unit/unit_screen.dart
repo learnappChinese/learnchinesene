@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'widget/unit_progress_tile.dart';
 import 'package:get/get.dart';
 import '../../core/widgets/empty_state_widget.dart';
@@ -117,7 +118,7 @@ class _UnitScreenState extends State<UnitScreen> {
   Widget _buildUnitCatalog(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const _UnitCatalogSkeleton();
       }
       if (controller.hasError.value) {
         return const EmptyStateWidget(
@@ -227,3 +228,41 @@ class _UnitPathItem extends StatelessWidget {
     );
   }
 }
+
+/// Khung đang tải khớp lộ trình chương: banner và các thẻ chương so le.
+class _UnitCatalogSkeleton extends StatelessWidget {
+  const _UnitCatalogSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final hp = ResponsiveHelper.horizontalPadding(context);
+    return AppShimmer(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+              maxWidth: ResponsiveHelper.contentMaxWidth(context)),
+          child: ListView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+            padding: EdgeInsets.fromLTRB(hp, 20, hp, 40),
+            children: [
+              const SkeletonQuestBanner(showProgress: false),
+              const SizedBox(height: 20),
+              for (var i = 0; i < 8; i++)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                      i.isEven ? 0 : 24, 10, i.isEven ? 24 : 0, 10),
+                  child: const SkeletonListTile(
+                    leadingSize: 50,
+                    radius: 20,
+                    trailingPillWidth: 64,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

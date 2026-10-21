@@ -9,15 +9,19 @@ class HomeGreenButton extends StatelessWidget {
       required this.label,
       required this.onTap,
       this.playIcon = false,
-      this.chevronIcon = false});
+      this.chevronIcon = false,
+      this.color = homeGreen});
   final String label;
   final VoidCallback onTap;
   final bool playIcon;
   final bool chevronIcon;
 
+  /// Màu mặt nút; gờ, viền và bóng được suy ra từ màu này.
+  final Color color;
+
   @override
   Widget build(BuildContext context) {
-    const primary = homeGreen;
+    final primary = color;
     final radius = 19.w;
     final buttonHeight = (playIcon ? 38 : 36).w;
 

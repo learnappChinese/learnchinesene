@@ -35,6 +35,24 @@ class BottomBleedScope extends InheritedWidget {
 double bottomBleed(BuildContext context) =>
     context.dependOnInheritedWidgetOfExactType<BottomBleedScope>()?.bleed ?? 0;
 
+/// Đưa nội dung (nhất là nút ở đáy) lên trên vùng an toàn phía dưới: home
+/// indicator trên iOS và thanh điều hướng trên Android (kể cả chế độ
+/// edge-to-edge). Nền dùng [bottomBleed] bên trong vẫn vẽ tràn tới mép màn.
+///
+/// Dùng cho thân của các `Scaffold` thường; [LearningScaffold] đã tự làm việc
+/// này.
+class SafeBottomArea extends StatelessWidget {
+  const SafeBottomArea({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => BottomBleedScope(
+        bleed: MediaQuery.paddingOf(context).bottom,
+        child: SafeArea(top: false, left: false, right: false, child: child),
+      );
+}
+
 /// Reusable multi-layered Chinese Fantasy Adventure background
 class LearningSceneBackground extends StatelessWidget {
   const LearningSceneBackground({

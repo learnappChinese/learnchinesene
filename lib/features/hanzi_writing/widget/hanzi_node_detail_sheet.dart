@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import '../../../core/services/tts_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/game_visual_tokens.dart';
+import '../../../core/widgets/app_back_button.dart';
+import '../../../core/widgets/app_green_button.dart';
 import '../models/hanzi_path_models.dart';
 
 /// Modal BottomSheet hiển thị chi tiết chữ Hán khi người học bấm vào một nút trên lộ trình.
@@ -55,16 +57,22 @@ class _HanziNodeDetailSheetState extends State<HanziNodeDetailSheet> {
     }
   }
 
+  static const _line = Color(0xFFE8E1D6);
+
   @override
   Widget build(BuildContext context) {
     final node = widget.node;
     final char = node.character;
     final isLocked = node.state == WritingNodeState.locked;
     final isCompleted = node.state == WritingNodeState.completed;
+    final pinyin = char.pinyin ?? '';
+    final meaning = (char.meaning?.isNotEmpty ?? false)
+        ? char.meaning!
+        : 'Chưa có định nghĩa';
 
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: Color(0xFFFFFCF4),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
@@ -75,10 +83,10 @@ class _HanziNodeDetailSheetState extends State<HanziNodeDetailSheet> {
         ],
       ),
       padding: EdgeInsets.fromLTRB(
-        24,
-        12,
-        24,
-        MediaQuery.of(context).padding.bottom + 20,
+        20,
+        10,
+        20,
+        MediaQuery.of(context).padding.bottom + 16,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -87,54 +95,70 @@ class _HanziNodeDetailSheetState extends State<HanziNodeDetailSheet> {
           // Tay nắm kéo (Pull handle)
           Center(
             child: Container(
-              width: 48,
+              width: 44,
               height: 5,
               decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
+                color: _line,
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Header: Huy hiệu HSK và nút đóng
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              DecoratedBox(
                 decoration: BoxDecoration(
-                  color: GameVisualTokens.primaryGreenSoft,
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: const LinearGradient(
+                    colors: [AppColors.homeGreenLight, AppColors.homeGreen],
+                  ),
+                  borderRadius: BorderRadius.circular(99),
                 ),
-                child: Text(
-                  'HSK ${node.hskLevel} • BÀI ${node.sectionId}',
-                  style: const TextStyle(
-                    color: GameVisualTokens.primaryGreenDark,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Text(
+                    'HSK ${node.hskLevel} • BÀI ${node.sectionId}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ),
-              IconButton(
+              const Spacer(),
+              AppHudIconButton(
+                icon: Icons.close_rounded,
+                tooltip: 'Đóng',
+                size: 36,
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close_rounded,
-                    color: Color(0xFF64748B), size: 24),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
-          // Khung hiển thị chữ Hán to và đẹp
+          // Khung chữ Hán: thẻ kem viền trắng như ở các màn học.
+          // Font Khải đã vẽ sẵn pinyin của chữ phía trên.
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 20),
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 20),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFFFFDF6), Color(0xFFFFF4DE)],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white, width: 4),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x24635D3B),
+                  blurRadius: 16,
+                  offset: Offset(0, 6),
+                ),
+              ],
             ),
             child: Column(
               children: [
@@ -144,261 +168,214 @@ class _HanziNodeDetailSheetState extends State<HanziNodeDetailSheet> {
                     fontFamily: 'FZKaiTiPinyin',
                     fontSize: 64,
                     fontWeight: FontWeight.bold,
-                    color: GameVisualTokens.ink,
+                    color: AppColors.homeInk,
                   ),
                 ),
-                const SizedBox(height: 8),
-
-                // Pinyin và nút phát âm thanh
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      (char.pinyin?.isNotEmpty ?? false) ? char.pinyin! : '—',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: GameVisualTokens.primaryGreenDark,
+                    Flexible(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.homeGreenSoft,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 6),
+                          child: Text(
+                            pinyin.isEmpty ? meaning : '$pinyin · $meaning',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.homeGreenText,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    InkWell(
-                      onTap: _playTts,
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: _isPlayingAudio
-                              ? GameVisualTokens.primaryGreen
-                              : GameVisualTokens.primaryGreenSoft,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          _isPlayingAudio
-                              ? Icons.volume_up_rounded
-                              : Icons.volume_down_rounded,
-                          size: 20,
-                          color: _isPlayingAudio
-                              ? Colors.white
-                              : GameVisualTokens.primaryGreenDark,
+                    const SizedBox(width: 10),
+                    // Nút phát âm phụ: tròn, phẳng.
+                    Material(
+                      color: _isPlayingAudio
+                          ? AppColors.homeGreen
+                          : Colors.white,
+                      shape: const CircleBorder(
+                        side: BorderSide(color: AppColors.homeBorder, width: 1.5),
+                      ),
+                      child: InkWell(
+                        onTap: _playTts,
+                        customBorder: const CircleBorder(),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.volume_up_rounded,
+                            size: 20,
+                            color: _isPlayingAudio
+                                ? Colors.white
+                                : AppColors.homeGreen,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-
-                // Nghĩa tiếng Việt
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    (char.meaning?.isNotEmpty ?? false)
-                        ? char.meaning!
-                        : 'Chưa có định nghĩa',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF475569),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Hàng thông tin chi tiết: Số nét, Lần luyện, Điểm cao nhất
           Row(
             children: [
               Expanded(
                 child: _buildStatBox(
-                  icon: '✏️',
+                  icon: Icons.draw_rounded,
+                  color: AppColors.imperialGold,
                   label: 'Số nét',
                   value: char.strokeCount > 0
                       ? '${char.strokeCount} nét'
                       : 'Đang cập nhật',
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: _buildStatBox(
-                  icon: '🔄',
+                  icon: Icons.replay_rounded,
+                  color: GameVisualTokens.blue,
                   label: 'Luyện tập',
                   value: '${node.practiceCount} lần',
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: _buildStatBox(
-                  icon: '🎯',
+                  icon: Icons.emoji_events_rounded,
+                  color: AppColors.homeGreen,
                   label: 'Điểm cao',
                   value: '${node.bestScore.toInt()}%',
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
 
           // Trạng thái thông báo
-          if (isLocked)
+          if (isLocked || isCompleted) ...[
+            const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
+                color: isLocked
+                    ? const Color(0xFFF3EEE4)
+                    : AppColors.homeGreenSoft,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFFECACA)),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.lock_clock_rounded,
-                      color: Color(0xFFDC2626), size: 20),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Chữ Hán này đang bị khóa. Hãy hoàn thành các chữ trước đó để mở khóa nhé!',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF991B1B),
-                      ),
-                    ),
+                  Icon(
+                    isLocked
+                        ? Icons.lock_rounded
+                        : Icons.check_circle_rounded,
+                    color: isLocked
+                        ? AppColors.homeSubtitle
+                        : AppColors.homeGreenText,
+                    size: 20,
                   ),
-                ],
-              ),
-            )
-          else if (isCompleted)
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECFDF5),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFA7F3D0)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.check_circle_rounded,
-                      color: Color(0xFF059669), size: 20),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Bạn đã hoàn thành chữ này. Hãy luyện lại để củng cố nét viết!',
+                      isLocked
+                          ? 'Hoàn thành các chữ trước đó để mở khóa chữ này nhé!'
+                          : 'Bạn đã hoàn thành chữ này. Luyện lại để nhớ nét viết lâu hơn!',
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF065F46),
+                        fontSize: 12.5,
+                        height: 1.35,
+                        fontWeight: FontWeight.w700,
+                        color: isLocked
+                            ? AppColors.homeSubtitle
+                            : AppColors.homeGreenText,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-          const SizedBox(height: 16),
+          ],
+          const SizedBox(height: 18),
 
-          // Nút bấm CTA phong cách 3D Duolingo
-          GestureDetector(
-            onTap: isLocked
+          // Nút hành động chính: xanh nổi khối như ở màn Home
+          AppGreenButton(
+            label: isLocked
+                ? 'Chưa mở khóa'
+                : isCompleted
+                    ? 'Luyện viết lại'
+                    : 'Bắt đầu viết',
+            icon: isLocked
+                ? Icons.lock_outline_rounded
+                : isCompleted
+                    ? Icons.refresh_rounded
+                    : Icons.edit_note_rounded,
+            height: 54,
+            fontSize: 16,
+            expand: true,
+            onPressed: isLocked
                 ? null
                 : () {
                     Navigator.pop(context);
                     widget.onStartWriting();
                   },
-            child: Container(
-              height: 54,
-              decoration: BoxDecoration(
-                color: isLocked
-                    ? const Color(0xFFE2E8F0)
-                    : isCompleted
-                        ? GameVisualTokens.primaryGreen
-                        : GameVisualTokens.primaryGreenDark,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isLocked
-                      ? const Color(0xFFCBD5E1)
-                      : isCompleted
-                          ? GameVisualTokens.primaryGreenDark
-                          : const Color(0xFF1B6A3B),
-                  width: 2,
-                ),
-                boxShadow: isLocked
-                    ? []
-                    : [
-                        BoxShadow(
-                          color: (isCompleted
-                                  ? GameVisualTokens.primaryGreenDark
-                                  : const Color(0xFF155724))
-                              .withValues(alpha: 0.5),
-                          offset: const Offset(0, 4),
-                          blurRadius: 0, // Độ sâu 3D đặc trưng Duolingo
-                        ),
-                      ],
-              ),
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isLocked
-                        ? Icons.lock_outline_rounded
-                        : isCompleted
-                            ? Icons.refresh_rounded
-                            : Icons.edit_note_rounded,
-                    color: isLocked ? const Color(0xFF94A3B8) : Colors.white,
-                    size: 22,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isLocked
-                        ? 'CHƯA MỞ KHÓA'
-                        : isCompleted
-                            ? 'LUYỆN VIẾT LẠI'
-                            : 'BẮT ĐẦU VIẾT',
-                    style: TextStyle(
-                      color: isLocked ? const Color(0xFF94A3B8) : Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
     );
   }
 
+  /// Ô thông tin phẳng: icon màu trong vòng tròn, nhãn xám, giá trị đậm.
   Widget _buildStatBox({
-    required String icon,
+    required IconData icon,
+    required Color color,
     required String label,
     required String value,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _line, width: 1.5),
       ),
       child: Column(
         children: [
-          Text(icon, style: const TextStyle(fontSize: 18)),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: .14),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 16, color: color),
+          ),
           const SizedBox(height: 4),
           Text(
             label,
             style: const TextStyle(
               fontSize: 11,
-              color: AppColors.muted,
-              fontWeight: FontWeight.w500,
+              color: AppColors.homeSubtitle,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: GameVisualTokens.ink,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                color: AppColors.homeTitle,
+              ),
             ),
           ),
         ],

@@ -20,6 +20,25 @@ abstract final class AppColors {
   static const error = Color(0xFFD64545);
   static const card = Colors.white;
 
+  // Home palette — chuẩn giao diện chung của toàn app (xem AppTheme.light).
+  static const Color homeGreen = Color(0xFF45BC09);
+  static const Color homeGreenLight = Color(0xFF6BD12A);
+  static const Color homeGreenText = Color(0xFF2E8F12);
+  static const Color homeGreenLink = Color(0xFF2C7042);
+  static const Color homeGreenSoft = Color(0xFFE3F7D3);
+  static const Color homeGreenDisabled = Color(0xFFB9C9AE);
+  static const Color homePage = Color(0xFFFFFEF9);
+  static const Color homeInk = Color(0xFF201E16);
+  static const Color homeTitle = Color(0xFF342E10);
+  static const Color homeBody = Color(0xFF5D5C54);
+  static const Color homeSubtitle = Color(0xFF7A6E5D);
+  static const Color homeIconMuted = Color(0xFF666E60);
+  static const Color homeBorder = Color(0xFFC0D4BB);
+  static const Color homeCardLine = Color(0xFFF1E6CF);
+  static const Color homeTrack = Color(0xFFE4E9E9);
+  static const Color homeShadow = Color(0x24635D3B);
+  static const Color homeSnackBar = Color(0xFF334E35);
+
   // Chinese Fantasy Tokens
   static const Color jade = Color(0xFF2E8A04);
   static const Color jadeDark = Color(0xFF1F6B02);

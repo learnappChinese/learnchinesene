@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_shimmer.dart';
 import 'package:get/get.dart';
 
 import '../../../core/learning/data/learning_history_repository.dart';
@@ -148,7 +149,7 @@ class _XpHistoryScreenState extends State<XpHistoryScreen> {
               _buildFilterChips(),
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const _XpHistorySkeleton()
                     : _events.isEmpty
                         ? _buildEmptyState()
                         : _buildEventList(),
@@ -325,4 +326,29 @@ class _XpHistoryScreenState extends State<XpHistoryScreen> {
       },
     );
   }
+}
+
+/// Khung đang tải khớp danh sách sự kiện XP: icon tròn, hai dòng, pill XP.
+class _XpHistorySkeleton extends StatelessWidget {
+  const _XpHistorySkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: ListView.separated(
+          physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+          padding: EdgeInsets.symmetric(
+            horizontal: ResponsiveHelper.horizontalPadding(context),
+            vertical: 8,
+          ),
+          itemCount: 12,
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          itemBuilder: (_, __) => const SkeletonListTile(
+            leadingSize: 44,
+            leadingCircle: true,
+            trailingPillWidth: 64,
+            radius: 16,
+          ),
+        ),
+      );
 }

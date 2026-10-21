@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../../core/models/word.dart';
+import '../../../core/widgets/app_green_button.dart';
 import '../../../core/widgets/panda_companion.dart';
 
 class FlashcardFront extends StatelessWidget {
@@ -296,17 +297,18 @@ class FlashcardCompletion extends StatelessWidget {
         padding: const EdgeInsets.all(32),
         child: Container(
           decoration: BoxDecoration(
-            color: GameVisualTokens.parchment,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: GameVisualTokens.imperialGold.withValues(alpha: 0.5),
-              width: 1.5,
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFFFFDF6), Color(0xFFFFF4DE)],
             ),
-            boxShadow: [
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: Colors.white, width: 4),
+            boxShadow: const [
               BoxShadow(
-                color: GameVisualTokens.imperialGold.withValues(alpha: 0.15),
-                blurRadius: 16,
-                spreadRadius: 2,
+                color: Color(0x2E635D3B),
+                blurRadius: 20,
+                offset: Offset(0, 8),
               ),
             ],
           ),
@@ -322,18 +324,22 @@ class FlashcardCompletion extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 const Text(
-                  '🎉 Hoàn thành session! 🎉',
+                  'Hoàn thành lượt ôn!',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
-                    color: GameVisualTokens.crimsonDark,
+                    color: AppColors.homeTitle,
                   ),
                 ),
                 const SizedBox(height: 6),
                 const Text(
                   'Bạn đã hoàn thành lượt ôn tập này.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.muted),
+                  style: TextStyle(
+                    color: AppColors.homeBody,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 18),
 
@@ -343,8 +349,9 @@ class FlashcardCompletion extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFF1E6CF)),
+                    borderRadius: BorderRadius.circular(18),
+                    border:
+                        Border.all(color: const Color(0xFFE8E1D6), width: 1.5),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -353,14 +360,14 @@ class FlashcardCompletion extends StatelessWidget {
                         label: 'Đã ôn',
                         value: '$cardsReviewed',
                         icon: Icons.style_rounded,
-                        color: GameVisualTokens.primaryGreenDark,
+                        color: AppColors.amberDark,
                       ),
                       Container(height: 32, width: 1, color: Colors.grey[200]),
                       _buildMetric(
                         label: 'Độ chính xác',
                         value: '$accuracyPercent%',
                         icon: Icons.check_circle_outline_rounded,
-                        color: GameVisualTokens.crimson,
+                        color: AppColors.homeGreenText,
                       ),
                       Container(height: 32, width: 1, color: Colors.grey[200]),
                       _buildMetric(
@@ -374,45 +381,28 @@ class FlashcardCompletion extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Actions
+                // Actions: nút trắng + nút xanh nổi khối như ở màn Home
                 Row(
                   children: [
                     if (onBackHome != null) ...[
                       Expanded(
-                        child: OutlinedButton(
+                        child: AppGreenButton.light(
+                          label: 'Về trang chủ',
+                          icon: Icons.home_rounded,
+                          height: 48,
+                          fontSize: 14,
                           onPressed: onBackHome,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.ink,
-                            side: const BorderSide(color: Color(0xFFD4C8B0)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: const Text(
-                            'Về trang chủ',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                     ],
                     Expanded(
-                      child: FilledButton.icon(
+                      child: AppGreenButton(
+                        label: 'Ôn tiếp',
+                        icon: Icons.replay_rounded,
+                        height: 48,
+                        fontSize: 14,
                         onPressed: onContinue,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: GameVisualTokens.crimson,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        icon: const Icon(Icons.replay_rounded, size: 20),
-                        label: const Text(
-                          'Ôn tiếp tục',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
                       ),
                     ),
                   ],

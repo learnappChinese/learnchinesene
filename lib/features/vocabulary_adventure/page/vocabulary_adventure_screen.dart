@@ -23,10 +23,10 @@ class VocabularyAdventureScreen extends GetView<VocabularyAdventureController> {
           backgroundColor: const Color(0xFFFFFAF0),
           foregroundColor: GameVisualTokens.ink,
         ),
-        body: LearningSceneBackground(
+        body: SafeBottomArea(child: LearningSceneBackground(
           theme: LearningSceneTheme.bambooVillage,
           child: Obx(() => _buildState(context)),
-        ),
+        )),
       );
 
   Widget _buildState(BuildContext context) {

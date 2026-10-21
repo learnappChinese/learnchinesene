@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_shimmer.dart';
 import '../../../core/widgets/learning_scene_background.dart';
 import '../../../core/widgets/learning_scaffold.dart';
 import '../../../core/widgets/locked_mission_sheet.dart';
@@ -225,7 +226,7 @@ class _DuoGamePathScreenState extends State<DuoGamePathScreen> {
   Widget _buildLevelPath(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const SkeletonPage.path();
       }
 
       if (controller.levels.isEmpty) {

@@ -15,7 +15,6 @@ class BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        alignment: Alignment.center,
         padding: EdgeInsets.fromLTRB(
             ResponsiveHelper.horizontalPadding(context),
             verticalPadding,
@@ -27,9 +26,14 @@ class BottomActionBar extends StatelessWidget {
               blurRadius: shadowBlur,
               offset: Offset(0, shadowOffset))
         ]),
-        child: ConstrainedBox(
-            constraints: BoxConstraints(
-                maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-            child: child),
+        // heightFactor 1: chỉ cao vừa nội dung, kể cả khi nằm ở
+        // Scaffold.bottomNavigationBar (nơi chiều cao cho phép là cả màn).
+        child: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+              constraints: BoxConstraints(
+                  maxWidth: ResponsiveHelper.contentMaxWidth(context)),
+              child: child),
+        ),
       );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import '../../core/widgets/bottom_action_bar.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
@@ -163,7 +164,7 @@ class _WordListScreenState extends State<WordListScreen> {
   Widget _buildWordContent(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const _WordListSkeleton();
       }
       if (controller.hasError.value) {
         return const EmptyStateWidget(
@@ -204,4 +205,67 @@ class _WordListScreenState extends State<WordListScreen> {
       );
     });
   }
+}
+
+/// Khung đang tải khớp màn học từ: thanh tiến độ, thẻ từ lớn và hàng nút đáy.
+class _WordListSkeleton extends StatelessWidget {
+  const _WordListSkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 4, 20, 14),
+              child: Row(
+                children: [
+                  Expanded(child: ShimmerBox(height: 8, radius: 8)),
+                  SizedBox(width: 12),
+                  ShimmerBox(width: 40, height: 14),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveHelper.horizontalPadding(context),
+                ),
+                child: const SkeletonCard(
+                  style: SkeletonCardStyle.cream,
+                  radius: 28,
+                  padding: EdgeInsets.all(24),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ShimmerBox(width: 130, height: 80, radius: 18),
+                        SizedBox(height: 16),
+                        ShimmerBox(width: 100, height: 18),
+                        SizedBox(height: 12),
+                        SkeletonPill(width: 140, height: 30),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveHelper.horizontalPadding(context),
+                12,
+                ResponsiveHelper.horizontalPadding(context),
+                12 + MediaQuery.paddingOf(context).bottom,
+              ),
+              child: const Row(
+                children: [
+                  ShimmerBox.circle(size: 48),
+                  SizedBox(width: 12),
+                  Expanded(child: ShimmerBox(height: 52, radius: 18)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
 }

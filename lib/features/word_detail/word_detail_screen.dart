@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_shimmer.dart';
 import 'widget/word_detail_cards.dart';
-import '../../core/widgets/bottom_action_bar.dart';
+import '../../core/widgets/app_back_button.dart';
+import '../../core/widgets/app_green_button.dart';
+import '../../core/widgets/learning_scaffold.dart';
+import '../../core/widgets/learning_scene_background.dart';
 import 'package:get/get.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/responsive/responsive_layout.dart';
+import '../../core/theme/game_visual_tokens.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../hanzi_writing/screens/hanzi_writing_screen.dart';
 import 'controller/word_detail_controller.dart';
@@ -57,126 +61,174 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Chi tiết từ vựng',
-          style: TextStyle(fontWeight: FontWeight.w800),
+    return LearningScaffold(
+      title: 'Chi tiết từ vựng',
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Obx(
+            () => AppHudIconButton(
+              icon: controller.learned.value
+                  ? Icons.bookmark_added_rounded
+                  : Icons.bookmark_add_outlined,
+              tooltip: controller.learned.value
+                  ? 'Đã đánh dấu đã học'
+                  : 'Đánh dấu đã học',
+              size: 40,
+              onPressed: controller.mark,
+            ),
+          ),
         ),
-        actions: [
-          Obx(() => IconButton(
-                onPressed: controller.mark,
-                icon: Icon(
-                  controller.learned.value
-                      ? Icons.bookmark_added_rounded
-                      : Icons.bookmark_add_outlined,
-                  color: controller.learned.value ? AppColors.success : null,
-                ),
-              )),
-        ],
+      ],
+      body: LearningSceneBackground(
+        theme: LearningSceneTheme.bambooVillage,
+        child: Column(
+          children: [
+            Expanded(child: _buildWordContent(context, w)),
+            _buildPracticeActions(),
+          ],
+        ),
       ),
-      body: _buildWordContent(context, w),
     );
   }
 
   Widget _buildExamples() {
     return Obx(() {
       if (controller.isLoadingExamples.value) {
-        return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(20),
-            child: CircularProgressIndicator(),
-          ),
-        );
+        return const _ExamplesSkeleton();
       }
       if (controller.examples.isEmpty) {
-        return const EmptyStateWidget(
-          icon: Icons.chat_bubble_outline_rounded,
-          title: 'Chưa có câu mẫu',
-          message: 'Từ này chưa có câu ví dụ.',
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Text(
+            'Từ này chưa có câu ví dụ.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: GameVisualTokens.muted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         );
       }
       return Column(
         children: controller.examples.asMap().entries.map((entry) {
           final e = entry.value;
           return WordExampleCard(
-              key: ValueKey(e.id),
-              example: e,
-              number: entry.key + 1,
-              onSpeak: () => controller.speak(exampleId: e.id));
+            key: ValueKey(e.id),
+            example: e,
+            number: entry.key + 1,
+            onSpeak: () => controller.speak(exampleId: e.id),
+          );
         }).toList(),
       );
     });
   }
 
+  // Không có nền riêng: nút nổi thẳng trên phong cảnh để nền liền mạch
+  // tới tận mép dưới màn hình.
   Widget _buildPracticeActions() {
-    return BottomActionBar(
-        child: Obx(() => Row(
-              children: [
+    return Center(
+      heightFactor: 1,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: ResponsiveHelper.contentMaxWidth(context),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        child: Obx(
+          () => Row(
+            children: [
+              Expanded(
+                child: AppGreenButton(
+                  label: 'Luyện phát âm',
+                  icon: Icons.record_voice_over_rounded,
+                  height: 50,
+                  onPressed: () => controller.speak(),
+                ),
+              ),
+              if (controller.characterId.value != null) ...[
+                const SizedBox(width: 12),
                 Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () => controller.speak(),
-                    icon: const Icon(Icons.record_voice_over_rounded),
-                    label: const Text('Luyện phát âm'),
+                  child: AppGreenButton.light(
+                    label: 'Luyện viết',
+                    icon: Icons.draw_rounded,
+                    height: 50,
+                    onPressed: () {
+                      Get.to(
+                        () => HanziWritingScreen(
+                          characterId: controller.characterId.value!,
+                        ),
+                      );
+                    },
                   ),
                 ),
-                if (controller.characterId.value != null) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Get.to(() => HanziWritingScreen(
-                            characterId: controller.characterId.value!));
-                      },
-                      icon: const Icon(Icons.draw_rounded),
-                      label: const Text('Luyện viết'),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.red),
-                        foregroundColor: AppColors.red,
-                      ),
-                    ),
-                  ),
-                ],
               ],
-            )));
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildWordContent(BuildContext context, Word word) {
-    return Column(
-      children: [
-        Expanded(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                  maxWidth: ResponsiveHelper.contentMaxWidth(context)),
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(
-                  ResponsiveHelper.horizontalPadding(context),
-                  4,
-                  ResponsiveHelper.horizontalPadding(context),
-                  24,
-                ),
-                children: [
-                  WordPronunciationCard(
-                      word: word,
-                      onPlayAudio: word.ttsUrl.isEmpty
-                          ? null
-                          : () => controller.audio.playUrl(word.ttsUrl),
-                      onSpeak: () => controller.speak()),
-                  const SizedBox(height: 26),
-                  const Text(
-                    'Câu mẫu theo ngữ cảnh',
-                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildExamples(),
-                ],
-              ),
-            ),
-          ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: ResponsiveHelper.contentMaxWidth(context),
         ),
-        _buildPracticeActions(),
-      ],
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
+          children: [
+            WordPronunciationCard(
+              word: word,
+              onPlayAudio: word.ttsUrl.isEmpty
+                  ? null
+                  : () => controller.audio.playUrl(word.ttsUrl),
+              onSpeak: () => controller.speak(),
+            ),
+            const SizedBox(height: 16),
+            WordExamplesCard(child: _buildExamples()),
+          ],
+        ),
+      ),
     );
   }
+}
+
+/// Khung đang tải khớp các thẻ câu mẫu: số thứ tự, câu, nghĩa, nút mic.
+class _ExamplesSkeleton extends StatelessWidget {
+  const _ExamplesSkeleton();
+
+  @override
+  Widget build(BuildContext context) => AppShimmer(
+        child: Column(
+          children: [
+            for (var i = 0; i < 3; i++) ...[
+              const SkeletonCard(
+                padding: EdgeInsets.fromLTRB(12, 12, 10, 12),
+                child: Row(
+                  children: [
+                    ShimmerBox.circle(size: 26),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ShimmerLine(widthFactor: .6, height: 9),
+                          SizedBox(height: 4),
+                          ShimmerLine(widthFactor: .8, height: 22),
+                          SizedBox(height: 8),
+                          ShimmerLine(widthFactor: .65, height: 12),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    ShimmerBox(width: 40, height: 40, radius: 13),
+                  ],
+                ),
+              ),
+              if (i < 2) const SizedBox(height: 14),
+            ],
+          ],
+        ),
+      );
 }

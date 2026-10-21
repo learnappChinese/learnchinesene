@@ -49,10 +49,10 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: LearningSceneBackground(
+      body: SafeBottomArea(child: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: _buildBody(context),
-      ),
+      )),
     );
   }
 
