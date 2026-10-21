@@ -64,6 +64,8 @@ class _LearningOverviewScreenState extends State<LearningOverviewScreen> {
   Widget build(BuildContext context) {
     return LearningScaffold(
       title: controller.title,
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      useSafeArea: false,
       body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: Obx(() {
@@ -80,7 +82,7 @@ class _LearningOverviewScreenState extends State<LearningOverviewScreen> {
                   ResponsiveHelper.horizontalPadding(context),
                   LearningSpacing.sm,
                   ResponsiveHelper.horizontalPadding(context),
-                  LearningSpacing.xxl,
+                  LearningSpacing.xxl + MediaQuery.viewPaddingOf(context).bottom,
                 ),
                 children: [
                   ChapterHeaderBanner(

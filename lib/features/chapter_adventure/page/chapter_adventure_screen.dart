@@ -22,6 +22,8 @@ class ChapterAdventureScreen extends GetView<ChapterAdventureController> {
   @override
   Widget build(BuildContext context) => LearningScaffold(
         title: 'Hành trình bài học',
+        // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+        useSafeArea: false,
         body: SharedTabBackground(
           child: Obx(() => _buildState(context)),
         ),
@@ -79,7 +81,11 @@ class ChapterAdventureScreen extends GetView<ChapterAdventureController> {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 40 + MediaQuery.viewPaddingOf(context).bottom,
+            ),
+          ),
         ]),
       ),
     );

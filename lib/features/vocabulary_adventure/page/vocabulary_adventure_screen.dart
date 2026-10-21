@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/learning/model/learning_result.dart';
 import '../../../core/theme/game_visual_tokens.dart';
+import '../../../core/widgets/app_shimmer.dart';
 import '../../../core/widgets/game_progress_hud.dart';
 import '../../../core/widgets/learning_scene_background.dart';
 import '../../../core/widgets/mission_intro.dart';
@@ -30,7 +31,11 @@ class VocabularyAdventureScreen extends GetView<VocabularyAdventureController> {
       );
 
   Widget _buildState(BuildContext context) {
-    if (controller.isLoading.value) return const _VocabularyLoading();
+    if (controller.isLoading.value) {
+      return controller.isResumingRun.value
+          ? const _VocabularyGameplaySkeleton()
+          : const SkeletonMissionIntro();
+    }
     if (controller.errorMessage.value != null) {
       return _VocabularyMessage(
         icon: Icons.cloud_off_rounded,
@@ -387,34 +392,109 @@ class _RewardMetric extends StatelessWidget {
       );
 }
 
-class _VocabularyLoading extends StatelessWidget {
-  const _VocabularyLoading();
+/// Khung đang tải khớp màn chơi khi tiếp tục lượt dở: thanh tiến độ, thẻ câu
+/// hỏi (đầu thẻ, ô từ cần hỏi) và 4 ô đáp án.
+class _VocabularyGameplaySkeleton extends StatelessWidget {
+  const _VocabularyGameplaySkeleton();
 
   @override
-  Widget build(BuildContext context) => Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(18),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Column(
-              children: [
-                const PandaCompanion(
-                  mood: PandaMood.thinking,
-                  size: 110,
-                  speechText: 'Panda đang chuẩn bị cuộn từ vựng…',
+  Widget build(BuildContext context) => AppShimmer(
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 11, 16, 13),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFFAF0),
+                border: Border(
+                  bottom: BorderSide(color: Color(0xFFF1E6CF), width: 1.5),
                 ),
-                const SizedBox(height: 18),
-                Container(
-                  height: 260,
-                  decoration: BoxDecoration(
-                    color: Colors.white60,
-                    borderRadius: BorderRadius.circular(26),
-                    border: Border.all(color: GameVisualTokens.goldLight),
+              ),
+              child: const Column(
+                children: [
+                  Row(
+                    children: [
+                      ShimmerBox.circle(size: 30),
+                      SizedBox(width: 9),
+                      ShimmerBox(width: 92, height: 12),
+                      Spacer(),
+                      SkeletonPill(width: 58, height: 22),
+                    ],
+                  ),
+                  SizedBox(height: 9),
+                  Row(
+                    children: [
+                      Expanded(child: ShimmerBox(height: 10, radius: 8)),
+                      SizedBox(width: 10),
+                      ShimmerBox(width: 30, height: 12),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 620),
+                    child: SkeletonCard(
+                      style: SkeletonCardStyle.cream,
+                      radius: 26,
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        children: [
+                          const SkeletonQuestionHeader(),
+                          const SizedBox(height: 10),
+                          const SizedBox(
+                            width: double.infinity,
+                            child: SkeletonCard(
+                              radius: 20,
+                              child: Column(
+                                children: [
+                                  ShimmerBox(width: 120, height: 50, radius: 12),
+                                  SizedBox(height: 10),
+                                  ShimmerLine(
+                                    widthFactor: .26,
+                                    height: 20,
+                                    alignment: Alignment.center,
+                                  ),
+                                  SizedBox(height: 12),
+                                  ShimmerBox(width: 46, height: 46, radius: 14),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          for (var i = 0; i < 4; i++) ...[
+                            if (i > 0) const SizedBox(height: 15),
+                            const SkeletonCard(
+                              height: 64,
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                children: [
+                                  ShimmerBox.circle(size: 26),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: ShimmerLine(
+                                      widthFactor: .45,
+                                      height: 16,
+                                      alignment: Alignment.center,
+                                    ),
+                                  ),
+                                  SizedBox(width: 38),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       );
 }

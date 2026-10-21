@@ -53,6 +53,8 @@ class _UnitScreenState extends State<UnitScreen> {
   Widget build(BuildContext context) {
     return LearningScaffold(
       title: controller.title,
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      useSafeArea: false,
       body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: _buildUnitCatalog(context),
@@ -167,7 +169,7 @@ class _UnitScreenState extends State<UnitScreen> {
                   ResponsiveHelper.horizontalPadding(context),
                   8,
                   ResponsiveHelper.horizontalPadding(context),
-                  40,
+                  40 + MediaQuery.viewPaddingOf(context).bottom,
                 ),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(

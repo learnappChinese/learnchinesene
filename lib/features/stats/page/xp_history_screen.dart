@@ -142,6 +142,8 @@ class _XpHistoryScreenState extends State<XpHistoryScreen> {
   Widget build(BuildContext context) {
     return LearningScaffold(
       title: 'Lịch sử Kinh nghiệm (XP)',
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      useSafeArea: false,
       body: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -233,9 +235,11 @@ class _XpHistoryScreenState extends State<XpHistoryScreen> {
 
   Widget _buildEventList() {
     return ListView.separated(
-      padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveHelper.horizontalPadding(context),
-        vertical: 12,
+      padding: EdgeInsets.fromLTRB(
+        ResponsiveHelper.horizontalPadding(context),
+        12,
+        ResponsiveHelper.horizontalPadding(context),
+        12 + MediaQuery.viewPaddingOf(context).bottom,
       ),
       itemCount: _events.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),

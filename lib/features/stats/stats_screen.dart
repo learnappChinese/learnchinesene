@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/widgets/learning_scene_background.dart';
 import '../../core/widgets/app_shimmer.dart';
 import 'widget/mastered_words_summary.dart';
 import 'package:get/get.dart';
@@ -51,7 +50,8 @@ class _StatsScreenState extends State<StatsScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: SafeBottomArea(child: _buildBody(context)),
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      body: _buildBody(context),
     );
   }
 
@@ -108,9 +108,11 @@ class _StatsScreenState extends State<StatsScreen> {
           constraints: BoxConstraints(
               maxWidth: ResponsiveHelper.contentMaxWidth(context)),
           child: ListView(
-            padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveHelper.horizontalPadding(context),
-              vertical: 24,
+            padding: EdgeInsets.fromLTRB(
+              ResponsiveHelper.horizontalPadding(context),
+              24,
+              ResponsiveHelper.horizontalPadding(context),
+              24 + MediaQuery.viewPaddingOf(context).bottom,
             ),
             children: [
               MasteredWordsSummary(count: s['mastered']?.toInt() ?? 0),

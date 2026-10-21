@@ -38,6 +38,8 @@ class _FlashcardSettingsScreenState extends State<FlashcardSettingsScreen> {
   Widget build(BuildContext context) {
     return LearningScaffold(
       title: 'Cài đặt ôn tập',
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      useSafeArea: false,
       body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: Obx(() {
@@ -46,7 +48,12 @@ class _FlashcardSettingsScreenState extends State<FlashcardSettingsScreen> {
           }
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              24 + MediaQuery.viewPaddingOf(context).bottom,
+            ),
             children: [
               // 1. Nhóm cấu hình nhanh (Presets)
               _buildSectionCard(

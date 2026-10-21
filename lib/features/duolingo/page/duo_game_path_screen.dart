@@ -63,6 +63,8 @@ class _DuoGamePathScreenState extends State<DuoGamePathScreen> {
   Widget build(BuildContext context) {
     return LearningScaffold(
       title: widget.gameName,
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      useSafeArea: false,
       body: LearningSceneBackground(
         theme: LearningSceneTheme.lanternTown,
         child: _buildLevelPath(context),
@@ -304,8 +306,10 @@ class _DuoGamePathScreenState extends State<DuoGamePathScreen> {
           ),
 
           // Padding cuối màn hình
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 48),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 48 + MediaQuery.viewPaddingOf(context).bottom,
+            ),
           ),
         ],
       );

@@ -15,7 +15,12 @@ class LessonDialogueTab extends StatelessWidget {
     }
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
       itemCount: lines.length,
       itemBuilder: (context, index) {
         final line = lines[index];
@@ -95,7 +100,12 @@ class LessonVocabularyTab extends StatelessWidget {
     }
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
@@ -161,7 +171,12 @@ class LessonGrammarTab extends StatelessWidget {
     }
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
       itemCount: points.length,
       itemBuilder: (context, index) {
         final gp = points[index];

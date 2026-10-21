@@ -49,10 +49,11 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: SafeBottomArea(child: LearningSceneBackground(
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: _buildBody(context),
-      )),
+      ),
     );
   }
 
@@ -112,7 +113,12 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             Expanded(
               child: ListView.builder(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  16 + MediaQuery.viewPaddingOf(context).bottom,
+                ),
                 itemCount: controller.lines.length + 1,
                 itemBuilder: (context, index) {
                   if (index == controller.lines.length) {
@@ -226,6 +232,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
 
   Widget _buildBody(BuildContext context) {
     return SafeArea(
+      bottom: false,
       child: Column(
         children: [
           // Settings Panel Card

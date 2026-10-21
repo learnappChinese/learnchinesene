@@ -1,5 +1,6 @@
 import 'package:pandarin/features/home/widgets/home_bottom_navigation.dart';
 import 'package:pandarin/core/config/feature_flags.dart';
+import 'package:pandarin/core/learning/model/recommended_next_action.dart';
 import 'package:pandarin/features/home/widgets/home_learning_tab.dart';
 import 'package:pandarin/features/home/model/home_journey.dart';
 import 'package:pandarin/features/review/model/review_item.dart';
@@ -147,6 +148,81 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Cần ôn tập 5 mục hôm nay'), findsOneWidget);
     expect(find.text('VÀO BẢN ĐỒ ẢI'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'Thẻ bài học vẫn dẫn tiếp lộ trình khi gợi ý chung là ôn tập đến hạn',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(393, 852);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final actions = <String>[];
+
+    await tester.pumpWidget(ScreenUtilInit(
+      designSize: const Size(440, 956),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (_, __) => MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: HomeLearningTab(
+            journey: const HomeJourney(
+              gameId: 1,
+              gameCode: 'select_answer',
+              gameName: 'Hành trình tiếng Trung',
+              gameDescription: '',
+              levelId: 'level_1',
+              unitId: 'unit_1',
+              worldNumber: 1,
+              chapterNumber: 1,
+              chapterTitle: 'Gọi tên món ăn và đồ uống',
+              missionNumber: 2,
+              missionTitle: 'Ôn lại 29 mục đến hạn',
+              pathMissionTitle: 'Chọn đáp án',
+              completedMissions: 1,
+              totalMissions: 6,
+              stars: 3,
+              bossProgress: 0.2,
+              nextRewardXp: 25,
+              nextAction: RecommendedNextAction(
+                type: RecommendedActionType.review,
+                destination: 'review:overdue',
+                reasonCode: 'overdue_review',
+                label: 'ÔN NGAY',
+                title: 'Ôn lại 29 mục đến hạn',
+                description: 'Những mục đến hạn có nguy cơ bị quên cao nhất.',
+                estimatedMinutes: 8,
+              ),
+            ),
+            reviewSummary: const ReviewSummary(totalDue: 29, wordsDue: 29),
+            onPractice: () => actions.add('practice'),
+            onVocabulary: () {},
+            onLessons: () {},
+            onConversation: () {},
+            onSections: () => actions.add('sections'),
+            onLearningPath: () => actions.add('journey'),
+            onContinueLesson: () => actions.add('lesson'),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ÔN NGAY'), findsNothing);
+    expect(find.textContaining('Ôn lại 29 mục', findRichText: true),
+        findsNothing);
+    expect(find.text('Những mục đến hạn có nguy cơ bị quên cao nhất.'),
+        findsNothing);
+    expect(find.textContaining('Mục tiêu kế tiếp: Chọn đáp án',
+            findRichText: true),
+        findsOneWidget);
+    expect(find.text('Cần ôn tập 29 mục hôm nay'), findsOneWidget);
+
+    await tester.tap(find.text('TIẾP TỤC'));
+    await tester.tap(find.text('LỘ TRÌNH HỌC'));
+    expect(actions, ['lesson', 'sections']);
     expect(tester.takeException(), isNull);
   });
 }

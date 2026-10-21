@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/widgets/learning_scene_background.dart';
 import '../../core/widgets/app_shimmer.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -55,13 +54,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: SafeBottomArea(child: Column(
+        // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+        body: Column(
           children: [
             _buildHeroWithStats(context),
             _buildTabSelector(),
             Expanded(child: _buildHistoryContent(context)),
           ],
-        )),
+        ),
       ),
     );
   }
@@ -495,7 +495,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        24 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
       children: rows,
     );
   }
@@ -518,7 +523,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        24 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
       itemCount: items.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {

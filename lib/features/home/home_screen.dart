@@ -121,6 +121,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         journey: controller.journey.value,
         reviewSummary: controller.reviewSummary.value,
         onLearningPath: _openCurrentJourney,
+        onContinueLesson: _openCurrentUnit,
         onReview: () => Get.to(() => const ReviewScreen()),
         onHanzi: () => Get.to(() => const HanziWritingHomeScreen()),
         onSpeaking: () => Get.to(
@@ -184,6 +185,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     }
 
+    _openCurrentUnit();
+  }
+
+  void _openCurrentUnit() {
+    final journey = controller.journey.value;
     if (journey == null || journey.unitId == null) {
       Get.to(() => const LearningSectionsScreen());
       return;

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/widgets/learning_scene_background.dart';
 import '../../core/widgets/app_shimmer.dart';
 import 'package:get/get.dart';
 import '../../core/theme/game_visual_tokens.dart';
@@ -74,7 +73,8 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         title: const Text('Hồ sơ & thành tích'),
       ),
-      body: SafeBottomArea(child: _buildAchievements(context)),
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      body: _buildAchievements(context),
     );
   }
 
