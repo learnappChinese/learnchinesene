@@ -29,6 +29,11 @@ class GuestJourneyResolver {
 
     final passedKeys = await store.getAllPassedStageKeys();
     final updatedLearningRows = <Map<String, dynamic>>[];
+    // Boss chỉ mở khi đã qua hết các ải, nên Boss đã thắng nghĩa là cả bài đã
+    // hoàn thành. Giữ đúng bất biến này để màn trong khớp với danh sách bài.
+    final isBossWon = bossRows.isNotEmpty && await store.isBossWon(unitId);
+    // Chỉ điểm của các ải có kết quả thật mới được tính vào độ thành thạo.
+    final recordedScores = <double>[];
 
     // Pass 1: compute completion and unlock for learning nodes sequentially
     for (int i = 0; i < learningRows.length; i++) {
@@ -37,7 +42,12 @@ class GuestJourneyResolver {
       final levelId = '${row['level_id'] ?? ''}'.trim();
 
       final stageRecord = await store.getStageRecord(gameId, levelId);
-      final isCompleted = stageRecord != null && stageRecord['passed'] == true;
+      final hasPassedRecord =
+          stageRecord != null && stageRecord['passed'] == true;
+      final isCompleted = isBossWon || hasPassedRecord;
+      if (hasPassedRecord) {
+        recordedScores.add((stageRecord['score'] as num?)?.toDouble() ?? 70.0);
+      }
 
       bool isUnlocked;
       String? lockReason;
@@ -97,15 +107,15 @@ class GuestJourneyResolver {
     // Derive effective mastery if overallMastery was not supplied or <= 0
     double effectiveMastery = overallMastery;
     if (effectiveMastery <= 0.0 && updatedLearningRows.isNotEmpty) {
-      final completedRows =
-          updatedLearningRows.where((r) => r['is_completed'] == true).toList();
-      if (completedRows.isNotEmpty) {
-        final totalScore = completedRows.fold<double>(
-          0.0,
-          (sum, r) => sum + ((r['best_score'] as num?)?.toDouble() ?? 70.0),
-        );
+      if (recordedScores.isNotEmpty) {
+        final totalScore = recordedScores.fold<double>(0.0, (a, b) => a + b);
         effectiveMastery =
-            (totalScore / (completedRows.length * 100)).clamp(0.0, 1.0);
+            (totalScore / (recordedScores.length * 100)).clamp(0.0, 1.0);
+      } else if (isBossWon) {
+        final bossRecord = await store.getBossRecord(unitId);
+        effectiveMastery =
+            (((bossRecord?['score'] as num?)?.toDouble() ?? 70.0) / 100)
+                .clamp(0.0, 1.0);
       }
     }
 
@@ -120,7 +130,6 @@ class GuestJourneyResolver {
     final updatedBossRows = <Map<String, dynamic>>[];
     for (final bRow in bossRows) {
       final bossRecord = await store.getBossRecord(unitId);
-      final isBossWon = bossRecord != null && bossRecord['won'] == true;
 
       bool isBossUnlocked;
       String? lockReason;
@@ -238,6 +247,7 @@ class GuestJourneyResolver {
     required bool isSectionUnlocked,
     String? previousSectionLastUnitId,
     Future<double> Function(String unitId)? masteryLoader,
+    Future<List<Map<String, dynamic>>> Function(String unitId)? pathRowsLoader,
   }) async {
     if (units.isEmpty) return const [];
 
@@ -293,7 +303,13 @@ class GuestJourneyResolver {
             : 'Đánh bại Boss Bài ${prevUnit.unitNumber} để mở khóa.';
       }
 
-      final passedCount = await store.getPassedStageCountForUnit(unit.id);
+      final passedCount = isBossWon
+          ? unit.missionCount
+          : await _passedStageCount(
+              unitId: unit.id,
+              store: store,
+              pathRowsLoader: isUnlocked ? pathRowsLoader : null,
+            );
       final completedCount = isBossWon
           ? unit.missionCount
           : (passedCount > unit.completedMissionCount
@@ -327,6 +343,33 @@ class GuestJourneyResolver {
     }
 
     return result;
+  }
+
+  /// Đếm số ải đã qua theo đúng các node trên lộ trình của unit, giống màn
+  /// tổng quan bài học. Đếm thô theo unit sẽ tính cả lượt luyện viết, phát âm…
+  /// nên dễ báo đủ ải và mở Boss quá sớm.
+  Future<int> _passedStageCount({
+    required String unitId,
+    required GuestLearningProgressStore store,
+    Future<List<Map<String, dynamic>>> Function(String unitId)? pathRowsLoader,
+  }) async {
+    if (pathRowsLoader != null) {
+      try {
+        final pathRows = await pathRowsLoader(unitId);
+        if (pathRows.isNotEmpty) {
+          final overlaid = await overlayUnitPath(
+            unitId: unitId,
+            pathRows: pathRows,
+            store: store,
+          );
+          return overlaid
+              .where((r) =>
+                  r['node_type'] == 'learning' && r['is_completed'] == true)
+              .length;
+        }
+      } catch (_) {}
+    }
+    return store.getPassedStageCountForUnit(unitId);
   }
 
   /// Overlays sections with Guest unlock and completion counts.

@@ -161,8 +161,9 @@ class VocabularyEventBuilder {
         events.add(_recall(item, words));
       }
       for (final item in round) {
-        if (item.examples.isNotEmpty) {
-          events.add(_use(item, words));
+        final example = _blankableExample(item);
+        if (example != null) {
+          events.add(_use(item, words, example));
         }
       }
     }
@@ -221,14 +222,24 @@ class VocabularyEventBuilder {
         ),
       );
 
+  /// Câu ví dụ phải chứa đúng từ đang học thì mới đục lỗ được; câu không
+  /// chứa từ sẽ thành câu hỏi không có đáp án khớp nên bỏ qua.
+  ExampleSentence? _blankableExample(VocabularyMissionWord item) {
+    final target = item.word.chinese.trim();
+    if (target.isEmpty) return null;
+    for (final example in item.examples) {
+      if (example.chinese.contains(target)) return example;
+    }
+    return null;
+  }
+
   VocabularyGameplayEvent _use(
     VocabularyMissionWord item,
     List<VocabularyMissionWord> pool,
+    ExampleSentence example,
   ) {
-    final example = item.examples.first;
-    final sentence = example.chinese.contains(item.word.chinese)
-        ? example.chinese.replaceAll(item.word.chinese, '＿＿')
-        : example.chinese;
+    final sentence =
+        example.chinese.replaceAll(item.word.chinese.trim(), '＿＿');
     return VocabularyGameplayEvent(
       id: '${item.word.id}-use',
       stage: VocabularyStage.use,

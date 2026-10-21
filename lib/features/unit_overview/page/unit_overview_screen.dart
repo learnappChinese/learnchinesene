@@ -65,6 +65,8 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   Widget build(BuildContext context) {
     return LearningScaffold(
       title: 'Tổng quan bài học',
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      useSafeArea: false,
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 12),
@@ -126,7 +128,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
                   ResponsiveHelper.horizontalPadding(context),
                   16,
                   ResponsiveHelper.horizontalPadding(context),
-                  40,
+                  40 + MediaQuery.viewPaddingOf(context).bottom,
                 ),
                 children: [
                   _buildHeader(context, chapter),
@@ -175,9 +177,18 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
           : 'Nắm vững từ vựng và mẫu câu giao tiếp cơ bản.',
       completed: completed,
       total: total,
-      statusLabel: chapter.bossUnlocked ? 'Boss đã mở' : 'Đang phiêu lưu',
-      bossUnlocked: chapter.bossUnlocked,
+      statusLabel: controller.isUnitCompleted
+          ? 'Đã hoàn thành'
+          : (_isBossOpen(chapter) ? 'Boss đã mở' : 'Đang phiêu lưu'),
+      bossUnlocked: _isBossOpen(chapter) && !controller.isUnitCompleted,
     );
+  }
+
+  /// Có lộ trình ải thì trạng thái Boss lấy từ node Boss trên lộ trình, cùng
+  /// nguồn với thẻ "Bài học đã hoàn thành" và danh sách ải.
+  bool _isBossOpen(ChapterAdventure chapter) {
+    if (controller.stages.isEmpty) return chapter.bossUnlocked;
+    return controller.isBossReady || controller.isBossDefeated;
   }
 
   Widget _buildMetricsRow(ChapterAdventure chapter) {
@@ -187,7 +198,10 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
     final total =
         hasStages ? controller.totalStageCount : chapter.missions.length;
     final masteryPct = (chapter.overallMastery * 100).round();
-    final bossStatus = chapter.bossUnlocked ? 'Sẵn sàng' : 'Chưa mở';
+    final bossOpen = _isBossOpen(chapter);
+    final bossStatus = controller.isBossDefeated
+        ? 'Đã hạ'
+        : (bossOpen ? 'Sẵn sàng' : 'Chưa mở');
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
@@ -224,10 +238,10 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
             _MetricItem(
               label: 'Boss',
               value: bossStatus,
-              icon: chapter.bossUnlocked
+              icon: bossOpen
                   ? Icons.local_fire_department_rounded
                   : Icons.lock_rounded,
-              color: chapter.bossUnlocked
+              color: bossOpen
                   ? GameVisualTokens.crimson
                   : const Color(0xFF94A3B8),
             ),
