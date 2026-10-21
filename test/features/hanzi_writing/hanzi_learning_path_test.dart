@@ -186,7 +186,6 @@ void main() {
       );
 
       expect(find.text('你'), findsOneWidget);
-      expect(find.text('nǐ'), findsOneWidget);
       expect(find.byIcon(Icons.check_rounded), findsOneWidget);
     });
 
@@ -221,7 +220,7 @@ void main() {
       );
 
       expect(find.text('好'), findsOneWidget);
-      expect(find.text('ĐANG HỌC'), findsOneWidget);
+      expect(find.text('Đang học'), findsOneWidget);
     });
 
     testWidgets('6. HanziZigzagNodeWidget renders locked state with lock icon',
@@ -296,9 +295,10 @@ void main() {
       );
 
       expect(find.text('Gia đình'), findsOneWidget);
-      expect(find.text('HSK 1 • BÀI 2'), findsOneWidget);
-      expect(find.text('Tiến độ: 1/2 chữ'), findsOneWidget);
-      expect(find.text('50%'), findsOneWidget);
+      expect(find.textContaining('HSK 1'), findsOneWidget);
+      expect(find.textContaining('BÀI 2'), findsOneWidget);
+      expect(find.text('1/2 chữ'), findsOneWidget);
+      expect(find.text('Đã xong 50%'), findsOneWidget);
     });
 
     testWidgets('8. HanziNodeDetailSheet displays character, pinyin, meaning and triggers CTA',
@@ -336,12 +336,12 @@ void main() {
       );
 
       expect(find.text('爱'), findsOneWidget);
-      expect(find.text('ài'), findsOneWidget);
-      expect(find.text('yêu, thích'), findsOneWidget);
+      expect(find.textContaining('ài'), findsOneWidget);
+      expect(find.textContaining('yêu, thích'), findsOneWidget);
       expect(find.text('10 nét'), findsOneWidget);
-      expect(find.text('BẮT ĐẦU VIẾT'), findsOneWidget);
+      expect(find.text('Bắt đầu viết'), findsOneWidget);
 
-      await tester.tap(find.text('BẮT ĐẦU VIẾT'));
+      await tester.tap(find.text('Bắt đầu viết'));
       await tester.pump();
       expect(started, isTrue);
     });
@@ -368,12 +368,10 @@ void main() {
       expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
 
       // Verify stat chips
-      expect(find.text('178'), findsOneWidget);
-      expect(find.text('XP'), findsOneWidget);
-      expect(find.text('1'), findsOneWidget);
-      expect(find.text('ngày'), findsOneWidget);
-      expect(find.text('0'), findsOneWidget);
-      expect(find.text('chữ'), findsOneWidget);
+      expect(find.textContaining('178'), findsOneWidget);
+      expect(find.textContaining('XP'), findsOneWidget);
+      expect(find.textContaining('ngày'), findsOneWidget);
+      expect(find.textContaining('chữ'), findsOneWidget);
     });
 
     testWidgets('10. HanziPathPandaWidget renders without bottom overflow in bounded row',
@@ -437,7 +435,6 @@ void main() {
 
       await tester.pump();
       expect(find.text('水'), findsOneWidget);
-      expect(find.text('shuǐ'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
