@@ -64,10 +64,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  /// Thời điểm app vào background. Chỉ đồng bộ lại khi người học rời app đủ
+  /// lâu, tránh việc mở thông báo, Control Center hay hộp xin quyền cũng làm
+  /// mọi màn tải lại toàn bộ dữ liệu.
+  DateTime? _pausedAt;
+  static const _resumeSyncThreshold = Duration(minutes: 2);
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed &&
-        Get.isRegistered<LearningProgressSyncService>()) {
+    if (state == AppLifecycleState.paused) {
+      _pausedAt = DateTime.now();
+      return;
+    }
+    if (state != AppLifecycleState.resumed) return;
+    final pausedAt = _pausedAt;
+    _pausedAt = null;
+    if (pausedAt == null ||
+        DateTime.now().difference(pausedAt) < _resumeSyncThreshold) {
+      return;
+    }
+    if (Get.isRegistered<LearningProgressSyncService>()) {
       Get.find<LearningProgressSyncService>().syncOnAppResume();
     }
   }

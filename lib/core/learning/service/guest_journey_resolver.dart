@@ -243,6 +243,17 @@ class GuestJourneyResolver {
 
     final result = <LearningUnitViewModel>[];
     final wonBossUnits = await store.getAllWonBossUnitIds();
+    final masteries = masteryLoader == null
+        ? null
+        : await Future.wait(
+            units.map((unit) async {
+              try {
+                return await masteryLoader(unit.id);
+              } catch (_) {
+                return unit.mastery;
+              }
+            }),
+          );
 
     for (int i = 0; i < units.length; i++) {
       final unit = units[i];
@@ -297,12 +308,7 @@ class GuestJourneyResolver {
               ? UnitCompletionState.bossPending
               : UnitCompletionState.inProgress);
 
-      double unitMastery = unit.mastery;
-      if (masteryLoader != null) {
-        try {
-          unitMastery = await masteryLoader(unit.id);
-        } catch (_) {}
-      }
+      double unitMastery = masteries?[i] ?? unit.mastery;
       if (unitMastery <= 0.0 && completedCount > 0) {
         unitMastery = 0.70;
       }
@@ -334,11 +340,15 @@ class GuestJourneyResolver {
 
     final result = <LearningSectionViewModel>[];
     bool prevSectionCompleted = true;
+    final wonBossUnits = await store.getAllWonBossUnitIds();
 
     for (int i = 0; i < sections.length; i++) {
       final section = sections[i];
-      final units = await unitsLoader(section.id);
-      final wonBossUnits = await store.getAllWonBossUnitIds();
+      // Chỉ phần học đã mở mới có thể có boss bị đánh bại, nên chỉ tải units
+      // khi cần: khách chưa thắng boss nào thì không phải gọi RPC nào cả.
+      final units = prevSectionCompleted && wonBossUnits.isNotEmpty
+          ? await unitsLoader(section.id)
+          : const <LearningUnitViewModel>[];
 
       final completedCount =
           units.where((u) => wonBossUnits.contains(u.id)).length;

@@ -45,6 +45,14 @@ class UnitOverviewScreen extends StatefulWidget {
 class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   late final UnitOverviewController controller;
 
+  /// Sync generation lúc rời màn, để khi quay về biết có cần tải lại không.
+  int _syncGenerationAtLeave = 0;
+
+  void _markLeaving() => _syncGenerationAtLeave = controller.syncGeneration;
+
+  Future<void> _refreshAfterReturn() =>
+      controller.refreshAfterReturn(_syncGenerationAtLeave);
+
   @override
   void initState() {
     super.initState();
@@ -570,7 +578,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
         (result is LearningNavigationOutcome && result.isSuccess);
     final outcome = result is LearningNavigationOutcome ? result : null;
 
-    controller.loadUnitOverview().then((_) {
+    _refreshAfterReturn().then((_) {
       if (!mounted) return;
 
       if (outcome != null && outcome.isFightBoss) {
@@ -621,6 +629,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   }
 
   void _openStage(ChapterAdventure chapter, LearningStageViewModel stage) {
+    _markLeaving();
     if (stage.isLocked) {
       final prerequisite = _findPrerequisiteStage(stage);
       showLockedMissionSheet(
@@ -769,6 +778,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   }
 
   void _openMission(ChapterAdventure chapter, ChapterMission mission) {
+    _markLeaving();
     if (mission.state == AdventureNodeState.locked) {
       final uncompleted = chapter.missions
           .where((m) => m.state != AdventureNodeState.completed && m != mission)
@@ -814,12 +824,13 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   }
 
   void _openBossWithStage(dynamic bossStage) {
+    _markLeaving();
     Get.to(
       () => BossBattleScreen(stage: bossStage),
     )?.then((result) {
       final isSuccess = result == true ||
           (result is LearningNavigationOutcome && result.isSuccess);
-      controller.loadUnitOverview().then((_) {
+      _refreshAfterReturn().then((_) {
         if (isSuccess && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1018,10 +1029,11 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   void _openAdventureMap() {
     final chapter = controller.chapter.value;
     if (chapter == null) return;
+    _markLeaving();
     Get.to(
       () => const ChapterAdventureScreen(),
       binding: ChapterAdventureBinding(levelId: chapter.levelId),
-    )?.then((_) => controller.loadUnitOverview());
+    )?.then((_) => _refreshAfterReturn());
   }
 }
 

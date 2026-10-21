@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/backend/query_cache.dart';
 import '../../../core/presentation/learning_presentation_mapper.dart';
 import '../../../core/database/duo_db_helper.dart';
 import '../../../core/widgets/adventure_node.dart';
@@ -33,12 +34,18 @@ class SupabaseChapterAdventureRepository implements ChapterAdventureRepository {
     final client = _client;
     if (client == null) return null;
     try {
-      final levelRows = List<Map<String, dynamic>>.from(
-        await client
-            .from('duo_levels')
-            .select('id, unit_id, teaching_objective')
-            .eq('id', levelId)
-            .limit(1),
+      // Thông tin level là nội dung tĩnh, cache cả kết quả rỗng (khi truyền
+      // vào unit id) để không phải tra lại mỗi lần làm mới.
+      final levelRows = await QueryCache.run(
+        'duo_levels.byId|$levelId',
+        () async => List<Map<String, dynamic>>.from(
+          await client
+              .from('duo_levels')
+              .select('id, unit_id, teaching_objective')
+              .eq('id', levelId)
+              .limit(1),
+        ),
+        keep: true,
       );
       if (levelRows.isEmpty) return null;
 

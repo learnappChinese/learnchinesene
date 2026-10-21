@@ -12,7 +12,7 @@ class DuoGameCenterController extends GetxController {
   }
 
   Future<void> loadGames() async {
-    isLoading.value = true;
+    isLoading.value = games.isEmpty;
     try {
       final list = await DuoGameRepository.instance.getGames();
       games.assignAll(list);

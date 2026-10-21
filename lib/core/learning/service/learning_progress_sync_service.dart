@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../backend/query_cache.dart';
 import '../model/learning_activity_submission.dart';
 import '../model/learning_result.dart';
 
@@ -280,6 +281,7 @@ class LearningProgressSyncService extends GetxService {
 
   Future<LearningSyncReport> _dispatch(LearningDomainEvent rawEvent) async {
     final event = rawEvent.withGeneration(generation.value + 1);
+    QueryCache.dropInflight();
     generation.value = event.generation;
     isSyncing.value = true;
     _events.add(event);

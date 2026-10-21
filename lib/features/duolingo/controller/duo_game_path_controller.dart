@@ -43,7 +43,7 @@ class DuoGamePathController extends GetxController {
   }
 
   Future<void> loadLevels() async {
-    isLoading.value = true;
+    isLoading.value = allLevels.isEmpty;
     try {
       final list =
           await DuoGameRepository.instance.getGameLevels(gameId, gameCode);

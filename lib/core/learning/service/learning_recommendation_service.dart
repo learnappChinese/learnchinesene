@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../backend/query_cache.dart';
 import '../data/learning_journey_repository.dart';
 import '../data/learning_progress_repository.dart';
 import '../model/learning_journey_models.dart';
@@ -433,12 +434,7 @@ class SupabaseLearningRecommendationService
     if (_pathLoader != null) {
       return await _pathLoader(unitId);
     }
-    final rows = List<Map<String, dynamic>>.from(
-      await _resolvedClient.rpc(
-        'unit_learning_path_v2',
-        params: <String, dynamic>{'p_unit_id': unitId},
-      ),
-    );
+    final rows = await QueryCache.unitPathRows(_resolvedClient, unitId);
     if (_resolvedClient.auth.currentUser == null) {
       final store = GuestLearningProgressStore();
       final resolver = const GuestJourneyResolver();

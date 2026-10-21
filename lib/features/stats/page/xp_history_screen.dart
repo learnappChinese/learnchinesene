@@ -55,7 +55,7 @@ class _XpHistoryScreenState extends State<XpHistoryScreen> {
               mounted) {
             setState(() => _events = []);
           }
-          await _loadEvents(rethrowFailure: true);
+          await _loadEvents(rethrowFailure: true, silent: _events.isNotEmpty);
         },
       );
     }
@@ -69,9 +69,12 @@ class _XpHistoryScreenState extends State<XpHistoryScreen> {
     super.dispose();
   }
 
-  Future<void> _loadEvents({bool rethrowFailure = false}) async {
+  Future<void> _loadEvents({
+    bool rethrowFailure = false,
+    bool silent = false,
+  }) async {
     final request = ++_loadRequest;
-    setState(() => _isLoading = true);
+    if (!silent) setState(() => _isLoading = true);
     try {
       final list = await _repo.fetchFullXpLedger(
         limit: 100,

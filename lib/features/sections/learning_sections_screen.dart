@@ -63,10 +63,14 @@ class _LearningSectionsScreenState extends State<LearningSectionsScreen> {
 
   Future<void> _loadSections({bool rethrowFailure = false}) async {
     final request = ++_loadRequest;
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    final hasData = _sections.isNotEmpty;
+    // Đã có dữ liệu thì làm mới ngầm, không hiện lại skeleton.
+    if (!hasData) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
     try {
       final list = await _journeyRepo.getSections();
       if (mounted && request == _loadRequest) {
@@ -76,7 +80,7 @@ class _LearningSectionsScreenState extends State<LearningSectionsScreen> {
         });
       }
     } catch (e) {
-      if (mounted && request == _loadRequest) {
+      if (mounted && request == _loadRequest && !hasData) {
         setState(() {
           _errorMessage = 'Không thể tải danh sách phần học: $e';
           _isLoading = false;

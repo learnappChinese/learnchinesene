@@ -24,14 +24,15 @@ class ChapterAdventureController extends GetxController {
 
   Future<void> loadChapter() async {
     final request = ++_request;
-    isLoading.value = true;
+    final hasData = chapter.value != null;
+    isLoading.value = !hasData;
     errorMessage.value = null;
     try {
       final result = await _repository.loadChapter(levelId);
       if (isClosed || request != _request) return;
-      chapter.value = result;
+      if (result != null || !hasData) chapter.value = result;
     } catch (_) {
-      if (!isClosed && request == _request) {
+      if (!isClosed && request == _request && !hasData) {
         errorMessage.value = 'Không thể mở bản đồ Chapter.';
       }
     } finally {

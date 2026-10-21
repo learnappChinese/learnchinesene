@@ -59,12 +59,16 @@ class ReviewController extends GetxController {
 
   Future<void> loadInitialData({bool rethrowFailure = false}) async {
     final request = ++_loadRequest;
-    isLoading.value = true;
+    // Đã có dữ liệu thì làm mới ngầm, không hiện lại loading.
+    isLoading.value = summary.value == null;
     errorMessage.value = '';
     try {
-      final loadedSummary = await _repository.loadReviewSummary();
-      final loadedItems =
-          await _repository.loadReviewItems(selectedCategory.value);
+      final results = await Future.wait<Object>([
+        _repository.loadReviewSummary(),
+        _repository.loadReviewItems(selectedCategory.value),
+      ]);
+      final loadedSummary = results[0] as ReviewSummary;
+      final loadedItems = results[1] as List<ReviewItem>;
       if (isClosed || request != _loadRequest) return;
       summary.value = loadedSummary;
       _assignItems(selectedCategory.value, loadedItems);

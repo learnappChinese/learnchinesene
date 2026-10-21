@@ -39,7 +39,7 @@ class StatsController extends GetxController {
 
   Future<void> loadStats() async {
     final request = ++_loadRequest;
-    isLoading.value = true;
+    isLoading.value = stats.isEmpty;
     try {
       final res = await DbHelper.instance.getStats();
       if (!isClosed && request == _loadRequest) stats.value = res;
