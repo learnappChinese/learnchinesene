@@ -35,7 +35,7 @@ class CloudHskQuizRepository implements HskQuizRepository {
       try {
         final rows = List<Map<String, dynamic>>.from(
           await client
-              .from('lexicon_words')
+              .from('words')
               .select('id, word, pinyin, meaning_vi, tts_url, hsk_level_id')
               .eq('hsk_level_id', level)
               .order('id'),
