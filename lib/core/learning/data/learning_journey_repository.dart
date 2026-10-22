@@ -257,7 +257,7 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
     try {
       final levelRows = List<Map<String, dynamic>>.from(
         await _client
-            .from('duo_levels')
+            .from('lesson_levels')
             .select('id')
             .eq('unit_id', unitId)
             .limit(1),
@@ -286,7 +286,7 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
 
       final levelRows = List<Map<String, dynamic>>.from(
         await _client
-            .from('duo_levels')
+            .from('lesson_levels')
             .select('id, level_index')
             .eq('unit_id', unitId)
             .order('level_index', ascending: true),
@@ -297,7 +297,7 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       if (levelIds.isNotEmpty) {
         final sessionRows = List<Map<String, dynamic>>.from(
           await _client
-              .from('duo_sessions')
+              .from('lesson_sessions')
               .select('id, level_id')
               .inFilter('level_id', levelIds),
         );
@@ -314,7 +314,7 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
         if (sessionIds.isNotEmpty) {
           final challengeRows = List<Map<String, dynamic>>.from(
             await _client
-                .from('duo_challenges')
+                .from('questions')
                 .select(
                   'id, session_id, type, prompt, tts, slow_tts, choices_text, solutions, tokens_text',
                 )
@@ -349,7 +349,7 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
         try {
           final unitRows = List<Map<String, dynamic>>.from(
             await _client
-                .from('duo_units')
+                .from('course_units')
                 .select('section_id, unit_number')
                 .eq('id', unitId)
                 .limit(1),
@@ -441,7 +441,7 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
             path.where((node) => node['node_type'] == 'boss').firstOrNull;
         final unitRows = List<Map<String, dynamic>>.from(
           await _client
-              .from('duo_units')
+              .from('course_units')
               .select('section_id')
               .eq('id', unitId)
               .limit(1),
