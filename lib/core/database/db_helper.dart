@@ -35,7 +35,7 @@ class DbHelper {
     final client = _client;
     if (client != null) {
       try {
-        await client.from('lexicon_hsk_levels').select('id').limit(1);
+        await client.from('hsk_levels').select('id').limit(1);
         return client;
       } catch (_) {}
     }
@@ -63,7 +63,7 @@ class DbHelper {
 
     final rows = List<Map<String, dynamic>>.from(
       await client
-          .from('lexicon_hsk_levels')
+          .from('hsk_levels')
           .select('id, name, sort_order')
           .order('sort_order')
           .order('id'),
@@ -101,7 +101,7 @@ class DbHelper {
 
     final rows = List<Map<String, dynamic>>.from(
       await client
-          .from('lexicon_units')
+          .from('vocabulary_units')
           .select('id, title, sort_order, unit_number')
           .eq('hsk_level_id', hskLevelId)
           .order('sort_order')
@@ -125,7 +125,7 @@ class DbHelper {
 
     final sourceRows = List<Map<String, dynamic>>.from(
       await client
-          .from('lexicon_word_sources')
+          .from('word_sources')
           .select('topic_id')
           .eq('unit_id', unitId),
     );
@@ -140,7 +140,7 @@ class DbHelper {
 
     final rows = List<Map<String, dynamic>>.from(
       await client
-          .from('lexicon_topics')
+          .from('topics')
           .select('id, name_vi, name_en')
           .inFilter('id', topicIds)
           .order('id'),
@@ -204,7 +204,7 @@ class DbHelper {
 
     final linkRows = List<Map<String, dynamic>>.from(
       await client
-          .from('lexicon_word_sources')
+          .from('word_sources')
           .select('word_id')
           .eq('unit_id', unitId)
           .order('word_id'),
@@ -219,7 +219,7 @@ class DbHelper {
 
     final unitRows = List<Map<String, dynamic>>.from(
       await client
-          .from('lexicon_units')
+          .from('vocabulary_units')
           .select('title, hsk_level_id')
           .eq('id', unitId)
           .limit(1),
@@ -293,7 +293,7 @@ class DbHelper {
       out.addAll(
         List<Map<String, dynamic>>.from(
           await client
-              .from('lexicon_words')
+              .from('words')
               .select(
                 'id, word, pinyin, meaning_vi, meaning_en, tts_url, hsk_level_id, main_character_id',
               )
@@ -311,7 +311,7 @@ class DbHelper {
 
     final rows = List<Map<String, dynamic>>.from(
       await client
-          .from('lexicon_examples')
+          .from('word_examples')
           .select(
             'id, word_id, example_order, sentence_cn, sentence_pinyin, sentence_vi',
           )
@@ -340,7 +340,7 @@ class DbHelper {
 
     final rows = List<Map<String, dynamic>>.from(
       await client
-          .from('lexicon_examples')
+          .from('word_examples')
           .select(
             'id, word_id, example_order, sentence_cn, sentence_pinyin, sentence_vi',
           )
@@ -381,7 +381,7 @@ class DbHelper {
 
     final rows = List<Map<String, dynamic>>.from(
       await client
-          .from('lexicon_user_progress')
+          .from('user_word_progress')
           .select('word_id, wrong_count, mastered, next_review_at')
           .eq('user_id', userId)
           .eq('mastered', false)
@@ -556,7 +556,7 @@ class DbHelper {
     if (client == null) return 0;
     final rows = List<Map<String, dynamic>>.from(
       await client
-          .from('lexicon_units')
+          .from('vocabulary_units')
           .select('id')
           .eq('hsk_level_id', levelId),
     );
@@ -672,7 +672,7 @@ class DbHelper {
 
     final characters = List<Map<String, dynamic>>.from(
       await client
-          .from('lexicon_characters')
+          .from('characters')
           .select(
             'id, character, stroke_count, stroke_width, stroke_height, stroke_paths',
           )
@@ -685,7 +685,7 @@ class DbHelper {
         ? const <Map<String, dynamic>>[]
         : List<Map<String, dynamic>>.from(
             await client
-                .from('lexicon_hanzi_progress')
+                .from('user_character_progress')
                 .select(
                   'character_id, practice_count, best_score, last_score, next_review_at',
                 )
@@ -792,7 +792,7 @@ class DbHelper {
     if (AppDatabase.instance.isOpen) {
       for (final target in [exactChar, if (exactChar != firstChar) firstChar]) {
         final rows = await AppDatabase.instance.database.query(
-          'lexicon_characters',
+          'characters',
           columns: ['id'],
           where: 'character = ?',
           whereArgs: [target],
@@ -810,7 +810,7 @@ class DbHelper {
         try {
           final rows = List<Map<String, dynamic>>.from(
             await client
-                .from('lexicon_characters')
+                .from('characters')
                 .select('id')
                 .eq('character', target)
                 .limit(1),
@@ -841,7 +841,7 @@ class DbHelper {
     while (true) {
       final page = List<Map<String, dynamic>>.from(
         await client
-            .from('lexicon_words')
+            .from('words')
             .select(
               'id, word, pinyin, meaning_vi, meaning_en, tts_url, hsk_level_id, main_character_id',
             )
