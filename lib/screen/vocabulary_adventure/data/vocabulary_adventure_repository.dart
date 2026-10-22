@@ -81,7 +81,7 @@ class SupabaseVocabularyAdventureRepository
   }) async {
     final levelRows = List<Map<String, dynamic>>.from(
       await _client
-          .from('duo_levels')
+          .from('lesson_levels')
           .select('unit_id, teaching_objective')
           .eq('id', levelId)
           .limit(1),
@@ -94,11 +94,11 @@ class SupabaseVocabularyAdventureRepository
       _unitIdByLevel[levelId] = unitId;
     }
     final unitRows = List<Map<String, dynamic>>.from(
-      await _client.from('duo_units').select('title').eq('id', unitId).limit(1),
+      await _client.from('course_units').select('title').eq('id', unitId).limit(1),
     );
 
     final sessionRows = List<Map<String, dynamic>>.from(
-      await _client.from('duo_sessions').select('id').eq('level_id', levelId),
+      await _client.from('lesson_sessions').select('id').eq('level_id', levelId),
     );
     final sessionIds = sessionRows
         .map((row) => (row['id'] as num?)?.toInt())
@@ -108,7 +108,7 @@ class SupabaseVocabularyAdventureRepository
 
     final challengeRows = List<Map<String, dynamic>>.from(
       await _client
-          .from('duo_challenges')
+          .from('questions')
           .select(
             'id, session_id, type, prompt, tts, slow_tts, choices_text, '
             'choices_tts, choices_image, choices_correct, tokens_text, '
@@ -141,7 +141,7 @@ class SupabaseVocabularyAdventureRepository
 
     final wordRows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_words')
+          .from('words')
           .select(
             'id, word, pinyin, meaning_vi, meaning_en, tts_url, hsk_level_id',
           )
@@ -155,7 +155,7 @@ class SupabaseVocabularyAdventureRepository
         .toList(growable: false);
     final exampleRows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_examples')
+          .from('word_examples')
           .select(
             'id, word_id, example_order, sentence_cn, sentence_pinyin, sentence_vi',
           )
@@ -184,7 +184,7 @@ class SupabaseVocabularyAdventureRepository
         ? <Map<String, dynamic>>[]
         : List<Map<String, dynamic>>.from(
             await _client
-                .from('lexicon_user_progress')
+                .from('user_word_progress')
                 .select(
                   'word_id, correct_count, wrong_count, mastered, next_review_at',
                 )
@@ -449,7 +449,7 @@ class SupabaseVocabularyAdventureRepository
     try {
       final levelRows = List<Map<String, dynamic>>.from(
         await _client
-            .from('duo_levels')
+            .from('lesson_levels')
             .select('unit_id')
             .eq('id', levelId)
             .limit(1),
