@@ -28,7 +28,7 @@ class DuoDbHelper {
   bool get isSignedIn => _userId != null;
 
   Future<SupabaseClient> get database async {
-    await _client.from('duo_game_definitions').select('id').limit(1);
+    await _client.from('game_modes').select('id').limit(1);
     return _client;
   }
 
@@ -37,7 +37,7 @@ class DuoDbHelper {
 
     final games = List<Map<String, dynamic>>.from(
       await _client
-          .from('duo_game_definitions')
+          .from('game_modes')
           .select(
             'id, game_code, name_vi, description_vi, icon, game_order',
           )
@@ -327,7 +327,7 @@ class DuoDbHelper {
     final uniqueWords = words.toSet().toList();
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('duo_flashcards')
+          .from('flashcards')
           .select('id, word, pinyin, meaning, tts_url')
           .inFilter('word', uniqueWords),
     );
@@ -345,7 +345,7 @@ class DuoDbHelper {
     if (userId != null) {
       final rows = List<Map<String, dynamic>>.from(
         await _client
-            .from('duo_active_sessions')
+            .from('user_active_sessions')
             .select(
               'game_id, level_id, current_index, score, correct_count, '
               'wrong_count, attempt_id, started_at, status, updated_at',
@@ -390,7 +390,7 @@ class DuoDbHelper {
     final userId = _userId;
     if (userId != null) {
       final now = DateTime.now().toUtc().toIso8601String();
-      await _client.from('duo_active_sessions').upsert(
+      await _client.from('user_active_sessions').upsert(
         {
           'user_id': userId,
           'game_id': gameId,
@@ -440,7 +440,7 @@ class DuoDbHelper {
     final userId = _userId;
     if (userId != null) {
       await _client
-          .from('duo_active_sessions')
+          .from('user_active_sessions')
           .delete()
           .eq('user_id', userId)
           .eq('game_id', gameId)
@@ -477,7 +477,7 @@ class DuoDbHelper {
 
     final cloudSessionRows = List<Map<String, dynamic>>.from(
       await _client
-          .from('duo_active_sessions')
+          .from('user_active_sessions')
           .select('game_id, level_id')
           .eq('user_id', userId)
           .eq('status', 'active'),
@@ -514,7 +514,7 @@ class DuoDbHelper {
         final local = _decodeMap(prefs.getString(key));
         if (local.isEmpty || local['status'] != 'active') continue;
 
-        await _client.from('duo_active_sessions').upsert(
+        await _client.from('user_active_sessions').upsert(
           {
             'user_id': userId,
             'game_id': parsed.gameId,
