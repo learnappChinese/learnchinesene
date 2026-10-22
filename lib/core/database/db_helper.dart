@@ -18,14 +18,14 @@ class DbHelper {
   SupabaseClient get _client => Supabase.instance.client;
 
   Future<SupabaseClient> get database async {
-    await _client.from('lexicon_hsk_levels').select('id').limit(1);
+    await _client.from('hsk_levels').select('id').limit(1);
     return _client;
   }
 
   Future<List<HskLevel>> getHskLevels() async {
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_hsk_levels')
+          .from('hsk_levels')
           .select('id, name, sort_order')
           .order('sort_order')
           .order('id'),
@@ -45,7 +45,7 @@ class DbHelper {
   Future<List<UnitModel>> getUnitsByLevel(int hskLevelId) async {
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_units')
+          .from('vocabulary_units')
           .select('id, title, sort_order, unit_number')
           .eq('hsk_level_id', hskLevelId)
           .order('sort_order')
@@ -66,7 +66,7 @@ class DbHelper {
   Future<List<Topic>> getTopicsByUnit(int unitId) async {
     final sourceRows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_word_sources')
+          .from('word_sources')
           .select('topic_id')
           .eq('unit_id', unitId),
     );
@@ -81,7 +81,7 @@ class DbHelper {
 
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_topics')
+          .from('topics')
           .select('id, name_vi, name_en')
           .inFilter('id', topicIds)
           .order('id'),
@@ -101,7 +101,7 @@ class DbHelper {
   Future<List<Word>> getWordsByUnit(int unitId) async {
     final linkRows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_word_units')
+          .from('unit_words')
           .select('word_id')
           .eq('unit_id', unitId)
           .order('word_id'),
@@ -116,7 +116,7 @@ class DbHelper {
 
     final unitRows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_units')
+          .from('vocabulary_units')
           .select('title, hsk_level_id')
           .eq('id', unitId)
           .limit(1),
@@ -175,7 +175,7 @@ class DbHelper {
       out.addAll(
         List<Map<String, dynamic>>.from(
           await _client
-              .from('lexicon_words')
+              .from('words')
               .select(
                 'id, word, pinyin, meaning_vi, meaning_en, tts_url, hsk_level_id, main_character_id',
               )
@@ -190,7 +190,7 @@ class DbHelper {
   Future<List<ExampleSentence>> getExamplesByWord(int wordId) async {
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_examples')
+          .from('word_examples')
           .select(
             'id, word_id, example_order, sentence_cn, sentence_pinyin, sentence_vi',
           )
@@ -216,7 +216,7 @@ class DbHelper {
   Future<List<ExampleSentence>> getExamplesByUnit(int unitId) async {
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_examples')
+          .from('word_examples')
           .select(
             'id, word_id, example_order, sentence_cn, sentence_pinyin, sentence_vi',
           )
@@ -244,7 +244,7 @@ class DbHelper {
     if (userId == null) return <Word>[];
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_user_progress')
+          .from('user_word_progress')
           .select('word_id, wrong_count, mastered, next_review_at')
           .eq('user_id', userId)
           .eq('mastered', false)
@@ -341,13 +341,13 @@ class DbHelper {
     if (_client.auth.currentUser == null) {
       final wordRows = List<Map<String, dynamic>>.from(
         await _client
-            .from('lexicon_word_units')
+            .from('unit_words')
             .select('word_id')
             .eq('unit_id', unitId),
       );
       final exampleRows = List<Map<String, dynamic>>.from(
         await _client
-            .from('lexicon_examples')
+            .from('word_examples')
             .select('id')
             .eq('unit_id', unitId),
       );
@@ -375,7 +375,7 @@ class DbHelper {
   Future<int> getUnitCountForLevel(int levelId) async {
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_units')
+          .from('vocabulary_units')
           .select('id')
           .eq('hsk_level_id', levelId),
     );
@@ -394,7 +394,7 @@ class DbHelper {
   Future<SpeakingPracticeItem?> getSpeakingItemByWordId(int wordId) async {
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_words')
+          .from('words')
           .select('id, word, pinyin, meaning_vi, tts_url')
           .eq('id', wordId)
           .limit(1),
@@ -415,7 +415,7 @@ class DbHelper {
   ) async {
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_examples')
+          .from('word_examples')
           .select('id, word_id, sentence_cn, sentence_pinyin, sentence_vi')
           .eq('id', exampleId)
           .limit(1),
@@ -478,7 +478,7 @@ class DbHelper {
   }) async {
     final characters = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_characters')
+          .from('characters')
           .select(
             'id, character, stroke_count, stroke_width, stroke_height, stroke_paths',
           )
@@ -491,7 +491,7 @@ class DbHelper {
         ? const <Map<String, dynamic>>[]
         : List<Map<String, dynamic>>.from(
             await _client
-                .from('lexicon_hanzi_progress')
+                .from('user_character_progress')
                 .select(
                   'character_id, practice_count, best_score, last_score, next_review_at',
                 )
@@ -557,7 +557,7 @@ class DbHelper {
   Future<HanziCharacter?> getCharacterForWritingById(int characterId) async {
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_characters')
+          .from('characters')
           .select(
             'id, character, stroke_count, stroke_width, stroke_height, stroke_paths',
           )
@@ -570,7 +570,7 @@ class DbHelper {
     final character = '${char['character'] ?? ''}';
     var words = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_words')
+          .from('words')
           .select('pinyin, meaning_vi, hsk_level_id')
           .eq('word', character)
           .limit(1),
@@ -578,7 +578,7 @@ class DbHelper {
     if (words.isEmpty) {
       words = List<Map<String, dynamic>>.from(
         await _client
-            .from('lexicon_words')
+            .from('words')
             .select('pinyin, meaning_vi, hsk_level_id')
             .eq('main_character_id', characterId)
             .limit(1),
@@ -605,7 +605,7 @@ class DbHelper {
     Future<int?> lookup(String value) async {
       final rows = List<Map<String, dynamic>>.from(
         await _client
-            .from('lexicon_characters')
+            .from('characters')
             .select('id')
             .eq('character', value)
             .gt('stroke_count', 0)
@@ -624,7 +624,7 @@ class DbHelper {
     while (true) {
       final page = List<Map<String, dynamic>>.from(
         await _client
-            .from('lexicon_words')
+            .from('words')
             .select(
               'id, word, pinyin, meaning_vi, hsk_level_id, main_character_id',
             )
@@ -643,7 +643,7 @@ class DbHelper {
     if (levelId <= 0) return '';
     final rows = List<Map<String, dynamic>>.from(
       await _client
-          .from('lexicon_hsk_levels')
+          .from('hsk_levels')
           .select('name')
           .eq('id', levelId)
           .limit(1),

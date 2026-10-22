@@ -359,7 +359,7 @@ class SupabaseLearningRecommendationService
         rows = await _activeSessionLoader(userId: userId, levelId: levelId);
       } else {
         var query = _resolvedClient
-            .from('duo_active_sessions')
+            .from('user_active_sessions')
             .select(
                 'attempt_id, game_id, level_id, current_index, score, correct_count, wrong_count, status')
             .eq('status', 'active');
@@ -418,7 +418,7 @@ class SupabaseLearningRecommendationService
       final now = DateTime.now().toUtc().toIso8601String();
       final rows = List<Map<String, dynamic>>.from(
         await _resolvedClient
-            .from('lexicon_user_progress')
+            .from('user_word_progress')
             .select('word_id')
             .lte('next_review_at', now)
             .limit(20),

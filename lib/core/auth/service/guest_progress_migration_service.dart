@@ -137,7 +137,7 @@ class GuestProgressMigrationService {
       // 2. Migrate active sessions if any
       for (final session in localSessions) {
         final now = DateTime.now().toUtc().toIso8601String();
-        await client.from('duo_active_sessions').upsert(
+        await client.from('user_active_sessions').upsert(
           {
             'user_id': targetUserId,
             'game_id': session.gameId,

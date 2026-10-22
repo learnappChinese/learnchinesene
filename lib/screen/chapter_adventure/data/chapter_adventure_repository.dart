@@ -24,7 +24,7 @@ class SupabaseChapterAdventureRepository implements ChapterAdventureRepository {
   Future<ChapterAdventure?> loadChapter(String levelId) async {
     final levelRows = List<Map<String, dynamic>>.from(
       await _client
-          .from('duo_levels')
+          .from('lesson_levels')
           .select('id, unit_id, teaching_objective')
           .eq('id', levelId)
           .limit(1),

@@ -30,7 +30,7 @@ class SupabaseReviewRepository implements ReviewRepository {
       try {
         final wordProgressRows = List<Map<String, dynamic>>.from(
           await _client
-              .from('lexicon_user_progress')
+              .from('user_word_progress')
               .select(
                   'word_id, wrong_count, mastered, next_review_at, listening_score')
               .eq('user_id', userId),
@@ -51,7 +51,7 @@ class SupabaseReviewRepository implements ReviewRepository {
         }
 
         final speakingRows = List<Map<String, dynamic>>.from(await _client
-            .from('lexicon_speaking_practice')
+            .from('user_speaking_practice')
             .select('id, accuracy_score, pronunciation_score, tone_score')
             .eq('user_id', userId));
         speakingDue = speakingRows.where((row) {
@@ -64,7 +64,7 @@ class SupabaseReviewRepository implements ReviewRepository {
 
         final hanziRows = List<Map<String, dynamic>>.from(
           await _client
-              .from('lexicon_hanzi_progress')
+              .from('user_character_progress')
               .select(
                   'character_id, best_score, practice_count, next_review_at')
               .eq('user_id', userId),
@@ -163,7 +163,7 @@ class SupabaseReviewRepository implements ReviewRepository {
 
       final weakProgress = List<Map<String, dynamic>>.from(
         await _client
-            .from('lexicon_user_progress')
+            .from('user_word_progress')
             .select('word_id, wrong_count, listening_score')
             .eq('user_id', userId)
             .order('listening_score')
@@ -180,7 +180,7 @@ class SupabaseReviewRepository implements ReviewRepository {
       if (wordIds.isEmpty) return const [];
       final wordRows = List<Map<String, dynamic>>.from(
         await _client
-            .from('lexicon_words')
+            .from('words')
             .select('id, word, pinyin, meaning_vi, tts_url')
             .inFilter('id', wordIds),
       );
@@ -213,7 +213,7 @@ class SupabaseReviewRepository implements ReviewRepository {
       if (userId != null) {
         final practiceRows = List<Map<String, dynamic>>.from(
           await _client
-              .from('lexicon_speaking_practice')
+              .from('user_speaking_practice')
               .select(
                   'id, target_text, recognized_text, accuracy_score, pronunciation_score, tone_score, fluency_score')
               .eq('user_id', userId)
@@ -257,7 +257,7 @@ class SupabaseReviewRepository implements ReviewRepository {
       if (userId != null) {
         final progressRows = List<Map<String, dynamic>>.from(
           await _client
-              .from('lexicon_hanzi_progress')
+              .from('user_character_progress')
               .select(
                   'character_id, best_score, practice_count, next_review_at')
               .eq('user_id', userId)
@@ -281,14 +281,14 @@ class SupabaseReviewRepository implements ReviewRepository {
               .toList();
           final chars = List<Map<String, dynamic>>.from(
             await _client
-                .from('lexicon_characters')
+                .from('characters')
                 .select('id, character, stroke_count')
                 .inFilter('id', charIds),
           );
           final charsById = {for (final c in chars) c['id']: c};
           final words = List<Map<String, dynamic>>.from(
             await _client
-                .from('lexicon_words')
+                .from('words')
                 .select('main_character_id, pinyin, meaning_vi')
                 .inFilter('main_character_id', charIds),
           );

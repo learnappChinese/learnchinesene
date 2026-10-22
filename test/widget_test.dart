@@ -27,5 +27,8 @@ void main() {
     final service = SpeechService();
     expect(service.similarityScore('你好', '你好'), 100);
     expect(service.similarityScore('你好', '再见'), lessThan(80));
+    expect(service.similarityScore('你好！', '你好'), 100);
+    expect(service.similarityScore('你 好。', '你好'), 100);
+    expect(service.similarityScore('今天天气怎么样？', '今天天气怎么样'), 100);
   });
 }
