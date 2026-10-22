@@ -104,7 +104,7 @@ class SpeechService {
     // Speech-to-text engines add spaces and punctuation inconsistently.
     // These characters do not change the spoken Mandarin phrase.
     return input
-        .replaceAll(RegExp(r'[\\s，。！？、；：,.!?;:（）()]'), '')
+        .replaceAll(RegExp(r'[\s，。！？、；：,.!?;:（）()]'), '')
         .trim();
   }
 
