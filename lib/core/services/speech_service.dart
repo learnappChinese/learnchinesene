@@ -100,7 +100,13 @@ class SpeechService {
     return similarity.clamp(0, 100).toDouble();
   }
 
-  String _normalize(String input) => input.replaceAll(' ', '').trim();
+  String _normalize(String input) {
+    // Speech-to-text engines add spaces and punctuation inconsistently.
+    // These characters do not change the spoken Mandarin phrase.
+    return input
+        .replaceAll(RegExp(r'[\\s，。！？、；：,.!?;:（）()]'), '')
+        .trim();
+  }
 
   int _levenshtein(String s, String t) {
     final rows = s.length + 1;
