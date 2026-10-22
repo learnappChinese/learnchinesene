@@ -46,6 +46,32 @@ void main() {
     );
   });
 
+  test('event builder skips Use when the example does not contain the word',
+      () {
+    final words = [
+      _missionWord(
+        id: 1,
+        chinese: '你呢',
+        pinyin: 'nǐ ne',
+        vietnamese: 'Còn bạn',
+        sentence: '你不说话，我怎么知道？',
+      ),
+      _missionWord(
+        id: 2,
+        chinese: '水',
+        pinyin: 'shuǐ',
+        vietnamese: 'Nước',
+        sentence: '我喝水。',
+      ),
+    ];
+    final events = const VocabularyEventBuilder().build(words);
+    final useEvents =
+        events.where((event) => event.stage == VocabularyStage.use).toList();
+
+    expect(useEvents.map((event) => event.word.chinese), ['水']);
+    expect(useEvents.single.prompt, '我喝＿＿。');
+  });
+
   test('controller only increases mastery on correct Recall and Use', () async {
     final repository = _FakeRepository(mission: _mission());
     final controller = _controller(repository);

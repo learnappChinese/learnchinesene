@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../backend/query_cache.dart';
 import '../../database/app_database.dart';
 import '../learning_rules_config.dart';
 import '../model/learning_activity_submission.dart';
@@ -928,12 +929,7 @@ class SupabaseLearningProgressRepository implements LearningProgressRepository {
     final client = _activeClient;
     if (client != null) {
       try {
-        final rows = List<Map<String, dynamic>>.from(
-          await client.rpc(
-            'unit_learning_path_v2',
-            params: <String, dynamic>{'p_unit_id': unitId},
-          ),
-        );
+        final rows = await QueryCache.unitPathRows(client, unitId);
         if (rows.isNotEmpty) return rows;
       } catch (_) {}
     }

@@ -28,6 +28,10 @@ class VocabularyAdventureController extends GetxController {
   final syncWarning = RxnString();
   final mission = Rxn<VocabularyMission>();
   final isIntroVisible = true.obs;
+
+  /// Có lượt chơi dở thì sau khi tải sẽ vào thẳng câu hỏi thay vì thẻ giới
+  /// thiệu; màn dựa vào đây để chọn đúng khung đang tải.
+  final isResumingRun = false.obs;
   final isCompleted = false.obs;
   final isFinishing = false.obs;
   final currentIndex = 0.obs;
@@ -78,6 +82,15 @@ class VocabularyAdventureController extends GetxController {
     errorMessage.value = null;
     syncWarning.value = null;
     try {
+      // Lượt dở đọc nhanh hơn nội dung mission nên chạy song song, để khung
+      // đang tải sớm khớp với màn sắp hiện.
+      final activeFuture = _repository
+          .loadActiveRun(levelId: levelId, gameId: gameId)
+          .then((run) {
+        if (_accepts(requestId)) isResumingRun.value = !_startsFresh(run);
+        return run;
+      })
+        ..ignore();
       final loaded = await _repository.loadMission(
         levelId: levelId,
         gameId: gameId,
@@ -89,10 +102,7 @@ class VocabularyAdventureController extends GetxController {
         return;
       }
 
-      final active = await _repository.loadActiveRun(
-        levelId: levelId,
-        gameId: gameId,
-      );
+      final active = await activeFuture;
       if (!_accepts(requestId)) return;
 
       final maxIndex = loaded.events.length - 1;
@@ -114,10 +124,7 @@ class VocabularyAdventureController extends GetxController {
         attemptId: _attemptId,
       );
       _attemptStarted = true;
-      isIntroVisible.value = active == null ||
-          (active.currentIndex == 0 &&
-              active.correctCount == 0 &&
-              active.wrongCount == 0);
+      isIntroVisible.value = _startsFresh(active);
       isCompleted.value = false;
       isFinishing.value = false;
       selectedAnswer.value = null;
@@ -135,6 +142,10 @@ class VocabularyAdventureController extends GetxController {
       if (_accepts(requestId)) isLoading.value = false;
     }
   }
+
+  bool _startsFresh(VocabularyRunSnapshot? run) =>
+      run == null ||
+      (run.currentIndex == 0 && run.correctCount == 0 && run.wrongCount == 0);
 
   void startMission() {
     isIntroVisible.value = false;

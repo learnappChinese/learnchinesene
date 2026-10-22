@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/config/feature_flags.dart';
+import '../../../core/learning/model/recommended_next_action.dart';
 import '../../../core/theme/game_visual_tokens.dart';
 import '../../review/model/review_item.dart';
 import '../model/home_journey.dart';
@@ -22,6 +23,7 @@ class HomeLearningTab extends StatelessWidget {
     this.journey,
     this.reviewSummary,
     this.onLearningPath,
+    this.onContinueLesson,
     this.onReview,
     this.onHanzi,
     this.onSpeaking,
@@ -34,6 +36,9 @@ class HomeLearningTab extends StatelessWidget {
   final HomeJourney? journey;
   final ReviewSummary? reviewSummary;
   final VoidCallback? onLearningPath;
+
+  /// Mở bài học hiện tại, dùng khi gợi ý chung đang là ôn tập.
+  final VoidCallback? onContinueLesson;
   final VoidCallback? onReview;
   final VoidCallback? onHanzi;
   final VoidCallback? onSpeaking;
@@ -83,13 +88,23 @@ class HomeLearningTab extends StatelessWidget {
     final worldNum = j?.worldNumber ?? 1;
     final chapterNum = j?.chapterNumber ?? 1;
     final title = j?.chapterTitle ?? 'Khởi đầu học tiếng Trung';
-    final nextMission = j?.missionTitle ?? 'Ải 1: Phát âm & Chào hỏi';
+    // Ôn tập đã có banner riêng ngay bên dưới, nên thẻ bài học luôn dẫn tiếp
+    // lộ trình thay vì lặp lại lời nhắc ôn tập.
+    final isReview = j?.nextAction?.type == RecommendedActionType.review;
+    final lessonAction = isReview ? null : j?.nextAction;
+    final nextMission = (isReview ? j?.pathMissionTitle : j?.missionTitle) ??
+        'Ải 1: Phát âm & Chào hỏi';
     final progress = j?.chapterProgress ?? 0.0;
     final completed = j?.completedMissions ?? 0;
     final total = j?.totalMissions ?? 1;
-    final actionLabel = j?.nextAction?.label.trim().isNotEmpty == true
-        ? j!.nextAction!.label.trim().toUpperCase()
-        : 'VÀO BẢN ĐỒ ẢI';
+    final actionLabel = isReview
+        ? 'TIẾP TỤC'
+        : lessonAction?.label.trim().isNotEmpty == true
+            ? lessonAction!.label.trim().toUpperCase()
+            : 'VÀO BẢN ĐỒ ẢI';
+    final onAction = isReview
+        ? onContinueLesson ?? onLearningPath ?? onPractice
+        : onLearningPath ?? onPractice;
     const ink = Color(0xFF342E10);
     const brown = Color(0xFF57300A);
     const muted = Color(0xFF5D5C54);
@@ -268,8 +283,8 @@ class HomeLearningTab extends StatelessWidget {
                       SizedBox(width: 8.w),
                       Expanded(
                         child: Text(
-                          j?.nextAction?.description.trim().isNotEmpty == true
-                              ? j!.nextAction!.description.trim()
+                          lessonAction?.description.trim().isNotEmpty == true
+                              ? lessonAction!.description.trim()
                               : 'Panda đã đánh dấu ải phù hợp nhất với tiến độ hiện tại của bạn.',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -292,7 +307,7 @@ class HomeLearningTab extends StatelessWidget {
                       flex: 3,
                       child: HomeGreenButton(
                         label: actionLabel,
-                        onTap: onLearningPath ?? onPractice,
+                        onTap: onAction,
                         playIcon: true,
                       ),
                     ),
@@ -301,8 +316,8 @@ class HomeLearningTab extends StatelessWidget {
                       Expanded(
                         flex: 2,
                         child: _OutlineGreenButton(
-                          label: 'BẢN ĐỒ THẾ GIỚI',
-                          icon: Icons.map_rounded,
+                          label: 'LỘ TRÌNH HỌC',
+                          icon: Icons.route_rounded,
                           onTap: onSections!,
                         ),
                       ),

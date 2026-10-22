@@ -69,10 +69,11 @@ class _HskScreenState extends State<HskScreen> {
           ),
         ],
       ),
-      body: SafeBottomArea(child: LearningSceneBackground(
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: _buildLevelCatalog(context),
-      )),
+      ),
     );
   }
 
@@ -136,9 +137,11 @@ class _HskScreenState extends State<HskScreen> {
           constraints: BoxConstraints(
               maxWidth: ResponsiveHelper.contentMaxWidth(context)),
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveHelper.horizontalPadding(context),
-              vertical: 24,
+            padding: EdgeInsets.fromLTRB(
+              ResponsiveHelper.horizontalPadding(context),
+              24,
+              ResponsiveHelper.horizontalPadding(context),
+              0,
             ),
             child: CustomScrollView(
               slivers: [
@@ -168,6 +171,11 @@ class _HskScreenState extends State<HskScreen> {
                       );
                     },
                     childCount: levels.length,
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 24 + MediaQuery.viewPaddingOf(context).bottom,
                   ),
                 ),
               ],

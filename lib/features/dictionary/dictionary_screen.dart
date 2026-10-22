@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/widgets/learning_scene_background.dart';
 import 'widget/dictionary_entry_view.dart';
 import 'controller/dictionary_controller.dart';
 import 'package:get/get.dart';
@@ -128,7 +127,8 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: SafeBottomArea(child: _buildBody(context)),
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      body: _buildBody(context),
     );
   }
 
@@ -313,7 +313,12 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            20 + MediaQuery.viewPaddingOf(context).bottom,
+          ),
           children: [
             // Search input container
             _buildSearchCard(theme),

@@ -51,10 +51,11 @@ class _LessonsScreenState extends State<LessonsScreen> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: SafeBottomArea(child: LearningSceneBackground(
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: _buildBody(),
-      )),
+      ),
     );
   }
 
@@ -137,7 +138,12 @@ class _LessonsScreenState extends State<LessonsScreen> {
             ? const Center(child: Text('Không tìm thấy bài học nào.'))
             : ListView.builder(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  16 + MediaQuery.viewPaddingOf(context).bottom,
+                ),
                 itemCount: controller.topics.length,
                 itemBuilder: (context, index) {
                   final topic = controller.topics[index];
@@ -193,10 +199,11 @@ class _LessonDetailView extends StatelessWidget {
             ],
           ),
         ),
-        body: SafeBottomArea(child: LearningSceneBackground(
+        // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+        body: LearningSceneBackground(
           theme: LearningSceneTheme.bambooVillage,
           child: _buildDetailContent(),
-        )),
+        ),
       ),
     );
   }

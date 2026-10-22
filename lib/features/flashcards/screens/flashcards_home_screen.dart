@@ -212,6 +212,8 @@ class _FlashcardsHomeScreenState extends State<FlashcardsHomeScreen> {
           ),
         ),
       ],
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      useSafeArea: false,
       body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: Obx(() {
@@ -229,7 +231,12 @@ class _FlashcardsHomeScreenState extends State<FlashcardsHomeScreen> {
             onRefresh: controller.loadDashboardAndDecks,
             color: AppColors.homeGreen,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(14, 16, 14, 32),
+              padding: EdgeInsets.fromLTRB(
+                14,
+                16,
+                14,
+                32 + MediaQuery.viewPaddingOf(context).bottom,
+              ),
               children: [
                 // 1. Dashboard tổng quan FSRS
                 if (stats != null) _buildDashboardHeader(stats),

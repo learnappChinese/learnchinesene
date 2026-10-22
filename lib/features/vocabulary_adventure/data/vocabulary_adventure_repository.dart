@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/backend/query_cache.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/duo_db_helper.dart';
 import '../../../core/learning/model/learning_result.dart';
@@ -92,52 +93,78 @@ class SupabaseVocabularyAdventureRepository
     final client = _client;
     if (client != null) {
       try {
-        final levelRows = List<Map<String, dynamic>>.from(
-          await client
-            .from('duo_levels')
-            .select('unit_id, teaching_objective')
-            .eq('id', levelId)
-            .limit(1),
-      );
+        // Nội dung curriculum là tĩnh: cache trong phiên và tải song song
+        // những query không phụ thuộc nhau.
+        Future<List<Map<String, dynamic>>> cachedRows(
+          String key,
+          Future<dynamic> Function() load,
+        ) =>
+            QueryCache.run(
+              'vocab|$key',
+              () async => List<Map<String, dynamic>>.from(await load()),
+              keep: true,
+            );
+
+        final firstStage = await Future.wait([
+          cachedRows(
+            'level|$levelId',
+            () => client
+                .from('duo_levels')
+                .select('unit_id, teaching_objective')
+                .eq('id', levelId)
+                .limit(1),
+          ),
+          cachedRows(
+            'sessions|$levelId',
+            () => client
+                .from('duo_sessions')
+                .select('id')
+                .eq('level_id', levelId),
+          ),
+        ]);
+        final levelRows = firstStage[0];
+        final sessionRows = firstStage[1];
       if (levelRows.isNotEmpty) {
         final level = levelRows.first;
         final unitId = '${level['unit_id'] ?? ''}';
         if (unitId.isNotEmpty) {
           _unitIdByLevel[levelId] = unitId;
         }
-        final unitRows = List<Map<String, dynamic>>.from(
-          await client
+        final unitFuture = cachedRows(
+          'unit|$unitId',
+          () => client
               .from('duo_units')
               .select('title')
               .eq('id', unitId)
               .limit(1),
         );
 
-        final sessionRows = List<Map<String, dynamic>>.from(
-          await client
-              .from('duo_sessions')
-              .select('id')
-              .eq('level_id', levelId),
-        );
         final sessionIds = sessionRows
             .map((row) => (row['id'] as num?)?.toInt())
             .whereType<int>()
             .toList(growable: false);
 
+        final challengeFuture = sessionIds.isEmpty
+            ? Future.value(const <Map<String, dynamic>>[])
+            : cachedRows(
+                'challenges|$levelId',
+                () => client
+                    .from('duo_challenges')
+                    .select(
+                      'id, session_id, type, prompt, tts, slow_tts, choices_text, '
+                      'choices_tts, choices_image, choices_correct, tokens_text, '
+                      'tokens_tts, tokens_hints, solutions',
+                    )
+                    .inFilter('session_id', sessionIds)
+                    .inFilter('type', const ['select', 'assist'])
+                    .order('session_id')
+                    .order('id'),
+              );
+        final secondStage = await Future.wait([unitFuture, challengeFuture]);
+        final unitRows = secondStage[0];
+
         if (sessionIds.isNotEmpty) {
-          final challengeRows = List<Map<String, dynamic>>.from(
-            await client
-                .from('duo_challenges')
-                .select(
-                  'id, session_id, type, prompt, tts, slow_tts, choices_text, '
-                  'choices_tts, choices_image, choices_correct, tokens_text, '
-                  'tokens_tts, tokens_hints, solutions',
-                )
-                .inFilter('session_id', sessionIds)
-                .inFilter('type', const ['select', 'assist'])
-                .order('session_id')
-                .order('id'),
-          );
+          final challengeRows = secondStage[1];
 
           final challengeByWord = <String, DuoChallenge>{};
           final sourceOrder = <String, int>{};
@@ -158,14 +185,15 @@ class SupabaseVocabularyAdventureRepository
           }
 
           if (challengeByWord.length >= 2) {
-            final wordRows = List<Map<String, dynamic>>.from(
-              await client
+            final wordRows = (await cachedRows(
+              'words|$levelId',
+              () => client
                   .from('lexicon_words')
                   .select(
                     'id, word, pinyin, meaning_vi, meaning_en, tts_url, hsk_level_id',
                   )
                   .inFilter('word', challengeByWord.keys.toList()),
-            )
+            ))
                 .where((row) => '${row['meaning_vi'] ?? ''}'.trim().isNotEmpty)
                 .toList();
 
@@ -174,8 +202,21 @@ class SupabaseVocabularyAdventureRepository
                   .map((row) => (row['id'] as num?)?.toInt())
                   .whereType<int>()
                   .toList(growable: false);
-              final exampleRows = List<Map<String, dynamic>>.from(
-                await client
+              final userId = client.auth.currentUser?.id;
+              // Tiến độ của người học không cache, chạy song song với ví dụ.
+              final progressFuture = userId == null
+                  ? Future.value(const <Map<String, dynamic>>[])
+                  : client
+                      .from('user_word_progress')
+                      .select(
+                        'word_id, correct_count, wrong_count, is_mastered, next_review_at',
+                      )
+                      .eq('user_id', userId)
+                      .inFilter('word_id', wordIds)
+                      .then(List<Map<String, dynamic>>.from);
+              final exampleRows = await cachedRows(
+                'examples|$levelId',
+                () => client
                     .from('lexicon_examples')
                     .select(
                       'id, word_id, example_order, sentence_cn, sentence_pinyin, sentence_vi',
@@ -203,17 +244,8 @@ class SupabaseVocabularyAdventureRepository
               }
 
               final progressByWord = <int, VocabularyWordProgress>{};
-              final userId = client.auth.currentUser?.id;
               if (userId != null) {
-                final progressRows = List<Map<String, dynamic>>.from(
-                  await client
-                      .from('user_word_progress')
-                      .select(
-                        'word_id, correct_count, wrong_count, is_mastered, next_review_at',
-                      )
-                      .eq('user_id', userId)
-                      .inFilter('word_id', wordIds),
-                );
+                final progressRows = await progressFuture;
                 for (final row in progressRows) {
                   final wordId = (row['word_id'] as num?)?.toInt();
                   if (wordId == null) continue;
@@ -594,12 +626,16 @@ class SupabaseVocabularyAdventureRepository
     final client = _client;
     if (client != null) {
       try {
-        final levelRows = List<Map<String, dynamic>>.from(
-          await client
-              .from('duo_levels')
-              .select('unit_id')
-              .eq('id', levelId)
-              .limit(1),
+        final levelRows = await QueryCache.run(
+          'vocab|level|$levelId',
+          () async => List<Map<String, dynamic>>.from(
+            await client
+                .from('duo_levels')
+                .select('unit_id, teaching_objective')
+                .eq('id', levelId)
+                .limit(1),
+          ),
+          keep: true,
         );
         if (levelRows.isNotEmpty) {
           final uId = '${levelRows.first['unit_id'] ?? ''}';

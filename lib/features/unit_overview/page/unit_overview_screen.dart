@@ -45,6 +45,14 @@ class UnitOverviewScreen extends StatefulWidget {
 class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   late final UnitOverviewController controller;
 
+  /// Sync generation lúc rời màn, để khi quay về biết có cần tải lại không.
+  int _syncGenerationAtLeave = 0;
+
+  void _markLeaving() => _syncGenerationAtLeave = controller.syncGeneration;
+
+  Future<void> _refreshAfterReturn() =>
+      controller.refreshAfterReturn(_syncGenerationAtLeave);
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +65,8 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   Widget build(BuildContext context) {
     return LearningScaffold(
       title: 'Tổng quan bài học',
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      useSafeArea: false,
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 12),
@@ -118,7 +128,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
                   ResponsiveHelper.horizontalPadding(context),
                   16,
                   ResponsiveHelper.horizontalPadding(context),
-                  40,
+                  40 + MediaQuery.viewPaddingOf(context).bottom,
                 ),
                 children: [
                   _buildHeader(context, chapter),
@@ -167,9 +177,18 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
           : 'Nắm vững từ vựng và mẫu câu giao tiếp cơ bản.',
       completed: completed,
       total: total,
-      statusLabel: chapter.bossUnlocked ? 'Boss đã mở' : 'Đang phiêu lưu',
-      bossUnlocked: chapter.bossUnlocked,
+      statusLabel: controller.isUnitCompleted
+          ? 'Đã hoàn thành'
+          : (_isBossOpen(chapter) ? 'Boss đã mở' : 'Đang phiêu lưu'),
+      bossUnlocked: _isBossOpen(chapter) && !controller.isUnitCompleted,
     );
+  }
+
+  /// Có lộ trình ải thì trạng thái Boss lấy từ node Boss trên lộ trình, cùng
+  /// nguồn với thẻ "Bài học đã hoàn thành" và danh sách ải.
+  bool _isBossOpen(ChapterAdventure chapter) {
+    if (controller.stages.isEmpty) return chapter.bossUnlocked;
+    return controller.isBossReady || controller.isBossDefeated;
   }
 
   Widget _buildMetricsRow(ChapterAdventure chapter) {
@@ -179,7 +198,10 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
     final total =
         hasStages ? controller.totalStageCount : chapter.missions.length;
     final masteryPct = (chapter.overallMastery * 100).round();
-    final bossStatus = chapter.bossUnlocked ? 'Sẵn sàng' : 'Chưa mở';
+    final bossOpen = _isBossOpen(chapter);
+    final bossStatus = controller.isBossDefeated
+        ? 'Đã hạ'
+        : (bossOpen ? 'Sẵn sàng' : 'Chưa mở');
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
@@ -216,10 +238,10 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
             _MetricItem(
               label: 'Boss',
               value: bossStatus,
-              icon: chapter.bossUnlocked
+              icon: bossOpen
                   ? Icons.local_fire_department_rounded
                   : Icons.lock_rounded,
-              color: chapter.bossUnlocked
+              color: bossOpen
                   ? GameVisualTokens.crimson
                   : const Color(0xFF94A3B8),
             ),
@@ -570,7 +592,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
         (result is LearningNavigationOutcome && result.isSuccess);
     final outcome = result is LearningNavigationOutcome ? result : null;
 
-    controller.loadUnitOverview().then((_) {
+    _refreshAfterReturn().then((_) {
       if (!mounted) return;
 
       if (outcome != null && outcome.isFightBoss) {
@@ -621,6 +643,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   }
 
   void _openStage(ChapterAdventure chapter, LearningStageViewModel stage) {
+    _markLeaving();
     if (stage.isLocked) {
       final prerequisite = _findPrerequisiteStage(stage);
       showLockedMissionSheet(
@@ -769,6 +792,7 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   }
 
   void _openMission(ChapterAdventure chapter, ChapterMission mission) {
+    _markLeaving();
     if (mission.state == AdventureNodeState.locked) {
       final uncompleted = chapter.missions
           .where((m) => m.state != AdventureNodeState.completed && m != mission)
@@ -814,12 +838,13 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   }
 
   void _openBossWithStage(dynamic bossStage) {
+    _markLeaving();
     Get.to(
       () => BossBattleScreen(stage: bossStage),
     )?.then((result) {
       final isSuccess = result == true ||
           (result is LearningNavigationOutcome && result.isSuccess);
-      controller.loadUnitOverview().then((_) {
+      _refreshAfterReturn().then((_) {
         if (isSuccess && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1018,10 +1043,11 @@ class _UnitOverviewScreenState extends State<UnitOverviewScreen> {
   void _openAdventureMap() {
     final chapter = controller.chapter.value;
     if (chapter == null) return;
+    _markLeaving();
     Get.to(
       () => const ChapterAdventureScreen(),
       binding: ChapterAdventureBinding(levelId: chapter.levelId),
-    )?.then((_) => controller.loadUnitOverview());
+    )?.then((_) => _refreshAfterReturn());
   }
 }
 

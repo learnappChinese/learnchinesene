@@ -32,6 +32,7 @@ class HomeController extends GetxController {
 
   LearningSyncRegistration? _syncRegistration;
   int _refreshRequest = 0;
+  bool _hasLoaded = false;
 
   static LearningProgressSyncService? _registeredSyncService() {
     if (!Get.isRegistered<LearningProgressSyncService>()) return null;
@@ -84,13 +85,15 @@ class HomeController extends GetxController {
       sevenDayXp.clear();
       recentTimeline.clear();
       masteryProfile.value = const SkillMasteryProfile();
+      _hasLoaded = false;
     }
     await refreshStats(rethrowFailure: true);
   }
 
   Future<void> refreshStats({bool rethrowFailure = false}) async {
     final request = ++_refreshRequest;
-    isJourneyLoading.value = true;
+    // Chỉ hiện skeleton ở lần tải đầu, các lần sau làm mới ngầm.
+    isJourneyLoading.value = !_hasLoaded;
     journeyError.value = null;
     final failures = <Object>[];
     bool isCurrent() => !isClosed && request == _refreshRequest;
@@ -146,6 +149,7 @@ class HomeController extends GetxController {
           : 'Một số dữ liệu tiến độ chưa thể cập nhật.';
     }
     isJourneyLoading.value = false;
+    _hasLoaded = true;
     if (failures.isNotEmpty && rethrowFailure) throw failures.first;
   }
 

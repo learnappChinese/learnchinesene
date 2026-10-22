@@ -66,6 +66,7 @@ class CloudHomeJourneyRepository implements HomeJourneyRepository {
       missionNumber: missionIndex < 0 ? totalMissions : missionIndex + 1,
       missionTitle:
           nextAction?.title ?? currentMission?.title ?? 'Sẵn sàng đánh Boss',
+      pathMissionTitle: currentMission?.title ?? 'Sẵn sàng đánh Boss',
       completedMissions: completed,
       totalMissions: totalMissions,
       stars: stars,

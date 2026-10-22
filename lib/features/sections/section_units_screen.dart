@@ -73,10 +73,14 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
 
   Future<void> _loadUnits({bool rethrowFailure = false}) async {
     final request = ++_loadRequest;
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    final hasData = _units.isNotEmpty;
+    // Đã có dữ liệu thì làm mới ngầm, không hiện lại skeleton.
+    if (!hasData) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
     try {
       final list = await _journeyRepo.getUnits(
         widget.section.id,
@@ -89,7 +93,7 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
         });
       }
     } catch (e) {
-      if (mounted && request == _loadRequest) {
+      if (mounted && request == _loadRequest && !hasData) {
         setState(() {
           _errorMessage = 'Không thể tải danh sách bài học: $e';
           _isLoading = false;
@@ -103,6 +107,8 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
   Widget build(BuildContext context) {
     return LearningScaffold(
       title: 'Phần ${widget.section.sectionNumber}',
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      useSafeArea: false,
       body: LearningSceneBackground(
         theme: LearningSceneTheme.bambooVillage,
         child: _buildBody(context),
@@ -162,7 +168,7 @@ class _SectionUnitsScreenState extends State<SectionUnitsScreen> {
             ResponsiveHelper.horizontalPadding(context),
             16,
             ResponsiveHelper.horizontalPadding(context),
-            40,
+            40 + MediaQuery.viewPaddingOf(context).bottom,
           ),
           children: [
             AdventureQuestBanner(

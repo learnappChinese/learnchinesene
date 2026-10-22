@@ -14,6 +14,7 @@ class HomeJourney {
     required this.chapterTitle,
     required this.missionNumber,
     required this.missionTitle,
+    this.pathMissionTitle,
     required this.completedMissions,
     required this.totalMissions,
     required this.stars,
@@ -34,6 +35,10 @@ class HomeJourney {
   final String chapterTitle;
   final int missionNumber;
   final String missionTitle;
+
+  /// Ải kế tiếp trên lộ trình bài học, kể cả khi [missionTitle] đang là một
+  /// gợi ý khác (ví dụ ôn tập đến hạn).
+  final String? pathMissionTitle;
   final int completedMissions;
   final int totalMissions;
   final int stars;

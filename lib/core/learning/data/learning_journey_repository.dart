@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../backend/query_cache.dart';
 import '../../database/app_database.dart';
 import '../../presentation/learning_presentation_mapper.dart';
 import '../../widgets/adventure_node.dart';
@@ -83,6 +84,41 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
   final GuestLearningProgressStore _guestStore;
   final GuestJourneyResolver _guestResolver;
 
+  /// Danh sách phần học chưa ghép tiến độ của khách.
+  Future<List<LearningSectionViewModel>> _getRawSections() async {
+    final client = _client;
+    if (client == null) return await _getLocalSections();
+    try {
+      final rows = await QueryCache.userScoped(
+        client,
+        'learning_sections_v2',
+        () async => List<Map<String, dynamic>>.from(
+          await client.rpc('learning_sections_v2'),
+        ),
+      );
+      if (rows.isNotEmpty) return rows.map(_mapSectionRow).toList();
+    } catch (_) {}
+    return await _getLocalSections();
+  }
+
+  LearningSectionViewModel _mapSectionRow(Map<String, dynamic> row) {
+    final number = (row['section_number'] as num?)?.toInt() ?? 1;
+    return LearningSectionViewModel(
+      id: '${row['section_id'] ?? ''}',
+      sectionNumber: number,
+      title: LearningPresentationMapper.sectionHeading(number),
+      subtitle: LearningPresentationMapper.sectionName(
+        number,
+        row['section_title'],
+      ),
+      unitCount: (row['unit_count'] as num?)?.toInt() ?? 0,
+      completedUnitCount: (row['completed_unit_count'] as num?)?.toInt() ?? 0,
+      isUnlocked: row['is_unlocked'] == true,
+      lockReason: row['lock_reason'] as String?,
+      requiredSectionNumber: (row['required_section_number'] as num?)?.toInt(),
+    );
+  }
+
   @override
   Future<List<LearningSectionViewModel>> getSections() async {
     final client = _client;
@@ -90,35 +126,22 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       return await _getLocalSections();
     }
     try {
-      final rows = List<Map<String, dynamic>>.from(
-        await client.rpc('learning_sections_v2'),
+      final rows = await QueryCache.userScoped(
+        client,
+        'learning_sections_v2',
+        () async => List<Map<String, dynamic>>.from(
+          await client.rpc('learning_sections_v2'),
+        ),
       );
       if (rows.isNotEmpty) {
-        final rawSections = rows.map((row) {
-          final number = (row['section_number'] as num?)?.toInt() ?? 1;
-          return LearningSectionViewModel(
-            id: '${row['section_id'] ?? ''}',
-            sectionNumber: number,
-            title: LearningPresentationMapper.sectionHeading(number),
-            subtitle: LearningPresentationMapper.sectionName(
-              number,
-              row['section_title'],
-            ),
-            unitCount: (row['unit_count'] as num?)?.toInt() ?? 0,
-            completedUnitCount:
-                (row['completed_unit_count'] as num?)?.toInt() ?? 0,
-            isUnlocked: row['is_unlocked'] == true,
-            lockReason: row['lock_reason'] as String?,
-            requiredSectionNumber:
-                (row['required_section_number'] as num?)?.toInt(),
-          );
-        }).toList(growable: false);
+        final rawSections =
+            rows.map(_mapSectionRow).toList(growable: false);
 
         if (client.auth.currentUser == null) {
           return await _guestResolver.overlaySections(
             sections: rawSections,
             store: _guestStore,
-            unitsLoader: (sectionId) => getUnits(sectionId),
+            unitsLoader: _getRawUnits,
           );
         }
         return rawSections;
@@ -182,10 +205,14 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       return await _getLocalRawUnits(sectionId);
     }
     try {
-      final rows = List<Map<String, dynamic>>.from(
-        await client.rpc(
-          'learning_units_v2',
-          params: <String, dynamic>{'p_section_id': sectionId},
+      final rows = await QueryCache.userScoped(
+        client,
+        'learning_units_v2|$sectionId',
+        () async => List<Map<String, dynamic>>.from(
+          await client.rpc(
+            'learning_units_v2',
+            params: <String, dynamic>{'p_section_id': sectionId},
+          ),
         ),
       );
 
@@ -346,6 +373,9 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
           store: _guestStore,
           isSectionUnlocked: effectiveSectionUnlocked,
           previousSectionLastUnitId: prevSectionLastUnitId,
+          pathRowsLoader: client == null
+              ? null
+              : (uId) => QueryCache.unitPathRows(client, uId),
           masteryLoader: (uId) async {
             try {
               final m = await _progressRepo.fetchUnitMastery(uId);
@@ -405,12 +435,16 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
     final client = _client;
     if (client != null) {
       try {
-        final levelRows = List<Map<String, dynamic>>.from(
-          await client
-              .from('duo_levels')
-              .select('id')
-              .eq('unit_id', unitId)
-              .limit(1),
+        final levelRows = await QueryCache.run(
+          'duo_levels.first|$unitId',
+          () async => List<Map<String, dynamic>>.from(
+            await client
+                .from('duo_levels')
+                .select('id')
+                .eq('unit_id', unitId)
+                .limit(1),
+          ),
+          keep: true,
         );
         if (levelRows.isNotEmpty) {
           final levelId = levelRows.first['id'] as String;
@@ -463,82 +497,29 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       return await _getLocalUnitStages(unitId);
     }
     try {
-      final pathRows = List<Map<String, dynamic>>.from(
-        await client.rpc(
-          'unit_learning_path_v2',
-          params: <String, dynamic>{'p_unit_id': unitId},
-        ),
-      );
+      // Tải nội dung tĩnh song song với RPC tiến độ.
+      final contentFuture = _loadUnitStaticContent(client, unitId);
+      final pathRows = await QueryCache.unitPathRows(client, unitId);
       if (pathRows.isNotEmpty) {
-        final levelRows = List<Map<String, dynamic>>.from(
-          await client
-              .from('duo_levels')
-              .select('id, level_index')
-              .eq('unit_id', unitId)
-              .order('level_index', ascending: true),
-        );
-        final levelIds = levelRows.map((l) => '${l['id']}').toList();
-
-        List<Map<String, dynamic>> rawChallenges = const [];
-        if (levelIds.isNotEmpty) {
-          final sessionRows = List<Map<String, dynamic>>.from(
-            await client
-                .from('duo_sessions')
-                .select('id, level_id')
-                .inFilter('level_id', levelIds),
-          );
-          final sessionIds = sessionRows
-              .map((s) => (s['id'] as num?)?.toInt())
-              .whereType<int>()
-              .toList();
-          final levelBySession = <int, String>{
-            for (final session in sessionRows)
-              if ((session['id'] as num?) != null)
-                (session['id'] as num).toInt(): '${session['level_id'] ?? ''}',
-          };
-
-          if (sessionIds.isNotEmpty) {
-            final challengeRows = List<Map<String, dynamic>>.from(
-              await client
-                  .from('duo_challenges')
-                  .select(
-                    'id, session_id, type, prompt, tts, slow_tts, choices_text, solutions, tokens_text',
-                  )
-                  .inFilter('session_id', sessionIds)
-                  .order('id', ascending: true),
-            );
-            rawChallenges = challengeRows
-                .map((challenge) => <String, dynamic>{
-                      ...challenge,
-                      '_level_id': levelBySession[
-                          (challenge['session_id'] as num?)?.toInt()],
-                    })
-                .toList(growable: false);
-          }
-        }
-
-        final bossRows = List<Map<String, dynamic>>.from(
-          await client
-              .from('boss_stages')
-              .select(
-                'id, unit_id, stage_order, title, question_count, difficulty, boss_name, boss_hp, player_hp, theme_code',
-              )
-              .eq('unit_id', unitId)
-              .limit(1),
-        );
-        final rawBossStage = bossRows.isNotEmpty ? bossRows.first : null;
+        final content = await contentFuture;
+        final rawChallenges = content.challenges;
+        final rawBossStage = content.bossStage;
 
         var resolvedPathRows = pathRows;
         if (client.auth.currentUser == null) {
           final mastery = await _progressRepo.fetchUnitMastery(unitId);
           bool isUnitUnlocked = true;
           try {
-            final unitRows = List<Map<String, dynamic>>.from(
-              await client
-                  .from('duo_units')
-                  .select('section_id, unit_number')
-                  .eq('id', unitId)
-                  .limit(1),
+            final unitRows = await QueryCache.run(
+              'duo_units.position|$unitId',
+              () async => List<Map<String, dynamic>>.from(
+                await client
+                    .from('duo_units')
+                    .select('section_id, unit_number')
+                    .eq('id', unitId)
+                    .limit(1),
+              ),
+              keep: true,
             );
             if (unitRows.isNotEmpty) {
               final secId = '${unitRows.first['section_id'] ?? ''}';
@@ -575,6 +556,89 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
     } catch (_) {}
 
     return await _getLocalUnitStages(unitId);
+  }
+
+  /// Nội dung curriculum của một unit (challenge, boss) không phụ thuộc người
+  /// học nên được cache trong suốt phiên chạy app. Mỗi lần quay về màn bài học
+  /// chỉ còn gọi RPC tiến độ thay vì 4-5 query nội dung tuần tự.
+  Future<_UnitStaticContent> _loadUnitStaticContent(
+    SupabaseClient client,
+    String unitId,
+  ) =>
+      QueryCache.run(
+        'unit_static_content|$unitId',
+        () => _fetchUnitStaticContent(client, unitId),
+        keep: true,
+      );
+
+  Future<_UnitStaticContent> _fetchUnitStaticContent(
+    SupabaseClient client,
+    String unitId,
+  ) async {
+    Future<List<Map<String, dynamic>>> loadChallenges() async {
+      final levelRows = List<Map<String, dynamic>>.from(
+        await client
+            .from('duo_levels')
+            .select('id, level_index')
+            .eq('unit_id', unitId)
+            .order('level_index', ascending: true),
+      );
+      final levelIds = levelRows.map((l) => '${l['id']}').toList();
+      if (levelIds.isEmpty) return const [];
+
+      final sessionRows = List<Map<String, dynamic>>.from(
+        await client
+            .from('duo_sessions')
+            .select('id, level_id')
+            .inFilter('level_id', levelIds),
+      );
+      final sessionIds = sessionRows
+          .map((s) => (s['id'] as num?)?.toInt())
+          .whereType<int>()
+          .toList();
+      if (sessionIds.isEmpty) return const [];
+      final levelBySession = <int, String>{
+        for (final session in sessionRows)
+          if ((session['id'] as num?) != null)
+            (session['id'] as num).toInt(): '${session['level_id'] ?? ''}',
+      };
+
+      final challengeRows = List<Map<String, dynamic>>.from(
+        await client
+            .from('duo_challenges')
+            .select(
+              'id, session_id, type, prompt, tts, slow_tts, choices_text, solutions, tokens_text',
+            )
+            .inFilter('session_id', sessionIds)
+            .order('id', ascending: true),
+      );
+      return challengeRows
+          .map((challenge) => <String, dynamic>{
+                ...challenge,
+                '_level_id':
+                    levelBySession[(challenge['session_id'] as num?)?.toInt()],
+              })
+          .toList(growable: false);
+    }
+
+    Future<Map<String, dynamic>?> loadBoss() async {
+      final bossRows = List<Map<String, dynamic>>.from(
+        await client
+            .from('boss_stages')
+            .select(
+              'id, unit_id, stage_order, title, question_count, difficulty, boss_name, boss_hp, player_hp, theme_code',
+            )
+            .eq('unit_id', unitId)
+            .limit(1),
+      );
+      return bossRows.isNotEmpty ? bossRows.first : null;
+    }
+
+    final results = await Future.wait<Object?>([loadChallenges(), loadBoss()]);
+    return _UnitStaticContent(
+      challenges: results[0] as List<Map<String, dynamic>>,
+      bossStage: results[1] as Map<String, dynamic>?,
+    );
   }
 
   Future<List<LearningStageViewModel>> _getLocalUnitStages(String unitId) async {
@@ -816,21 +880,23 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
     final client = _client;
     if (client == null || client.auth.currentUser == null) {
       try {
-        final sections = await getSections();
+        // Duyệt lần lượt từng phần học và dừng ngay khi tìm thấy bài đang học,
+        // thay vì tải units của mọi phần như getSections() phải làm.
+        final sections = await _getRawSections();
+        List<LearningUnitViewModel>? firstUnits;
         for (final section in sections) {
-          if (!section.isUnlocked) continue;
           final units = await getUnits(section.id);
+          firstUnits ??= units;
           for (final unit in units) {
             if (unit.isUnlocked && !unit.bossWon) {
               return unit;
             }
           }
+          // Phần sau chỉ mở khi phần này đã hoàn thành toàn bộ.
+          if (units.isEmpty || !units.every((u) => u.bossWon)) break;
         }
-        if (sections.isNotEmpty) {
-          final firstUnits = await getUnits(sections.first.id);
-          if (firstUnits.isNotEmpty) {
-            return firstUnits.first;
-          }
+        if (firstUnits != null && firstUnits.isNotEmpty) {
+          return firstUnits.first;
         }
       } catch (e) {
         debugPrint(
@@ -852,12 +918,7 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
           unitNum,
         );
 
-        final path = List<Map<String, dynamic>>.from(
-          await client.rpc(
-            'unit_learning_path_v2',
-            params: <String, dynamic>{'p_unit_id': unitId},
-          ),
-        );
+        final path = await QueryCache.unitPathRows(client, unitId);
         final learningNodes = path
             .where((node) => node['node_type'] == 'learning')
             .toList(growable: false);
@@ -989,4 +1050,11 @@ class SupabaseLearningJourneyRepository implements LearningJourneyRepository {
       return null;
     }
   }
+}
+
+class _UnitStaticContent {
+  const _UnitStaticContent({required this.challenges, required this.bossStage});
+
+  final List<Map<String, dynamic>> challenges;
+  final Map<String, dynamic>? bossStage;
 }

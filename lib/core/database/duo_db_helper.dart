@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../backend/query_cache.dart';
 import '../models/duo_challenge.dart';
 import '../models/duo_flashcard.dart';
 import '../learning/data/guest_learning_progress_store.dart';
@@ -156,12 +157,7 @@ class DuoDbHelper {
     final client = _client;
     if (client == null) return <Map<String, dynamic>>[];
     try {
-      var rows = List<Map<String, dynamic>>.from(
-        await client.rpc(
-          'unit_learning_path_v2',
-          params: <String, dynamic>{'p_unit_id': unitId},
-        ),
-      );
+      var rows = await QueryCache.unitPathRows(client, unitId);
       if (_userId == null) {
         rows = await _overlayGuestPath(rows, unitId);
       }

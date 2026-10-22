@@ -573,5 +573,83 @@ void main() {
           reason: 'Stage 2 PHẢI mở sau khi reload!');
       expect(reloadedPath[1]['lock_reason'], isNull);
     });
+
+    test(
+        'Luyện viết/phát âm cùng unit không làm danh sách bài đếm thừa ải '
+        'hay mở Boss sớm', () async {
+      await store.recordStagePassed(
+        gameId: 1,
+        levelId: 'level_01',
+        unitId: 'unit_01',
+        score: 100,
+        stars: 3,
+      );
+      for (var i = 0; i < 3; i++) {
+        await store.recordStagePassed(
+          gameId: 500 + i,
+          levelId: 'hanzi_$i',
+          unitId: 'unit_01',
+          score: 95,
+          stars: 3,
+          activityType: 'hanzi',
+        );
+      }
+
+      final units = await resolver.overlayUnits(
+        sectionId: 'sec_01',
+        units: const [
+          LearningUnitViewModel(
+            id: 'unit_01',
+            sectionId: 'sec_01',
+            sectionNumber: 1,
+            unitNumber: 1,
+            title: 'Bài 1: Chào hỏi',
+            subtitle: '',
+            teachingObjective: '',
+            missionCount: 3,
+            completedMissionCount: 0,
+            mastery: 0.0,
+            state: UnitCompletionState.inProgress,
+            isUnlocked: true,
+            bossAvailable: false,
+            bossWon: false,
+            bossStageId: 1,
+          ),
+        ],
+        store: store,
+        isSectionUnlocked: true,
+        pathRowsLoader: (_) async => sampleUnitPath,
+      );
+
+      expect(units.single.completedMissionCount, 1);
+      expect(units.single.bossAvailable, isFalse);
+    });
+
+    test('Boss đã thắng -> màn bài học tính đủ ải, khớp danh sách bài',
+        () async {
+      await store.recordStagePassed(
+        gameId: 1,
+        levelId: 'level_01',
+        unitId: 'unit_01',
+        score: 90,
+        stars: 3,
+      );
+      await store.recordBossWon(
+        unitId: 'unit_01',
+        stageId: 1,
+        score: 80,
+        stars: 3,
+      );
+
+      final path = await resolver.overlayUnitPath(
+        unitId: 'unit_01',
+        pathRows: sampleUnitPath,
+        store: store,
+      );
+
+      expect(path.every((row) => row['is_completed'] == true), isTrue);
+      // Ải không có kết quả thật không kéo độ thành thạo xuống.
+      expect(path.first['overall_mastery'], closeTo(0.9, 0.001));
+    });
   });
 }

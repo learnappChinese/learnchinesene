@@ -46,6 +46,8 @@ class _DuoGameCenterScreenState extends State<DuoGameCenterScreen> {
   Widget build(BuildContext context) {
     return LearningScaffold(
       title: 'Game Center',
+      // Nội dung cuộn tràn xuống đáy, khoảng đệm nằm ở cuối danh sách.
+      useSafeArea: false,
       body: LearningSceneBackground(
         theme: LearningSceneTheme.lanternTown,
         child: _buildGameCatalog(context),
@@ -64,7 +66,12 @@ class _DuoGameCenterScreenState extends State<DuoGameCenterScreen> {
       }
 
       return ListView.separated(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          20 + MediaQuery.viewPaddingOf(context).bottom,
+        ),
         itemCount: controller.games.length,
         separatorBuilder: (_, __) => const SizedBox(height: 16),
         itemBuilder: (context, idx) {

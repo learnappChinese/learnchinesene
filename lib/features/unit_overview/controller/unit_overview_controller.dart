@@ -18,6 +18,8 @@ class UnitOverviewController extends GetxController {
   final LearningProgressSyncService? _syncService;
   LearningSyncRegistration? _syncRegistration;
   int _loadRequest = 0;
+  Future<void>? _inflightLoad;
+  int _loadedGeneration = -1;
 
   static LearningProgressSyncService? _registeredSyncService() {
     if (!Get.isRegistered<LearningProgressSyncService>()) return null;
@@ -59,14 +61,42 @@ class UnitOverviewController extends GetxController {
           nextUnit.value = null;
         }
         await loadUnitOverview(rethrowFailure: true);
+        _loadedGeneration = event.generation;
       },
     );
     loadUnitOverview();
   }
 
-  Future<void> loadUnitOverview({bool rethrowFailure = false}) async {
+  bool get hasData => chapter.value != null || stages.isNotEmpty;
+
+  /// Generation hiện tại của sync service, dùng để biết đã có sync nào chạy
+  /// trong lúc người học ở màn con hay chưa.
+  int get syncGeneration => _syncService?.generation.value ?? 0;
+
+  /// Làm mới khi quay về từ một màn học. Nếu sync service đã làm mới màn này
+  /// sau khi hoàn thành bài (generation thay đổi) thì không gọi lại API nữa.
+  Future<void> refreshAfterReturn(int generationBefore) {
+    final inflight = _inflightLoad;
+    if (inflight != null) return inflight;
+    final current = syncGeneration;
+    if (current != generationBefore && _loadedGeneration >= current) {
+      return Future<void>.value();
+    }
+    return loadUnitOverview();
+  }
+
+  Future<void> loadUnitOverview({bool rethrowFailure = false}) {
+    final future = _loadUnitOverview(rethrowFailure: rethrowFailure);
+    _inflightLoad = future;
+    return future.whenComplete(() {
+      if (identical(_inflightLoad, future)) _inflightLoad = null;
+    });
+  }
+
+  Future<void> _loadUnitOverview({bool rethrowFailure = false}) async {
     final request = ++_loadRequest;
-    isLoading.value = true;
+    // Chỉ hiện skeleton ở lần tải đầu, các lần sau làm mới ngầm.
+    isLoading.value = !hasData;
     errorMessage.value = null;
     if (unitId.trim().isEmpty) {
       errorMessage.value = 'Không xác định được bài học cần mở.';
@@ -153,7 +183,11 @@ class UnitOverviewController extends GetxController {
       }
     } catch (e) {
       if (!isClosed && request == _loadRequest) {
-        errorMessage.value = 'Lỗi kết nối khi tải bài học: $e';
+        if (hasData) {
+          debugPrint('[UnitOverviewController] background refresh failed: $e');
+        } else {
+          errorMessage.value = 'Lỗi kết nối khi tải bài học: $e';
+        }
       }
       if (rethrowFailure) rethrow;
     } finally {
