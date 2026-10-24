@@ -24,6 +24,7 @@ import '../dictionary/dictionary_screen.dart';
 import '../flashcards/flashcards_screen.dart';
 import '../hsk_quiz/hsk_quiz_screen.dart';
 import '../system/profile_page.dart';
+import '../system/privacy_policy_page.dart';
 import '../unit_overview/binding/unit_overview_binding.dart';
 import '../unit_overview/page/unit_overview_screen.dart';
 import '../review/review_screen.dart';
@@ -246,6 +247,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildPersonalTab() => HomePersonalTab(
         onProfile: () => Get.to(() => const ProfilePage()),
         onDictionary: FeatureFlags.enableAi ? () => Get.to(() => const DictionaryScreen()) : () {},
+        onPrivacyPolicy: () => Get.to(() => const PrivacyPolicyPage()),
       );
 
   @override
